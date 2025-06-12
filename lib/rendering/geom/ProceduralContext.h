@@ -76,8 +76,8 @@ public:
 
     /// Return the delta fraction of shutter open/close time in
     /// motionSteps duration
-    virtual void getMotionBlurDelta(
-            float& shutterOpenDelta, float& shutterCloseDelta) const = 0;
+    virtual void getMotionBlurDelta(float& shutterOpenDelta,
+                                    float& shutterCloseDelta) const = 0;
 
 };
 

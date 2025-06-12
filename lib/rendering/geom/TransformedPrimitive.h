@@ -26,7 +26,7 @@ class TransformedPrimitive : public moonray::geom::Primitive
 {
 public:
     TransformedPrimitive(const shading::XformSamples& xform,
-            std::unique_ptr<Primitive> primitive);
+                         std::unique_ptr<Primitive> primitive);
 
     ~TransformedPrimitive();
 
@@ -47,9 +47,8 @@ private:
 
     /// @remark For renderer internal use, procedural should never call this
     /// @internal
-    virtual void transformPrimitive(
-            const MotionBlurParams& motionBlurParams,
-            const shading::XformSamples& prim2render) override;
+    virtual void transformPrimitive(const MotionBlurParams& motionBlurParams,
+                                    const shading::XformSamples& prim2render) override;
 
 private:
     struct Impl;

@@ -35,12 +35,14 @@ public:
 
     // Adds a transition sequence to the FSM.  A transition sequence
     // is a sequence of instance primitives ending in a volumeId
-    void add(const std::vector<const geom::internal::Instance *> &sequence, int volumeId);
+    void add(const std::vector<const geom::internal::Instance *> &sequence,
+             int volumeId);
 
     // Transition to instance "to"
     // Returns next valid state (>= 0) based on this transition.  If the
     // transition is invalid, return -1.
-    int transition(int state, const geom::internal::Instance *to) const;
+    int transition(int state,
+                   const geom::internal::Instance *to) const;
 
     // Is this an end state?
     bool isLeaf(int state) const;
@@ -59,7 +61,9 @@ private:
 
         Node(): mVolumeId(-1) {}
 
-        int addTransition(InstanceId to, NodeIdx nodeIdx);
+        int addTransition(InstanceId to,
+                          NodeIdx nodeIdx);
+
         NodeIdx findTransition(InstanceId to) const;
 
         // valid next nodes
@@ -116,7 +120,9 @@ public:
     // For a given volumeId return true if volumeId is an instance.
     // If true, then evaluate the instance xform at time, returning the
     // result in primToRender.
-    bool evalInstanceXform(int volumeId, float time, Mat43 &primToRender) const;
+    bool evalInstanceXform(int volumeId,
+                           float time,
+                           Mat43 &primToRender) const;
 
     // A state machine is used to compute volume ids from a sequence of
     // instance primitive intersections

@@ -76,44 +76,51 @@ computeEmissionDistributionImpl(const scene_rdl2::rdl2::Geometry* rdlGeometry,
     primToRender[1] = renderToPrim[1].inverse();
     openvdb::math::MapBase::ConstPtr map = emissionGrid.transform().baseMap();
     openvdb::math::Mat4d M = map->getAffineMap()->getMat4().asPointer();
-    scene_rdl2::math::Mat4f indexToPrim(
-        M[0][0], M[0][1], M[0][2], M[0][3],
-        M[1][0], M[1][1], M[1][2], M[1][3],
-        M[2][0], M[2][1], M[2][2], M[2][3],
-        M[3][0], M[3][1], M[3][2], M[3][3]);
+
+    scene_rdl2::math::Mat4f indexToPrim(M[0][0], M[0][1], M[0][2], M[0][3],
+                                        M[1][0], M[1][1], M[1][2], M[1][3],
+                                        M[2][0], M[2][1], M[2][2], M[2][3],
+                                        M[3][0], M[3][1], M[3][2], M[3][3]);
+
     scene_rdl2::math::Mat4f indexToRender[2] = {indexToPrim * primToRender[0],
                                                 indexToPrim * primToRender[1]};
+
     // We must pick a single representative voxel volume - interpolate halfway between the 2 matrices
     float voxelVolume = scene_rdl2::math::lerp(indexToRender[0], indexToRender[1], 0.5f).det();
     float invUnitVolume = 1.0f / voxelVolume;
 
     scene_rdl2::math::Vec3i res(dim[0], dim[1], dim[2]);
+
     // This is really subtle. The vdb point sampler transforms the input
     // world coordinates to index space and uses "round" to look up the
     // voxel value so we need to offset the sample by 0.5
     float tx = pMin[0] - 0.5f;
     float ty = pMin[1] - 0.5f;
     float tz = pMin[2] - 0.5f;
-    scene_rdl2::math::Mat4f distToIndex(
-        1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 0.0f,
-        tx  , ty  , tz  , 1.0f);
+
+    scene_rdl2::math::Mat4f distToIndex(1.0f, 0.0f, 0.0f, 0.0f,
+                                        0.0f, 1.0f, 0.0f, 0.0f,
+                                        0.0f, 0.0f, 1.0f, 0.0f,
+                                        tx  , ty  , tz  , 1.0f);
+
     scene_rdl2::math::Mat4f distToRender[2] = {distToIndex * indexToRender[0],
                                                distToIndex * indexToRender[1]};
+
     size_t denseResolution = res[0] * res[1] * res[2];
 
     // check for overflow
     if (denseResolution != 0 && res[0] != denseResolution / (res[1] * res[2])) {
         float emissionSampleRate = scene_rdl2::math::clamp(rdlGeometry->get<scene_rdl2::rdl2::Float>("emission_sample_rate"));
+
         // The cube root of 2 ^ 31 is about 1290.
         float factor = 3.f * 1290.f / (res[0] + res[1] + res[2]);
+
         // round to nearest 2 decimal
         float suggestedSampleRate = int(factor * emissionSampleRate * 100) / 100.f;
 
         rdlGeometry->warn("Emission grid is too large and caused an integer overflow. "
-            "Please set \"emission_sample_rate\" to ", suggestedSampleRate,
-            " or lower for accurate results.");
+                          "Please set \"emission_sample_rate\" to ", suggestedSampleRate,
+                          " or lower for accurate results.");
     }
 
     auto evalVolumeShader = [&](const openvdb::Coord& coord)->float
@@ -148,9 +155,11 @@ computeEmissionDistributionImpl(const scene_rdl2::rdl2::Geometry* rdlGeometry,
         if (value <= scene_rdl2::math::sEpsilon || !scene_rdl2::math::isfinite(value)) {
             continue;
         }
+
         if (it.isVoxelValue()) {
             const openvdb::Coord& coord = it.getCoord();
             value *= evalVolumeShader(coord);
+
             // set histogram value
             histogram[getHistogramIndex(coord)] += value;
         } else {
@@ -180,11 +189,11 @@ class DDAIntersector;
 struct VdbVolumeData
 {
     VdbVolumeData(const std::string& filePath,
-            const std::string& densityGridName,
-            const std::string& emissionGridName,
-            const std::string& velocityGridName,
-            const MotionBlurParams& motionBlurParams,
-            shading::PrimitiveAttributeTable&& primitiveAttributeTable) :
+                  const std::string& densityGridName,
+                  const std::string& emissionGridName,
+                  const std::string& velocityGridName,
+                  const MotionBlurParams& motionBlurParams,
+                  shading::PrimitiveAttributeTable&& primitiveAttributeTable) :
         mFilePath(filePath),
         mDensityGridName(densityGridName),
         mEmissionGridName(emissionGridName),
@@ -192,7 +201,9 @@ struct VdbVolumeData
         mIsMotionBlurOn(motionBlurParams.isMotionBlurOn()),
         mShutterOpen(motionBlurParams.getShutterOpen()),
         mShutterClose(motionBlurParams.getShutterClose()),
-        mVelocityScale(0.0f), mVelocitySampleRate(0.0f), mEmissionSampleRate(0.0f),
+        mVelocityScale(0.0f),
+        mVelocitySampleRate(0.0f),
+        mEmissionSampleRate(0.0f),
         mPrimitiveAttributeTable(std::move(primitiveAttributeTable))
     {}
 
@@ -215,12 +226,12 @@ class VdbVolume : public NamedPrimitive
 {
 public:
     VdbVolume(const std::string& vdbFilePath,
-            const std::string& densityGridName,
-            const std::string& emissionGridName,
-            const std::string& velocityGridName,
-            const MotionBlurParams& motionBlurParams,
-            LayerAssignmentId&& layerAssignmentId,
-            shading::PrimitiveAttributeTable&& primitiveAttributeTable);
+              const std::string& densityGridName,
+              const std::string& emissionGridName,
+              const std::string& velocityGridName,
+              const MotionBlurParams& motionBlurParams,
+              LayerAssignmentId&& layerAssignmentId,
+              shading::PrimitiveAttributeTable&& primitiveAttributeTable);
 
     ~VdbVolume();
 
@@ -238,17 +249,25 @@ public:
         return false;
     }
 
-    virtual void tessellate(const TessellationParams& tessellationParams, TessellationStats& stats) override;
+    virtual void tessellate(const TessellationParams& tessellationParams,
+                            TessellationStats& stats) override;
 
     virtual void transformPrimitive(const scene_rdl2::math::Mat4f& primToRender);
 
     void setTransform(const shading::XformSamples& xforms,
-            float shutterOpenDelta, float shutterCloseDelta)
+                      float shutterOpenDelta,
+                      float shutterCloseDelta)
     {
         if (mIsMotionBlurOn) {
             MNRY_ASSERT(xforms.size() == 2);
-            mPrimToRender[0] = lerp(scene_rdl2::math::Mat4f(xforms[0]), scene_rdl2::math::Mat4f(xforms[1]), shutterOpenDelta);
-            mPrimToRender[1] = lerp(scene_rdl2::math::Mat4f(xforms[0]), scene_rdl2::math::Mat4f(xforms[1]), shutterCloseDelta);
+            mPrimToRender[0] = lerp(scene_rdl2::math::Mat4f(xforms[0]),
+                                    scene_rdl2::math::Mat4f(xforms[1]),
+                                    shutterOpenDelta);
+
+            mPrimToRender[1] = lerp(scene_rdl2::math::Mat4f(xforms[0]),
+                                    scene_rdl2::math::Mat4f(xforms[1]),
+                                    shutterCloseDelta);
+
             mRenderToPrim[0] = mPrimToRender[0].inverse();
             mRenderToPrim[1] = mPrimToRender[1].inverse();
         } else {
@@ -263,12 +282,15 @@ public:
     virtual int getIntersectionAssignmentId(int primID) const override;
 
     void getTessellatedMesh(BufferDesc * vertexBufferDesc,
-            BufferDesc& indexBufferDesc,
-            size_t& vertexCount, size_t& faceCount, size_t& timeSteps) const;
+                            BufferDesc& indexBufferDesc,
+                            size_t& vertexCount,
+                            size_t& faceCount,
+                            size_t& timeSteps) const;
 
     virtual void postIntersect(mcrt_common::ThreadLocalState& tls,
-            const scene_rdl2::rdl2::Layer* pRdlLayer, const mcrt_common::Ray& ray,
-            shading::Intersection& intersection) const override;
+                               const scene_rdl2::rdl2::Layer* pRdlLayer,
+                               const mcrt_common::Ray& ray,
+                               shading::Intersection& intersection) const override;
 
     virtual BBox3f computeAABB() const override;
     virtual BBox3f computeAABBAtTimeStep(int timeStep) const override;
@@ -276,9 +298,8 @@ public:
     virtual std::unique_ptr<EmissionDistribution>
     computeEmissionDistribution(const scene_rdl2::rdl2::VolumeShader* volumeShader) const override;
 
-    virtual const scene_rdl2::rdl2::Material* getIntersectionMaterial(
-            const scene_rdl2::rdl2::Layer* pRdlLayer,
-            const mcrt_common::Ray &ray) const override;
+    virtual const scene_rdl2::rdl2::Material* getIntersectionMaterial(const scene_rdl2::rdl2::Layer* pRdlLayer,
+                                                                      const mcrt_common::Ray &ray) const override;
 
     virtual PrimitiveType getType() const override
     {
@@ -286,25 +307,28 @@ public:
     }
 
     virtual void initVolumeSampleInfo(VolumeSampleInfo* info,
-            const Vec3f& rayOrg, const Vec3f& rayDir, const float time,
-            const scene_rdl2::rdl2::VolumeShader* volumeShader,
-            int volumeId) const override;
+                                      const Vec3f& rayOrg,
+                                      const Vec3f& rayDir,
+                                      const float time,
+                                      const scene_rdl2::rdl2::VolumeShader* volumeShader,
+                                      int volumeId) const override;
 
     // This sample position is used for sampling the vdb grids. It must be in the vdb grids' space.
     virtual scene_rdl2::math::Vec3f evalVolumeSamplePosition(mcrt_common::ThreadLocalState* tls,
-                                                 uint32_t volumeId,
-                                                 const Vec3f& pSample,
-                                                 float time) const override;
+                                                             uint32_t volumeId,
+                                                             const Vec3f& pSample,
+                                                             float time) const override;
 
     // This sample position is used for sampling map shaders. It must be in render space or
     // local space if this is a shared primitive.
-    virtual scene_rdl2::math::Vec3f transformVolumeSamplePosition(const Vec3f& pSample, float time) const override;
+    virtual scene_rdl2::math::Vec3f transformVolumeSamplePosition(const Vec3f& pSample,
+                                                                  float time) const override;
 
     virtual scene_rdl2::math::Color evalDensity(mcrt_common::ThreadLocalState* tls,
-                                    uint32_t volumeId,
-                                    const Vec3f& pSample,
-                                    float /*rayVolumeDepth*/,
-                                    const scene_rdl2::rdl2::VolumeShader* const /*volumeShader*/) const override;
+                                                uint32_t volumeId,
+                                                const Vec3f& pSample,
+                                                float /*rayVolumeDepth*/,
+                                                const scene_rdl2::rdl2::VolumeShader* const) const override;
 
     virtual void evalVolumeCoefficients(mcrt_common::ThreadLocalState* tls,
                                         uint32_t volumeId,
@@ -314,20 +338,27 @@ public:
                                         scene_rdl2::math::Color* temperature,
                                         bool highQuality,
                                         float /*rayVolumeDepth*/,
-                                        const scene_rdl2::rdl2::VolumeShader* const /*volumeShader*/) const override;
+                                        const scene_rdl2::rdl2::VolumeShader* const) const override;
 
     virtual scene_rdl2::math::Color evalTemperature(mcrt_common::ThreadLocalState* tls,
-                                        uint32_t volumeId,
-                                        const Vec3f& pSample) const override;
+                                                    uint32_t volumeId,
+                                                    const Vec3f& pSample) const override;
 
     // query all volume intersections of this VdbVolume alone the ray
     // note that tfar is stored in volumeState already
-    bool queryIntersections(const Vec3f& rayOrg, const Vec3f& rayDir,
-                            float tNear, float time, int threadIdx, int volumeId,
-                            VolumeRayState& volumeRayState, bool computeRenderSpaceDistance);
+    bool queryIntersections(const Vec3f& rayOrg,
+                            const Vec3f& rayDir,
+                            float tNear,
+                            float time,
+                            int threadIdx,
+                            int volumeId,
+                            VolumeRayState& volumeRayState,
+                            bool computeRenderSpaceDistance);
 
     // query whether a given position is inside active field of vdb grid
-    bool isInActiveField(uint32_t threadIdx, const Vec3f& p, float time) const;
+    bool isInActiveField(uint32_t threadIdx,
+                         const Vec3f& p,
+                         float time) const;
 
     void initMotionBlurBoundary(openvdb::FloatGrid::Ptr& topologyGrid,
                                 openvdb::VectorGrid::Ptr velocityGrid,
@@ -341,21 +372,21 @@ public:
     void setVelocityScale(float velocityScale)
     {
         MNRY_ASSERT_REQUIRE(mVdbVolumeData,
-            "velocity scale can only be set before initialization");
+                            "velocity scale can only be set before initialization");
         mVdbVolumeData->mVelocityScale = velocityScale;
     }
 
     void setVelocitySampleRate(float velocitySampleRate)
     {
         MNRY_ASSERT_REQUIRE(mVdbVolumeData,
-            "velocity sample rate can only be set before initialization");
+                            "velocity sample rate can only be set before initialization");
         mVdbVolumeData->mVelocitySampleRate = velocitySampleRate;
     }
 
     void setEmissionSampleRate(float emissionSampleRate)
     {
         MNRY_ASSERT_REQUIRE(mVdbVolumeData,
-            "emission sample rate can only be set before initialization");
+                            "emission sample rate can only be set before initialization");
         mVdbVolumeData->mEmissionSampleRate = emissionSampleRate;
     }
 
@@ -401,8 +432,8 @@ protected:
                           openvdb::VectorGrid::Ptr& velocityGrid);
 
     virtual bool initialize(const scene_rdl2::rdl2::Geometry& rdlGeometry,
-                    const scene_rdl2::rdl2::Layer* layer,
-                    const VolumeAssignmentTable* volumeAssignmentTable);
+                            const scene_rdl2::rdl2::Layer* layer,
+                            const VolumeAssignmentTable* volumeAssignmentTable);
 
     bool initDensitySampler(openvdb::io::File& file,
                             openvdb::GridPtrVecPtr grids,
@@ -425,8 +456,8 @@ protected:
                                             const int assignmentId) override;
 
     scene_rdl2::math::Color sampleBakedDensity(mcrt_common::ThreadLocalState* tls,
-                                   uint32_t volumeId,
-                                   const openvdb::Vec3d& p) const;
+                                               uint32_t volumeId,
+                                               const openvdb::Vec3d& p) const;
 
 protected:
     struct LinearGridTransform
@@ -451,6 +482,7 @@ protected:
     // When the VdbVolume is a shared primitive (i.e. when instancing),
     // this member will be the indentity matrix.
     scene_rdl2::math::Mat4f mRenderToPrim[2];
+
     // vdb world space to render space for baked volume shader grid
     // We use two time samples for transformation motion blur.
     // If not a shared primitive (i.e when not instancing), this is just
@@ -460,15 +492,20 @@ protected:
     // do something similar when evaluating displacement maps on shared
     // primitives.
     scene_rdl2::math::Mat4f mPrimToRender[2];
+
     // 8 vertices to form a bounding box in render space; 2 time samples for transformation motion blur
     Vec3fa mBBoxVertices[8 * 2];
+
     // 4 * 6 = 24 index values for a bounding box (same topology for both time samples)
     int mBBoxIndices[24];
+
     // this member is only valid when the grid has linear transform
     // We use two time samples for transformation motion blur.
     std::unique_ptr<LinearGridTransform> mLinearTransform[2];
+
     // this member is only valid when the grid uses non-uniform voxels
     std::unique_ptr<DDAIntersector> mDDAIntersector;
+
     // the active voxels that we should ray trace
     openvdb::FloatGrid::Ptr mTopologyGrid;
     std::vector<openvdb::FloatGrid::ConstAccessor> mTopologyAccessors;
@@ -483,6 +520,7 @@ protected:
     VDBSampler<openvdb::Vec3SGrid> mEmissionSampler;
 
     Interpolation mInterpolationMode;
+
     // empty vdb?
     bool mIsEmpty;
     std::unique_ptr<VdbVolumeData> mVdbVolumeData;

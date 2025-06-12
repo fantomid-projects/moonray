@@ -88,6 +88,7 @@ public:
     VertexBuffer(VertexBuffer&&) noexcept = default;
 
     VertexBuffer& operator=(const VertexBuffer&) = delete;
+
     VertexBuffer& operator=(VertexBuffer&& other)
         noexcept(noexcept(std::declval<VertexBuffer>().traits_type::operator=(std::move(other))))
     {

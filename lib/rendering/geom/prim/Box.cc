@@ -29,35 +29,37 @@ Box::Box(float length,
          float width,
          float height,
          LayerAssignmentId&& layerAssignmentId,
-         PrimitiveAttributeTable&& primitiveAttributeTable)
-: NamedPrimitive(std::move(layerAssignmentId))
-, mL2P(scene_rdl2::math::one)
-, mP2L(scene_rdl2::math::one)
-, mLength(scene_rdl2::math::abs(length))
-, mWidth(scene_rdl2::math::abs(width))
-, mHeight(scene_rdl2::math::abs(height))
-, mIsSingleSided(false)
-, mIsNormalReversed(false)
+         PrimitiveAttributeTable&& primitiveAttributeTable) :
+    NamedPrimitive(std::move(layerAssignmentId)),
+    mL2P(scene_rdl2::math::one),
+    mP2L(scene_rdl2::math::one),
+    mLength(scene_rdl2::math::abs(length)),
+    mWidth(scene_rdl2::math::abs(width)),
+    mHeight(scene_rdl2::math::abs(height)),
+    mIsSingleSided(false),
+    mIsNormalReversed(false)
 {
-    MNRY_ASSERT_REQUIRE(
-        mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT);
+    MNRY_ASSERT_REQUIRE(mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT);
+
     // facevarying/varying/vertex are the same for Box:
     // bilinear interpolation on the intersection uv across 4 specified values
     for (auto& kv : primitiveAttributeTable) {
         for (auto& attribute : kv.second) {
-            if (attribute->getRate() == RATE_VARYING ||
-                attribute->getRate() == RATE_FACE_VARYING) {
+            if (attribute->getRate() == RATE_VARYING || attribute->getRate() == RATE_FACE_VARYING) {
                 attribute->setRate(RATE_VERTEX);
             }
         }
     }
+
     setAttributes(Attributes::interleave(primitiveAttributeTable,
-        0, 1, 4, std::vector<size_t>(), 4));
+                                         0, 1, 4,
+                                         std::vector<size_t>(),
+                                         4));
 }
 
 const scene_rdl2::rdl2::Material*
 Box::getIntersectionMaterial(const scene_rdl2::rdl2::Layer* pRdlLayer,
-        const mcrt_common::Ray& ray) const
+                             const mcrt_common::Ray& ray) const
 {
     // there is only one part for Box, so the LayerAssignmentId should
     // always be CONSTANT
@@ -69,19 +71,20 @@ Box::getIntersectionMaterial(const scene_rdl2::rdl2::Layer* pRdlLayer,
 
 void
 Box::postIntersect(mcrt_common::ThreadLocalState& tls,
-        const scene_rdl2::rdl2::Layer* pRdlLayer, const mcrt_common::Ray& ray,
-        Intersection& intersection) const
+                   const scene_rdl2::rdl2::Layer* pRdlLayer,
+                   const mcrt_common::Ray& ray,
+                   Intersection& intersection) const
 {
     intersection.setLayerAssignments(mLayerAssignmentId.getConstId(), pRdlLayer);
 
     const scene_rdl2::rdl2::Material* material = intersection.getMaterial();
-    const AttributeTable *table =
-        material->get<shading::RootShader>().getAttributeTable();
+    const AttributeTable *table = material->get<shading::RootShader>().getAttributeTable();
     intersection.setTable(&tls.mArena, table);
     intersection.setIds(ray.primID, 0, 0);
 
     if (ray.isInstanceHit()) {
-        overrideInstanceAttrs(ray, intersection);
+        overrideInstanceAttrs(ray,
+                              intersection);
     }
 
     const Vec3f& nLocal = ray.Ng;
@@ -107,24 +110,30 @@ Box::postIntersect(mcrt_common::ThreadLocalState& tls,
     if (mIsNormalReversed) {
         Ng = -Ng;
     }
-    intersection.setDifferentialGeometry(Ng, Ng, st, dpds, dpdt, true);
+    intersection.setDifferentialGeometry(Ng, Ng, st,
+                                         dpds, dpdt, true);
 
     // interpolate primitive attributes
-    QuadricInterpolator interpolator(getAttributes(), ray.time, ray.u, ray.v);
+    QuadricInterpolator interpolator(getAttributes(),
+                                     ray.time,
+                                     ray.u, ray.v);
+
     intersection.setRequiredAttributes(interpolator);
 
     const scene_rdl2::rdl2::Geometry* geometry = intersection.getGeometryObject();
     MNRY_ASSERT(geometry != nullptr);
-    intersection.setEpsilonHint( geometry->getRayEpsilon() );
+    intersection.setEpsilonHint(geometry->getRayEpsilon());
 
     // wireframe AOV
     if (table->requests(StandardAttributes::sNumPolyVertices)) {
         intersection.setAttribute(StandardAttributes::sNumPolyVertices, 4);
     }
+
     if (table->requests(StandardAttributes::sPolyVertexType)) {
         intersection.setAttribute(StandardAttributes::sPolyVertexType,
                                   static_cast<int>(StandardAttributes::POLYVERTEX_TYPE_POLYGON));
     }
+
     // When the box is not an instancing object,
     // mL2P stands for local space to render space, which
     // transforms box center from origin to world space, then
@@ -136,6 +145,7 @@ Box::postIntersect(mcrt_common::ThreadLocalState& tls,
     const Mat43 transform = ray.isInstanceHit() ? mL2P * ray.ext.l2r : mL2P;
     const Vec3f lower = getMinCorner();
     const Vec3f upper = getMaxCorner();
+
     const Vec3f verts[8] = {
         Vec3f(lower.x, lower.y, lower.z),   //     2---------3
         Vec3f(upper.x, lower.y, lower.z),   //    /|        /|
@@ -146,6 +156,7 @@ Box::postIntersect(mcrt_common::ThreadLocalState& tls,
         Vec3f(lower.x, upper.y, upper.z),   //   |/        |/
         Vec3f(upper.x, upper.y, upper.z),   //   4---------5
     };
+
     const int indices[7][4] = {
         {3, 7, 5, 1},   // right face
         {6, 2, 0, 4},   // left face
@@ -155,12 +166,14 @@ Box::postIntersect(mcrt_common::ThreadLocalState& tls,
         {3, 1, 0, 2},   // back face
         {0, 0, 0, 0}    // degenerate face used in case nLocal has a nonsensical value
     };
+
     int iFace = scene_rdl2::math::isEqual(nLocal.x,  1.0f) ? 0 :
                 scene_rdl2::math::isEqual(nLocal.x, -1.0f) ? 1 :
                 scene_rdl2::math::isEqual(nLocal.y,  1.0f) ? 2 :
                 scene_rdl2::math::isEqual(nLocal.y, -1.0f) ? 3 :
                 scene_rdl2::math::isEqual(nLocal.z,  1.0f) ? 4 :
                 scene_rdl2::math::isEqual(nLocal.z, -1.0f) ? 5 : 6;
+
     for (int iVert = 0; iVert < 4; iVert++) {
         if (table->requests(StandardAttributes::sPolyVertices[iVert])) {
             int index = indices[iFace][iVert];
@@ -176,9 +189,12 @@ Box::postIntersect(mcrt_common::ThreadLocalState& tls,
         if (ray.isInstanceHit()) {
             // Motion vectors only support a single instance level, hence we only care
             // about ray.instance0.
-            motion = computePrimitiveMotion(intersection.getP(), nullptr, ray.getTime(),
-                static_cast<const Instance *>(ray.ext.instance0OrLight));
+            motion = computePrimitiveMotion(intersection.getP(),
+                                            nullptr,
+                                            ray.getTime(),
+                                            static_cast<const Instance *>(ray.ext.instance0OrLight));
         }
+
         intersection.setAttribute(StandardAttributes::sMotion, motion);
     }
 }
@@ -212,13 +228,18 @@ Box::getBoundsFunction() const
 }
 
 static bool
-bboxTest(const Vec3f& org, const Vec3f& dir, float rayTnear, float rayTfar,
-        const Vec3f& pMin, const Vec3f& pMax,
-        bool isSingleSided, bool isNormalReversed, float& tHit)
+bboxTest(const Vec3f& org,
+         const Vec3f& dir,
+         float rayTnear, float rayTfar,
+         const Vec3f& pMin, const Vec3f& pMax,
+         bool isSingleSided,
+         bool isNormalReversed,
+         float& tHit)
 {
     float t0 = scene_rdl2::math::neg_inf;
     float t1 = scene_rdl2::math::pos_inf;
     bool hitBBox = true;
+
     // update t interval for each plane of box
     // not that we don't need to verify whether dir[i] == 0.
     // if it is 0, the invDir will hold an infinite value, either
@@ -239,10 +260,12 @@ bboxTest(const Vec3f& org, const Vec3f& dir, float rayTnear, float rayTfar,
         t0 = tnear > t0 ? tnear : t0;
         t1 = tfar < t1 ? tfar : t1;
     }
+
     // compute intersection distance along ray
     if (!hitBBox || t0 > rayTfar || t1 < rayTnear) {
         return false;
     }
+
     tHit = t0;
     if (t0 < rayTnear || (isSingleSided && isNormalReversed)) {
         tHit = t1;
@@ -250,6 +273,7 @@ bboxTest(const Vec3f& org, const Vec3f& dir, float rayTnear, float rayTfar,
             return false;
         }
     }
+
     return true;
 }
 
@@ -263,6 +287,7 @@ intersectFunc(const RTCIntersectFunctionNArguments* args)
     RTCHitN* hits = RTCRayHitN_HitN(rayhit, N);
     const BVHUserData* userData = (const BVHUserData*)args->geometryUserPtr;
     const Box* box = (const Box*)userData->mPrimitive;
+
     // get sidedness and reverse normals
     bool isSingleSided = box->getIsSingleSided();
     bool isNormalReversed = box->getIsNormalReversed();
@@ -273,35 +298,44 @@ intersectFunc(const RTCIntersectFunctionNArguments* args)
         if (valid[index] == 0) {
             continue;
         }
+
         // transform ray to object space
-        Vec3f org = scene_rdl2::math::transformPoint(P2L, Vec3f(
-            RTCRayN_org_x(rays, N, index),
-            RTCRayN_org_y(rays, N, index),
-            RTCRayN_org_z(rays, N, index)));
-        Vec3f dir = scene_rdl2::math::transformVector(P2L, Vec3f(
-            RTCRayN_dir_x(rays, N, index),
-            RTCRayN_dir_y(rays, N, index),
-            RTCRayN_dir_z(rays, N, index)));
+        Vec3f org = scene_rdl2::math::transformPoint(P2L,
+                                                     Vec3f(RTCRayN_org_x(rays, N, index),
+                                                           RTCRayN_org_y(rays, N, index),
+                                                           RTCRayN_org_z(rays, N, index)));
+
+        Vec3f dir = scene_rdl2::math::transformVector(P2L,
+                                                      Vec3f(RTCRayN_dir_x(rays, N, index),
+                                                            RTCRayN_dir_y(rays, N, index),
+                                                            RTCRayN_dir_z(rays, N, index)));
+
         float& rayTnear = RTCRayN_tnear(rays, N, index);
         float& rayTfar = RTCRayN_tfar(rays, N, index);
+
         float tHit;
-        if (!bboxTest(org, dir, rayTnear, rayTfar, pMin, pMax,
-            isSingleSided, isNormalReversed, tHit)) {
+        if (!bboxTest(org,
+                      dir,
+                      rayTnear, rayTfar,
+                      pMin, pMax,
+                      isSingleSided,
+                      isNormalReversed,
+                      tHit)) {
             continue;
         }
+
         // compute hit position
         Vec3f pHit = org + tHit * dir;
+
         // local space normal will be transformed
         // to parent space at postIntersect
-        if (pHit.x < pMin.x * (1 - sEpsilonEdge) ||
-            pHit.x > pMax.x * (1 - sEpsilonEdge)) { // left or right face
+        if (pHit.x < pMin.x * (1 - sEpsilonEdge) || pHit.x > pMax.x * (1 - sEpsilonEdge)) { // left or right face
             RTCHitN_Ng_x(hits, N, index) = scene_rdl2::math::sign(pHit.x);
             RTCHitN_Ng_y(hits, N, index) = 0.0f;
             RTCHitN_Ng_z(hits, N, index) = 0.0f;
             RTCHitN_u(hits, N, index) = (pHit.y - pMin.y) / (pMax.y - pMin.y);
             RTCHitN_v(hits, N, index) = (pHit.z - pMin.z) / (pMax.z - pMin.z);
-        } else if (pHit.y < pMin.y * (1 - sEpsilonEdge) ||
-                   pHit.y > pMax.y * (1 - sEpsilonEdge)) { // top or bottom face
+        } else if (pHit.y < pMin.y * (1 - sEpsilonEdge) || pHit.y > pMax.y * (1 - sEpsilonEdge)) { // top or bottom face
             RTCHitN_Ng_x(hits, N, index) = 0.0f;
             RTCHitN_Ng_y(hits, N, index) = scene_rdl2::math::sign(pHit.y);
             RTCHitN_Ng_z(hits, N, index) = 0.0f;
@@ -314,6 +348,7 @@ intersectFunc(const RTCIntersectFunctionNArguments* args)
             RTCHitN_u(hits, N, index) = (pHit.x - pMin.x) / (pMax.x - pMin.x);
             RTCHitN_v(hits, N, index) = (pHit.y - pMin.y) / (pMax.y - pMin.y);
         }
+
         // TODO call intersect filter functions
         rayTfar = tHit;
         RTCHitN_instID(hits, N, index, 0) = args->context->instID[0];
@@ -336,6 +371,7 @@ occludedFunc(const RTCOccludedFunctionNArguments* args)
     RTCRayN* rays = args->ray;
     const BVHUserData* userData = (const BVHUserData*)args->geometryUserPtr;
     const Box* box = (const Box*)userData->mPrimitive;
+
     // get sidedness and reverse normals
     bool isSingleSided = box->getIsSingleSided();
     bool isNormalReversed = box->getIsNormalReversed();
@@ -347,21 +383,29 @@ occludedFunc(const RTCOccludedFunctionNArguments* args)
             continue;
         }
         // transform ray to object space
-        Vec3f org = scene_rdl2::math::transformPoint(P2L, Vec3f(
-            RTCRayN_org_x(rays, N, index),
-            RTCRayN_org_y(rays, N, index),
-            RTCRayN_org_z(rays, N, index)));
-        Vec3f dir = scene_rdl2::math::transformVector(P2L, Vec3f(
-            RTCRayN_dir_x(rays, N, index),
-            RTCRayN_dir_y(rays, N, index),
-            RTCRayN_dir_z(rays, N, index)));
+        Vec3f org = scene_rdl2::math::transformPoint(P2L,
+                                                     Vec3f(RTCRayN_org_x(rays, N, index),
+                                                           RTCRayN_org_y(rays, N, index),
+                                                           RTCRayN_org_z(rays, N, index)));
+
+        Vec3f dir = scene_rdl2::math::transformVector(P2L,
+                                                      Vec3f(RTCRayN_dir_x(rays, N, index),
+                                                            RTCRayN_dir_y(rays, N, index),
+                                                            RTCRayN_dir_z(rays, N, index)));
+
         float& rayTnear = RTCRayN_tnear(rays, N, index);
         float& rayTfar = RTCRayN_tfar(rays, N, index);
         float tHit;
-        if (!bboxTest(org, dir, rayTnear, rayTfar, pMin, pMax,
-            isSingleSided, isNormalReversed, tHit)) {
+        if (!bboxTest(org,
+                      dir,
+                      rayTnear, rayTfar,
+                      pMin, pMax,
+                      isSingleSided,
+                      isNormalReversed,
+                      tHit)) {
             continue;
         }
+
         // TODO call occlude filter functions
         // mark the tfar negative is the official signal
         // for embree that the ray is occluded

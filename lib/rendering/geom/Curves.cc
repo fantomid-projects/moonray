@@ -49,29 +49,35 @@ Curves::Curves(Type type,
                PrimitiveAttributeTable&& primitiveAttributeTable)
 {
     if (type == Type::LINEAR) {
-        mImpl = fauxstd::make_unique<Impl>(new internal::LineSegments(
-            static_cast<internal::Curves::Type>(type),
+        mImpl = fauxstd::make_unique<Impl>(
+            new internal::LineSegments(static_cast<internal::Curves::Type>(type),
+                                       subtype,
+                                       std::move(curvesVertexCount),
+                                       std::move(vertices), std::move(layerAssignmentId),
+                                       std::move(primitiveAttributeTable)),
+            type,
             subtype,
-            std::move(curvesVertexCount),
-            std::move(vertices), std::move(layerAssignmentId),
-            std::move(primitiveAttributeTable)),
-            type, subtype, tessellationRate);
+            tessellationRate);
     } else if (type == Type::BEZIER) {
-        mImpl = fauxstd::make_unique<Impl>(new internal::BezierSpanChains(
-            static_cast<internal::Curves::Type>(type),
+        mImpl = fauxstd::make_unique<Impl>(
+            new internal::BezierSpanChains(static_cast<internal::Curves::Type>(type),
+                                           subtype,
+                                           std::move(curvesVertexCount),
+                                           std::move(vertices), std::move(layerAssignmentId),
+                                           std::move(primitiveAttributeTable)),
+            type,
             subtype,
-            std::move(curvesVertexCount),
-            std::move(vertices), std::move(layerAssignmentId),
-            std::move(primitiveAttributeTable)),
-            type, subtype, tessellationRate);
+            tessellationRate);
     } else if (type == Type::BSPLINE) {
-        mImpl = fauxstd::make_unique<Impl>(new internal::BSpline(
-            static_cast<internal::Curves::Type>(type),
+        mImpl = fauxstd::make_unique<Impl>(
+            new internal::BSpline(static_cast<internal::Curves::Type>(type),
+                                  subtype,
+                                  std::move(curvesVertexCount),
+                                  std::move(vertices), std::move(layerAssignmentId),
+                                  std::move(primitiveAttributeTable)),
+            type,
             subtype,
-            std::move(curvesVertexCount),
-            std::move(vertices), std::move(layerAssignmentId),
-            std::move(primitiveAttributeTable)),
-            type, subtype, tessellationRate);
+            tessellationRate);
     } else {
         // only support linear/bezier/bspline curve at this moment
         MNRY_ASSERT_REQUIRE(false);
@@ -159,11 +165,10 @@ Curves::setCurvedMotionBlurSampleCount(int count)
 }
 
 static Primitive::DataValidness
-checkLineSegmentsData(
-        const Curves::CurvesVertexCount& curvesVertexCount,
-        const Curves::VertexBuffer& vertices,
-        const PrimitiveAttributeTable& primitiveAttributeTable,
-        std::string* message)
+checkLineSegmentsData(const Curves::CurvesVertexCount& curvesVertexCount,
+                      const Curves::VertexBuffer& vertices,
+                      const PrimitiveAttributeTable& primitiveAttributeTable,
+                      std::string* message)
 {
     size_t curvesCount = curvesVertexCount.size();
     size_t verticesCount = 0;
@@ -196,18 +201,18 @@ checkLineSegmentsData(
 }
 
 static Primitive::DataValidness
-checkCubicCurvesData(
-        const Curves::CurvesVertexCount& curvesVertexCount,
-        const Curves::VertexBuffer& vertices,
-        const PrimitiveAttributeTable& primitiveAttributeTable,
-        const Curves::Type type,
-        const int tessellationRate,
-        std::string* message)
+checkCubicCurvesData(const Curves::CurvesVertexCount& curvesVertexCount,
+                     const Curves::VertexBuffer& vertices,
+                     const PrimitiveAttributeTable& primitiveAttributeTable,
+                     const Curves::Type type,
+                     const int tessellationRate,
+                     std::string* message)
 {
     size_t curvesCount = curvesVertexCount.size();
     size_t varyingsCount = 0;
     size_t faceVaryingsCount = 0;
     size_t verticesCount = 0;
+
     // each bezier curve should have 3 * k + 1 vertices
     // since each span has 4 vertices and the neighbor
     // spans share one vertex
@@ -223,6 +228,7 @@ checkCubicCurvesData(
             }
             return Primitive::DataValidness::INVALID_TOPOLOGY;
         }
+
         if (n < 4) {
             if (message) {
                 std::stringstream errMsg;
@@ -232,6 +238,7 @@ checkCubicCurvesData(
             }
             return Primitive::DataValidness::INVALID_TOPOLOGY;
         }
+
         size_t spansInCurve = 0;
         if (type == Curves::Type::BEZIER) {
             spansInCurve = (n - 1) / 3;
@@ -266,23 +273,29 @@ checkCubicCurvesData(
 
 Primitive::DataValidness
 Curves::checkPrimitiveData(Type type,
-        SubType subtype,
-        int tessellationRate,
-        const CurvesVertexCount& curvesVertexCount,
-        const VertexBuffer& vertices,
-        const PrimitiveAttributeTable& primitiveAttributeTable,
-        std::string* message)
+                           SubType subtype,
+                           int tessellationRate,
+                           const CurvesVertexCount& curvesVertexCount,
+                           const VertexBuffer& vertices,
+                           const PrimitiveAttributeTable& primitiveAttributeTable,
+                           std::string* message)
 {
     Primitive::DataValidness result;
     switch (type) {
     case Type::LINEAR:
-        result = checkLineSegmentsData(curvesVertexCount, vertices,
-            primitiveAttributeTable, message);
+        result = checkLineSegmentsData(curvesVertexCount,
+                                       vertices,
+                                       primitiveAttributeTable,
+                                       message);
         break;
     case Type::BEZIER:
     case Type::BSPLINE:
-        result = checkCubicCurvesData(curvesVertexCount, vertices,
-            primitiveAttributeTable, type, tessellationRate, message);
+        result = checkCubicCurvesData(curvesVertexCount,
+                                      vertices,
+                                      primitiveAttributeTable,
+                                      type,
+                                      tessellationRate,
+                                      message);
         break;
     default:
         {
@@ -298,9 +311,8 @@ Curves::checkPrimitiveData(Type type,
 }
 
 void
-Curves::transformPrimitive(
-        const MotionBlurParams& motionBlurParams,
-        const XformSamples& prim2render)
+Curves::transformPrimitive(const MotionBlurParams& motionBlurParams,
+                           const XformSamples& prim2render)
 {
     size_t motionSamplesCount = getMotionSamplesCount();
     XformSamples p2r = prim2render;
@@ -309,12 +321,17 @@ Curves::transformPrimitive(
     }
 
     const PrimitiveAttributeTable* primAttrTab = mImpl->mCurves->getPrimitiveAttributeTable();
-    transformVertexBuffer(mImpl->mCurves->getVertexBuffer(), p2r, motionBlurParams,
-                          mImpl->mCurves->getMotionBlurType(), mImpl->mCurves->getCurvedMotionBlurSampleCount(),
+    transformVertexBuffer(mImpl->mCurves->getVertexBuffer(),
+                          p2r,
+                          motionBlurParams,
+                          mImpl->mCurves->getMotionBlurType(),
+                          mImpl->mCurves->getCurvedMotionBlurSampleCount(),
                           primAttrTab);
 
     float shutterOpenDelta, shutterCloseDelta;
-    motionBlurParams.getMotionBlurDelta(shutterOpenDelta, shutterCloseDelta);
+    motionBlurParams.getMotionBlurDelta(shutterOpenDelta,
+                                        shutterCloseDelta);
+
     mImpl->mCurves->getAttributes()->transformAttributes(p2r,
                                                          shutterOpenDelta,
                                                          shutterCloseDelta,

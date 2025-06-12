@@ -23,15 +23,17 @@ namespace geom {
 
 struct PolygonMesh::Impl
 {
-    explicit Impl(internal::PolyMesh* polyMesh) : mPolyMesh(polyMesh) {}
+    explicit Impl(internal::PolyMesh* polyMesh) :
+        mPolyMesh(polyMesh) {}
+
     std::unique_ptr<internal::PolyMesh> mPolyMesh;
 };
 
 PolygonMesh::PolygonMesh(FaceVertexCount&& faceVertexCount,
-        IndexBuffer&& indices,
-        VertexBuffer&& vertices,
-        LayerAssignmentId&& layerAssignmentId,
-        shading::PrimitiveAttributeTable&& primitiveAttributeTable)
+                         IndexBuffer&& indices,
+                         VertexBuffer&& vertices,
+                         LayerAssignmentId&& layerAssignmentId,
+                         shading::PrimitiveAttributeTable&& primitiveAttributeTable)
 {
     // n-gon to triangle
     // nTriangle = n - 2
@@ -41,6 +43,7 @@ PolygonMesh::PolygonMesh(FaceVertexCount&& faceVertexCount,
             [](const size_t& faceCount, size_t curFaceVerts) {
                 return faceCount + (curFaceVerts - 2);
             });
+
     // n-gon to quad
     // nQuad = (n - 1) / 2
     // e.g. triangle(3) -> 1 quad
@@ -55,17 +58,24 @@ PolygonMesh::PolygonMesh(FaceVertexCount&& faceVertexCount,
 
     const size_t maxFVCount = *std::max_element(faceVertexCount.begin(),
                                                 faceVertexCount.end());
+
     // If the maximum face vertex count is more than four we always create a
     // tri mesh for now since it can deal with concave ngons.   If not, we
     // create a quad mesh if it will generate less polygons than a trimesh.
     if (maxFVCount <= 4 && outputQuadFaceCount * 4 < outputTriFaceCount * 3) {
         mImpl = fauxstd::make_unique<Impl>(new internal::QuadMesh(outputQuadFaceCount,
-                std::move(faceVertexCount), std::move(indices), std::move(vertices),
-                std::move(layerAssignmentId), std::move(primitiveAttributeTable)));
+                                                                  std::move(faceVertexCount),
+                                                                  std::move(indices),
+                                                                  std::move(vertices),
+                                                                  std::move(layerAssignmentId),
+                                                                  std::move(primitiveAttributeTable)));
     } else {
         mImpl = fauxstd::make_unique<Impl>(new internal::TriMesh(outputTriFaceCount,
-                std::move(faceVertexCount), std::move(indices), std::move(vertices),
-                std::move(layerAssignmentId), std::move(primitiveAttributeTable)));
+                                                                 std::move(faceVertexCount),
+                                                                 std::move(indices),
+                                                                 std::move(vertices),
+                                                                 std::move(layerAssignmentId),
+                                                                 std::move(primitiveAttributeTable)));
     }
 }
 
@@ -127,7 +137,8 @@ PolygonMesh::getName() const
 void
 PolygonMesh::setParts(size_t partCount, FaceToPartBuffer&& faceToPart)
 {
-    mImpl->mPolyMesh->setParts(partCount, std::move(faceToPart));
+    mImpl->mPolyMesh->setParts(partCount,
+                               std::move(faceToPart));
 }
 
 void
@@ -173,22 +184,30 @@ PolygonMesh::setCurvedMotionBlurSampleCount(int count)
 }
 
 void
-PolygonMesh::transformPrimitive(
-        const MotionBlurParams& motionBlurParams,
-        const shading::XformSamples& prim2render)
+PolygonMesh::transformPrimitive(const MotionBlurParams& motionBlurParams,
+                                const shading::XformSamples& prim2render)
 {
     size_t motionSamplesCount = getMotionSamplesCount();
     shading::XformSamples p2r = prim2render;
     if (motionSamplesCount > 1 && prim2render.size() == 1) {
         p2r.resize(motionSamplesCount, prim2render[0]);
     }
+
     const shading::PrimitiveAttributeTable* primAttrTab = mImpl->mPolyMesh->getPrimitiveAttributeTable();
-    transformVertexBuffer(mImpl->mPolyMesh->getVertexBuffer(), p2r, motionBlurParams,
-                          mImpl->mPolyMesh->getMotionBlurType(), mImpl->mPolyMesh->getCurvedMotionBlurSampleCount(),
+    transformVertexBuffer(mImpl->mPolyMesh->getVertexBuffer(),
+                          p2r,
+                          motionBlurParams,
+                          mImpl->mPolyMesh->getMotionBlurType(),
+                          mImpl->mPolyMesh->getCurvedMotionBlurSampleCount(),
                           primAttrTab);
+
     float shutterOpenDelta, shutterCloseDelta;
-    motionBlurParams.getMotionBlurDelta(shutterOpenDelta, shutterCloseDelta);
-    mImpl->mPolyMesh->setTransform(p2r, shutterOpenDelta, shutterCloseDelta);
+    motionBlurParams.getMotionBlurDelta(shutterOpenDelta,
+                                        shutterCloseDelta);
+
+    mImpl->mPolyMesh->setTransform(p2r,
+                                   shutterOpenDelta,
+                                   shutterCloseDelta);
 }
 
 internal::Primitive*
@@ -199,10 +218,11 @@ PolygonMesh::getPrimitiveImpl()
 
 void
 PolygonMesh::updateVertexData(const std::vector<float>& vertexData,
-        const shading::XformSamples& prim2render)
+                              const shading::XformSamples& prim2render)
 {
     if (vertexData.size() > 0) {
-        mImpl->mPolyMesh->updateVertexData(vertexData, prim2render);
+        mImpl->mPolyMesh->updateVertexData(vertexData,
+                                           prim2render);
     }
 }
 

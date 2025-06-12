@@ -20,8 +20,11 @@ namespace geom {
 class Box : public moonray::geom::Primitive
 {
 public:
-    Box(float length, float width, float height, LayerAssignmentId&& layerAssignmentId,
-            shading::PrimitiveAttributeTable&& primitiveAttributeTable);
+    Box(float length,
+        float width,
+        float height,
+        LayerAssignmentId&& layerAssignmentId,
+        shading::PrimitiveAttributeTable&& primitiveAttributeTable);
 
     ~Box();
 
@@ -58,9 +61,8 @@ private:
 
     /// @remark For renderer internal use, procedural should never call this
     /// @internal
-    virtual void transformPrimitive(
-            const MotionBlurParams& motionBlurParams,
-            const shading::XformSamples& prim2render) override;
+    virtual void transformPrimitive(const MotionBlurParams& motionBlurParams,
+                                    const shading::XformSamples& prim2render) override;
 
 private:
     struct Impl;

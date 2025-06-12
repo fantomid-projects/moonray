@@ -17,9 +17,11 @@ public:
     MotionBlurParams() {}
 
     MotionBlurParams(const std::vector<float>& motionSteps,
-            float shutterOpen, float shutterClose,
-            bool isMotionBlurOn, float fps,
-            bool slerpXforms=false):
+                     float shutterOpen,
+                     float shutterClose,
+                     bool isMotionBlurOn,
+                     float fps,
+                     bool slerpXforms=false) :
         mMotionSteps(motionSteps),
         mShutterOpen(shutterOpen),
         mShutterClose(shutterClose),
@@ -74,13 +76,15 @@ public:
 
     float getShutterClose() const { return mShutterClose; }
 
-    void getMotionBlurDelta(float& shutterOpenDelta, float& shutterCloseDelta) const
+    void getMotionBlurDelta(float& shutterOpenDelta,
+                            float& shutterCloseDelta) const
     {
         shutterOpenDelta = mShutterOpenDelta;
         shutterCloseDelta = mShutterCloseDelta;
     }
 
-    void getMotionStepTimes(float& t0, float& t1) const
+    void getMotionStepTimes(float& t0,
+                            float& t1) const
     {
         t0 = mT0;
         t1 = mT1;
@@ -99,6 +103,7 @@ private:
     std::vector<float> mMotionSteps;
     float mShutterOpen;
     float mShutterClose;
+
     // delta fraction of shutter open/close time in motionSteps duration
     float mShutterOpenDelta;
     float mShutterCloseDelta;

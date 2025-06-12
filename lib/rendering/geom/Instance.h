@@ -25,8 +25,8 @@ class Instance : public moonray::geom::Primitive
 {
 public:
     Instance(const shading::XformSamples& xform,
-            std::shared_ptr<SharedPrimitive> reference,
-            shading::PrimitiveAttributeTable&& primitiveAttributeTable);
+             std::shared_ptr<SharedPrimitive> reference,
+             shading::PrimitiveAttributeTable&& primitiveAttributeTable);
 
     ~Instance();
 
@@ -45,9 +45,8 @@ private:
 
     /// @remark For renderer internal use, procedural should never call this
     /// @internal
-    virtual void transformPrimitive(
-            const MotionBlurParams& motionBlurParams,
-            const shading::XformSamples& prim2render) override;
+    virtual void transformPrimitive(const MotionBlurParams& motionBlurParams,
+                                    const shading::XformSamples& prim2render) override;
 
 private:
     class Impl;

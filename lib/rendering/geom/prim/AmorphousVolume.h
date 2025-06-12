@@ -21,11 +21,11 @@ class AmorphousVolume : public VdbVolume
 {
 public:
     AmorphousVolume(const std::string& vdbFilePath,
-            const std::string& densityGridName,
-            const std::string& velocityGridName,
-            const MotionBlurParams& motionBlurParams,
-            LayerAssignmentId&& layerAssignmentId,
-            shading::PrimitiveAttributeTable&& primitiveAttributeTable);
+                    const std::string& densityGridName,
+                    const std::string& velocityGridName,
+                    const MotionBlurParams& motionBlurParams,
+                    LayerAssignmentId&& layerAssignmentId,
+                    shading::PrimitiveAttributeTable&& primitiveAttributeTable);
 
     ~AmorphousVolume();
 
@@ -35,10 +35,10 @@ public:
     computeEmissionDistribution(const scene_rdl2::rdl2::VolumeShader* volumeShader) const override;
 
     virtual scene_rdl2::math::Color evalDensity(mcrt_common::ThreadLocalState* tls,
-                                    uint32_t volumeId,
-                                    const Vec3f& pSample,
-                                    float /*rayVolumeDepth*/,
-                                    const scene_rdl2::rdl2::VolumeShader* const /*volumeShader*/) const override;
+                                                uint32_t volumeId,
+                                                const Vec3f& pSample,
+                                                float /*rayVolumeDepth*/,
+                                                const scene_rdl2::rdl2::VolumeShader* const) const override;
 
     virtual void evalVolumeCoefficients(mcrt_common::ThreadLocalState* tls,
                                         uint32_t volumeId,
@@ -48,16 +48,16 @@ public:
                                         scene_rdl2::math::Color* temperature,
                                         bool highQuality,
                                         float /*rayVolumeDepth*/,
-                                        const scene_rdl2::rdl2::VolumeShader* const /*volumeShader*/) const override;
+                                        const scene_rdl2::rdl2::VolumeShader* const) const override;
 
     virtual scene_rdl2::math::Color evalTemperature(mcrt_common::ThreadLocalState* tls,
-                                        uint32_t volumeId,
-                                        const Vec3f& pSample) const override;
+                                                    uint32_t volumeId,
+                                                    const Vec3f& pSample) const override;
 
 protected:
     virtual bool initialize(const scene_rdl2::rdl2::Geometry& rdlGeometry,
-                    const scene_rdl2::rdl2::Layer* layer,
-                    const VolumeAssignmentTable* volumeAssignmentTable) override;
+                            const scene_rdl2::rdl2::Layer* layer,
+                            const VolumeAssignmentTable* volumeAssignmentTable) override;
 
     // Thge amorphous library uses metadata to figure out which
     // grid in the vdb file needs to be loaded up.
@@ -76,8 +76,8 @@ protected:
 
         // Initialize from scattering parameters.
         bool initialize(const ScatterParams& scatterParams,
-            const std::vector<int>& volumeIds,
-            const scene_rdl2::rdl2::Geometry* rdlGeometry = nullptr)
+                        const std::vector<int>& volumeIds,
+                        const scene_rdl2::rdl2::Geometry* rdlGeometry = nullptr)
         {
             if (!scatterParams.extinctionGrid() || scatterParams.extinctionGrid()->empty()) {
                 if (rdlGeometry) {
@@ -92,19 +92,21 @@ protected:
             for (unsigned samplerId = 0; samplerId < mVolumeIdCount; ++samplerId) {
                 mVolumeIdToSamplerId[volumeIds[samplerId]] = samplerId;
             }
+
             unsigned samplerCount = mVolumeIdCount * mcrt_common::getNumTBBThreads();
             for (unsigned i = 0; i < samplerCount; ++i) {
                 mThreadSamplers.push_back(*mMasterSampler);
             }
+
             return true;
         }
 
         // Initialize from a .vdb file.
         bool initialize(const std::string& vdbFilePath,
-            const std::string& densityGridName,
-            const scene_rdl2::rdl2::Geometry& rdlGeometry,
-            const float emissionSampleRate,
-            const std::vector<int>& volumeIds)
+                        const std::string& densityGridName,
+                        const scene_rdl2::rdl2::Geometry& rdlGeometry,
+                        const float emissionSampleRate,
+                        const std::vector<int>& volumeIds)
         {
             amorphous::File vdbFile(vdbFilePath);
             std::stringstream msg;
@@ -131,47 +133,46 @@ protected:
         }
 
         scene_rdl2::math::Color extinct(mcrt_common::ThreadLocalState* tls,
-                uint32_t volumeId,
-                const openvdb::Vec3d& p,
-                Interpolation mode) const
+                                        uint32_t volumeId,
+                                        const openvdb::Vec3d& p,
+                                        Interpolation mode) const
         {
             tls->mGeomTls->mStatistics.incCounter(STATS_DENSITY_GRID_SAMPLES);
             uint32_t threadIdx = tls->mThreadIdx;
             unsigned samplerIdx = threadIdx * mVolumeIdCount + (mVolumeIdToSamplerId.at(volumeId));
-            return scene_rdl2::math::Color(mThreadSamplers[samplerIdx].extinc(
-                p, (amorphous::InterpolationMethod)mode));
+            return scene_rdl2::math::Color(mThreadSamplers[samplerIdx].extinc(p,
+                                                                              (amorphous::InterpolationMethod)mode));
         }
 
         scene_rdl2::math::Color albedo(mcrt_common::ThreadLocalState* tls,
-                uint32_t volumeId,
-                const openvdb::Vec3d& p,
-                Interpolation mode) const
+                                       uint32_t volumeId,
+                                       const openvdb::Vec3d& p,
+                                       Interpolation mode) const
         {
             tls->mGeomTls->mStatistics.incCounter(STATS_COLOR_GRID_SAMPLES);
             uint32_t threadIdx = tls->mThreadIdx;
             unsigned samplerIdx = threadIdx * mVolumeIdCount + (mVolumeIdToSamplerId.at(volumeId));
-            amorphous::Rgba aVal = mThreadSamplers[samplerIdx].color(
-                p, (amorphous::InterpolationMethod)mode);
+            amorphous::Rgba aVal = mThreadSamplers[samplerIdx].color(p,
+                                                                     (amorphous::InterpolationMethod)mode);
             return scene_rdl2::math::Color(aVal.r(), aVal.g(), aVal.b());
         }
 
         scene_rdl2::math::Color incand(mcrt_common::ThreadLocalState* tls,
-                uint32_t volumeId,
-                const openvdb::Vec3d& p,
-                Interpolation mode) const
+                                       uint32_t volumeId,
+                                       const openvdb::Vec3d& p,
+                                       Interpolation mode) const
         {
             tls->mGeomTls->mStatistics.incCounter(STATS_EMISSION_GRID_SAMPLES);
             uint32_t threadIdx = tls->mThreadIdx;
             unsigned samplerIdx = threadIdx * mVolumeIdCount + (mVolumeIdToSamplerId.at(volumeId));
-            amorphous::Rgba aVal = mThreadSamplers[samplerIdx].incand(
-                p, (amorphous::InterpolationMethod)mode);
+            amorphous::Rgba aVal = mThreadSamplers[samplerIdx].incand(p,
+                                                                      (amorphous::InterpolationMethod)mode);
             return scene_rdl2::math::Color(aVal.r(), aVal.g(), aVal.b());
         }
 
         openvdb::FloatGrid::Ptr getDensityGrid()
         {
-            return openvdb::ConstPtrCast<openvdb::FloatGrid>(
-                mScatterParams.extinctionGrid());
+            return openvdb::ConstPtrCast<openvdb::FloatGrid>(mScatterParams.extinctionGrid());
         }
 
         amorphous::BaseGridCPtr getIncandGrid() const
@@ -180,8 +181,8 @@ protected:
         }
 
         void loadVelocityGrid(const std::string& vdbFilePath,
-                const std::string& velocityGridName,
-                openvdb::VectorGrid::Ptr& velocityGrid)
+                              const std::string& velocityGridName,
+                              openvdb::VectorGrid::Ptr& velocityGrid)
         {
             std::stringstream msg;
             velocityGrid.reset();

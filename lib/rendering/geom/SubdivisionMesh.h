@@ -66,11 +66,11 @@ public:
     explicit SubdivisionMesh(Impl* impl);
 
     SubdivisionMesh(Scheme scheme,
-            FaceVertexCount&& faceVertexCount,
-            IndexBuffer&& indices,
-            VertexBuffer&& vertices,
-            LayerAssignmentId&& layerAssignmentId,
-            shading::PrimitiveAttributeTable&& primitiveAttributeTable);
+                    FaceVertexCount&& faceVertexCount,
+                    IndexBuffer&& indices,
+                    VertexBuffer&& vertices,
+                    LayerAssignmentId&& layerAssignmentId,
+                    shading::PrimitiveAttributeTable&& primitiveAttributeTable);
 
     ~SubdivisionMesh();
 
@@ -130,7 +130,8 @@ public:
     bool hasSubdHoles() const;
 
     // sets the face->part mapping
-    void setParts(size_t partCount, FaceToPartBuffer&& faceToPart);
+    void setParts(size_t partCount,
+                  FaceToPartBuffer&& faceToPart);
 
     /// set the mesh resolution (each edge in control face would be split
     /// into n segments when resolution is n)
@@ -155,7 +156,7 @@ public:
 
     // TODO replace this function with proper VertexBuffer update mechanics
     void updateVertexData(const std::vector<float>& vertexData,
-            const shading::XformSamples& prim2render);
+                          const shading::XformSamples& prim2render);
 
     void setCurvedMotionBlurSampleCount(int count);
 
@@ -166,9 +167,8 @@ private:
 
     /// @remark For renderer internal use, procedural should never call this
     /// @internal
-    virtual void transformPrimitive(
-            const MotionBlurParams& motionBlurParams,
-            const shading::XformSamples& prim2render) override;
+    virtual void transformPrimitive(const MotionBlurParams& motionBlurParams,
+                                    const shading::XformSamples& prim2render) override;
 
 
 private:
@@ -181,20 +181,19 @@ private:
 inline bool
 SubdivisionMesh::isValidScheme(int x)
 {
-    return (x >= 0) &&
-        (x < static_cast<int>(Scheme::NUM_SCHEMES));
+    return (x >= 0) && (x < static_cast<int>(Scheme::NUM_SCHEMES));
 }
+
 inline bool
 SubdivisionMesh::isValidBoundaryInterpolation(int x)
 {
-    return (x >= 0) &&
-        (x < static_cast<int>(BoundaryInterpolation::NUM_BOUNDARY_INTERPOLATIONS));
+    return (x >= 0) && (x < static_cast<int>(BoundaryInterpolation::NUM_BOUNDARY_INTERPOLATIONS));
 }
+
 inline bool
 SubdivisionMesh::isValidFVarLinearInterpolation(int x)
 {
-    return (x >= 0) &&
-        (x < static_cast<int>(FVarLinearInterpolation::NUM_FVAR_LINEAR_INTERPOLATIONS));
+    return (x >= 0) && (x < static_cast<int>(FVarLinearInterpolation::NUM_FVAR_LINEAR_INTERPOLATIONS));
 }
 
 } // namespace geom

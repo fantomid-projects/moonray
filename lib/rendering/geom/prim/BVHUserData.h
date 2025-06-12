@@ -29,8 +29,7 @@ public:
 
         static void intersectionFilter(const RTCFilterFunctionNArguments* args)
         {
-            const BVHUserData* userData =
-                (const BVHUserData*)args->geometryUserPtr;
+            const BVHUserData* userData = (const BVHUserData*)args->geometryUserPtr;
             const IntersectionFilterManager* fm = userData->mFilterManager;
             for (auto& filter : fm->mIntersectionFilters) {
                 filter(args);
@@ -39,8 +38,7 @@ public:
 
         static void occlusionFilter(const RTCFilterFunctionNArguments* args)
         {
-            const BVHUserData* userData =
-                (const BVHUserData*)args->geometryUserPtr;
+            const BVHUserData* userData = (const BVHUserData*)args->geometryUserPtr;
             const IntersectionFilterManager* fm = userData->mFilterManager;
             for (auto& filter : fm->mOcclusionFilters) {
                 filter(args);
@@ -63,9 +61,12 @@ public:
         std::vector<RTCFilterFunctionN> mOcclusionFilters;
     };
 
-    BVHUserData(const scene_rdl2::rdl2::Layer* layer, const Primitive* primitive,
-             const IntersectionFilterManager* filterManager) :
-        mLayer(layer), mPrimitive(primitive), mFilterManager(filterManager)
+    BVHUserData(const scene_rdl2::rdl2::Layer* layer,
+                const Primitive* primitive,
+                const IntersectionFilterManager* filterManager) :
+        mLayer(layer),
+        mPrimitive(primitive),
+        mFilterManager(filterManager)
     {
         // should have layer and primitive but instances do not have
         // Filter Managers

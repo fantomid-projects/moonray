@@ -20,9 +20,9 @@ class Points : public NamedPrimitive
 {
 public:
     Points(geom::Points::VertexBuffer&& position,
-            geom::Points::RadiusBuffer&& radius,
-            LayerAssignmentId&& layerAssignmentId,
-            shading::PrimitiveAttributeTable&& primitiveAttributeTable);
+           geom::Points::RadiusBuffer&& radius,
+           LayerAssignmentId&& layerAssignmentId,
+           shading::PrimitiveAttributeTable&& primitiveAttributeTable);
 
     virtual PrimitiveType getType() const override
     {
@@ -31,22 +31,22 @@ public:
 
     virtual int getIntersectionAssignmentId(int primID) const override
     {
-        int assignmentId =
-            mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT ?
-            mLayerAssignmentId.getConstId() :
-            mLayerAssignmentId.getVaryingId()[primID];
+        int assignmentId = mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT ?
+                           mLayerAssignmentId.getConstId() :
+                           mLayerAssignmentId.getVaryingId()[primID];
         return assignmentId;
     }
 
-    virtual const scene_rdl2::rdl2::Material* getIntersectionMaterial(
-            const scene_rdl2::rdl2::Layer *pRdlLayer,
-            const mcrt_common::Ray &ray) const override;
+    virtual const scene_rdl2::rdl2::Material* getIntersectionMaterial(const scene_rdl2::rdl2::Layer *pRdlLayer,
+                                                                      const mcrt_common::Ray &ray) const override;
 
     virtual void postIntersect(mcrt_common::ThreadLocalState& tls,
-            const scene_rdl2::rdl2::Layer* pRdlLayer, const mcrt_common::Ray& ray,
-            shading::Intersection& intersection) const override;
+                               const scene_rdl2::rdl2::Layer* pRdlLayer,
+                               const mcrt_common::Ray& ray,
+                               shading::Intersection& intersection) const override;
 
     virtual BBox3f computeAABB() const override;
+
     virtual BBox3f computeAABBAtTimeStep(int timeStep) const override;
 
     virtual size_t getMemory() const override
@@ -94,7 +94,10 @@ public:
         return mRadius;
     }
 
-    const shading::PrimitiveAttributeTable* getPrimitiveAttributeTable() const { return &mPrimitiveAttributeTable; }
+    const shading::PrimitiveAttributeTable* getPrimitiveAttributeTable() const
+    {
+        return &mPrimitiveAttributeTable;
+    }
 
     void setCurvedMotionBlurSampleCount(uint32_t count)
     {

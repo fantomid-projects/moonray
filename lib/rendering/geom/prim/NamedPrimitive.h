@@ -29,7 +29,8 @@ class NamedPrimitive : public moonray::geom::internal::Primitive
 public:
     /// Constructor / Destructor
     NamedPrimitive(LayerAssignmentId&& layerAssignmentId):
-        mAttributes(), mLayerAssignmentId(std::move(layerAssignmentId))
+        mAttributes(),
+        mLayerAssignmentId(std::move(layerAssignmentId))
     {
         resetShadowLinking();
     }
@@ -72,9 +73,11 @@ public:
     }
 
     virtual void initVolumeSampleInfo(VolumeSampleInfo* info,
-            const Vec3f& rayOrg, const Vec3f& rayDir, float time,
-            const scene_rdl2::rdl2::VolumeShader* volumeShader,
-            int volumeId) const override;
+                                      const Vec3f& rayOrg,
+                                      const Vec3f& rayDir,
+                                      float time,
+                                      const scene_rdl2::rdl2::VolumeShader* volumeShader,
+                                      int volumeId) const override;
 
     virtual bool hasAssignment(int assignmentId) const override;
 
@@ -84,8 +87,7 @@ public:
 
     bool hasVolumeAssignment(const scene_rdl2::rdl2::Layer* layer) const;
 
-    void getUniqueAssignmentIds(
-            std::unordered_set<int>& uniqueAssignmentIds) const;
+    void getUniqueAssignmentIds(std::unordered_set<int>& uniqueAssignmentIds) const;
 
     // The set of primitive attributes associated with this primitive.
     // This is generally set by the procedural at primitive construction
@@ -103,18 +105,21 @@ public:
 
     void resetShadowLinking();
 
-    void createShadowLinking(int casterId, bool complementReceiverSet)
+    void createShadowLinking(int casterId,
+                             bool complementReceiverSet)
     {
         mShadowLinkings[casterId] = new ShadowLinking(complementReceiverSet);
     }
 
-    void addShadowLinkedLight(int casterId, const scene_rdl2::rdl2::Light* light)
+    void addShadowLinkedLight(int casterId,
+                              const scene_rdl2::rdl2::Light* light)
     {
         MNRY_ASSERT(mShadowLinkings[casterId]);
         mShadowLinkings[casterId]->addLight(light);
     }
 
-    void addShadowLinkedGeom(int casterId, int receiverId)
+    void addShadowLinkedGeom(int casterId,
+                             int receiverId)
     {
         MNRY_ASSERT(mShadowLinkings[casterId]);
         mShadowLinkings[casterId]->addReceiver(receiverId);
@@ -149,23 +154,25 @@ protected:
         if (primitiveAttributes.isSupported(shading::StandardAttributes::sNormal)) {
             scene_rdl2::math::Vec3f N;
             interpolator.interpolate(shading::StandardAttributes::sNormal,
-                reinterpret_cast<char*>(&N));
+                                     reinterpret_cast<char*>(&N));
             N = N.normalize();
-            intersection.setAttribute(shading::StandardAttributes::sNormal, N);
+            intersection.setAttribute(shading::StandardAttributes::sNormal,
+                                      N);
             intersection.setN(N);
         }
 
         if (primitiveAttributes.isSupported(shading::StandardAttributes::sdPds)) {
             scene_rdl2::math::Vec3f dPds;
             interpolator.interpolate(shading::StandardAttributes::sdPds,
-                reinterpret_cast<char*>(&dPds));
-            intersection.setAttribute(shading::StandardAttributes::sdPds, dPds);
+                                     reinterpret_cast<char*>(&dPds));
+            intersection.setAttribute(shading::StandardAttributes::sdPds,
+                                      dPds);
         }
 
         if (primitiveAttributes.isSupported(shading::StandardAttributes::sdPdt)) {
             Vec3f dPdt;
             interpolator.interpolate(shading::StandardAttributes::sdPdt,
-                reinterpret_cast<char*>(&dPdt));
+                                     reinterpret_cast<char*>(&dPdt));
             intersection.setAttribute(shading::StandardAttributes::sdPdt, dPdt);
         }
     }

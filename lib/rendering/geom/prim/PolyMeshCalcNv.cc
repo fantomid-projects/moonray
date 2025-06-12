@@ -43,13 +43,13 @@ PolyMeshCalcNv::updateVtx(const PolygonMesh::VertexBuffer &vertices)
 
     tbb::blocked_range<size_t> range(0, mVCount, mVCount / div);
     tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
-            for (size_t vId = r.begin(); vId < r.end(); ++vId) {
-                for (size_t t = 0; t < mMotionSampleCount; ++t) {
-                    const float *vPos = (const float *)&vertices(vId, t);
-                    mVtx[vId * mMotionSampleCount + t] = Vec3f(vPos[0], vPos[1], vPos[2]);
-                }
+        for (size_t vId = r.begin(); vId < r.end(); ++vId) {
+            for (size_t t = 0; t < mMotionSampleCount; ++t) {
+                const float *vPos = (const float *)&vertices(vId, t);
+                mVtx[vId * mMotionSampleCount + t] = Vec3f(vPos[0], vPos[1], vPos[2]);
             }
-        });
+        }
+    });
 }
 
 void
@@ -62,39 +62,39 @@ PolyMeshCalcNv::computeVn()
     // compute fnv
     tbb::blocked_range<size_t> range1(0, mFCount, mFCount / div);
     tbb::parallel_for(range1, [&](const tbb::blocked_range<size_t> &r) {
-            for (size_t fId = r.begin(); fId < r.end(); ++fId) {
-                computeFn(fId);
-            }
-        });
+        for (size_t fId = r.begin(); fId < r.end(); ++fId) {
+            computeFn(fId);
+        }
+    });
 
     // gather fn based on mVFlink info and normalize
     tbb::blocked_range<size_t> range2(0, mVCount, mVCount / div);
     tbb::parallel_for(range2, [&](const tbb::blocked_range<size_t> &r) {
-            for (size_t vId = r.begin(); vId < r.end(); ++vId) {
-                size_t vfTotal = mVFlink[vId].size();
-                for (size_t t = 0; t < mMotionSampleCount; ++t) {
-                    Vec3f cVn(0.f, 0.f, 0.f);
-                    for (size_t vfId = 0; vfId < vfTotal; ++vfId) {
-                        size_t fId = (mVFlink[vId])[vfId];
-                        Vec3f &fn = mFnv[fId * mMotionSampleCount + t];
-                        cVn += fn;
-                    }
-                    size_t index = mMotionSampleCount * vId + t;
-                    mVnv[index] = normalize(cVn);
+        for (size_t vId = r.begin(); vId < r.end(); ++vId) {
+            size_t vfTotal = mVFlink[vId].size();
+            for (size_t t = 0; t < mMotionSampleCount; ++t) {
+                Vec3f cVn(0.f, 0.f, 0.f);
+                for (size_t vfId = 0; vfId < vfTotal; ++vfId) {
+                    size_t fId = (mVFlink[vId])[vfId];
+                    Vec3f &fn = mFnv[fId * mMotionSampleCount + t];
+                    cVn += fn;
                 }
+                size_t index = mMotionSampleCount * vId + t;
+                mVnv[index] = normalize(cVn);
             }
-        });
+        }
+    });
 
     if (mFixInvalid) {
         tbb::blocked_range<size_t> range2(0, mVnv.size(), mVnv.size() / div);
         tbb::parallel_for(range2, [&](const tbb::blocked_range<size_t> &r) {
-                for (size_t v = r.begin(); v < r.end(); ++v) {
-                    if (!scene_rdl2::math::isFinite(mVnv[v])) {
-                        // degened surface, assign a valid but meaningless value
-                        mVnv[v] = Vec3f(0, 0, 1);
-                    }
+            for (size_t v = r.begin(); v < r.end(); ++v) {
+                if (!scene_rdl2::math::isFinite(mVnv[v])) {
+                    // degened surface, assign a valid but meaningless value
+                    mVnv[v] = Vec3f(0, 0, 1);
                 }
-            });
+            }
+        });
     }
 
     // showVnv();
@@ -146,10 +146,11 @@ PolyMeshCalcNv::setVtx(const PolygonMesh::VertexBuffer &vertices)
 
 void
 TriMeshCalcNv::setFaceVid(const PolygonMesh::IndexBuffer &indices,
-        size_t motionSampleCount)
+                          size_t motionSampleCount)
 {
     mFCount = indices.size() / 3;
     mFVid.assign(indices.begin(), indices.end());
+
     // work memory for vn computation
     mFnv.resize(mFCount * motionSampleCount);
 
@@ -186,6 +187,7 @@ TriMeshCalcNv::computeFn(size_t fId)
         Vec3f &v0 = mVtx[v0Id * mMotionSampleCount + t];
         Vec3f &v1 = mVtx[v1Id * mMotionSampleCount + t];
         Vec3f &v2 = mVtx[v2Id * mMotionSampleCount + t];
+
         // e1 x e2 = 2*area(triangle)
         // where e1 and e2 are edge vectors
         mFnv[fId * mMotionSampleCount + t] = cross(v1 - v0, v2 - v0);
@@ -194,10 +196,11 @@ TriMeshCalcNv::computeFn(size_t fId)
 
 void
 QuadMeshCalcNv::setFaceVid(const PolygonMesh::IndexBuffer &indices,
-        size_t motionSampleCount)
+                           size_t motionSampleCount)
 {
     mFCount = indices.size() / 4;
     mFVid.assign(indices.begin(), indices.end());
+
     // work memory for vn computation
     mFnv.resize(mFCount * motionSampleCount);
 

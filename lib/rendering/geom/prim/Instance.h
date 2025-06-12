@@ -24,13 +24,13 @@ namespace internal {
 class Instance : public moonray::geom::internal::Primitive {
 public:
     explicit Instance(const shading::XformSamples& xform,
-            std::shared_ptr<SharedPrimitive> reference,
-            shading::PrimitiveAttributeTable&& primitiveAttributeTable):
-        mLocal2Parent(xform, 0, 0), mReference(reference)
+                      std::shared_ptr<SharedPrimitive> reference,
+                      shading::PrimitiveAttributeTable&& primitiveAttributeTable) :
+        mLocal2Parent(xform, 0, 0),
+        mReference(reference)
     {
         if (!primitiveAttributeTable.empty()) {
-            mAttributes.reset(new shading::InstanceAttributes(
-                std::move(primitiveAttributeTable)));
+            mAttributes.reset(new shading::InstanceAttributes(std::move(primitiveAttributeTable)));
         }
     }
 
@@ -54,9 +54,11 @@ public:
     }
 
     virtual void initVolumeSampleInfo(VolumeSampleInfo* info,
-            const Vec3f& rayOrg, const Vec3f& rayDir, float time,
-            const scene_rdl2::rdl2::VolumeShader* volumeShader,
-            int volumeId) const override
+                                      const Vec3f& rayOrg,
+                                      const Vec3f& rayDir,
+                                      float time,
+                                      const scene_rdl2::rdl2::VolumeShader* volumeShader,
+                                      int volumeId) const override
     {
         // This method must be defined because it is a pure virtual method
         // in the base class, but it should never be called.  Volume sample
@@ -82,14 +84,14 @@ public:
     virtual RTCOccludedFunctionN getOccludedFunction() const override;
 
     virtual BBox3f computeAABB() const override;
+
     virtual BBox3f computeAABBAtTimeStep(int timeStep) const override;
 
     virtual bool hasAssignment(int assignmentId) const override;
 
     RTCScene getReferenceScene() const
     {
-        return static_cast<RTCScene>(
-            geom::internal::PrimitivePrivateAccess::getBVHScene(*mReference));
+        return static_cast<RTCScene>(geom::internal::PrimitivePrivateAccess::getBVHScene(*mReference));
     }
 
     const std::shared_ptr<SharedPrimitive>& getReference() const
@@ -103,7 +105,8 @@ public:
     }
 
     void appendXform(const shading::XformSamples& xform,
-            float shutterOpenDelta, float shutterCloseDelta)
+                     float shutterOpenDelta,
+                     float shutterCloseDelta)
     {
         mLocal2Parent.appendXform(xform);
         mLocal2Parent.setSampleInterval(shutterOpenDelta, shutterCloseDelta);

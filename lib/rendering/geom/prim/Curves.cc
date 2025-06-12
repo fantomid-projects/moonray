@@ -45,7 +45,7 @@ bilinearInterpolate(const Vec2f& uv,
 template <typename T>
 void*
 Curves::getBakedAttributeData(const TypedAttributeKey<T>& key,
-                                size_t& numElements, AttributeRate &newRate) const
+                              size_t& numElements, AttributeRate &newRate) const
 {
     size_t curvesCount = mCurvesVertexCount.size(); 
     size_t vertexCount = 0;
@@ -193,56 +193,68 @@ Curves::getBakedAttribute(const AttributeKey& key) const
     switch (battr->mType) {
     case AttributeType::TYPE_BOOL:
         battr->mData = getBakedAttributeData(TypedAttributeKey<bool>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_INT:
         battr->mData = getBakedAttributeData(TypedAttributeKey<int>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_LONG:
         battr->mData = getBakedAttributeData(TypedAttributeKey<long>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_FLOAT:
         battr->mData = getBakedAttributeData(TypedAttributeKey<float>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_DOUBLE:
         battr->mData = getBakedAttributeData(TypedAttributeKey<double>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_STRING:
         battr->mData = getBakedAttributeData(TypedAttributeKey<std::string>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_RGB:
         battr->mData = getBakedAttributeData(TypedAttributeKey<scene_rdl2::math::Color>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_RGBA:
         battr->mData = getBakedAttributeData(TypedAttributeKey<scene_rdl2::math::Color4>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_VEC2F:
         battr->mData = getBakedAttributeData(TypedAttributeKey<Vec2f>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_VEC3F:
         battr->mData = getBakedAttributeData(TypedAttributeKey<Vec3f>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_VEC4F:
         battr->mData = getBakedAttributeData(TypedAttributeKey<Vec4f>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_MAT4F:
         battr->mData = getBakedAttributeData(TypedAttributeKey<scene_rdl2::math::Mat4f>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     default:
         MNRY_ASSERT(false, (std::string("unsupported attribute type ") +
-            std::string(attributeTypeName(key.getType())) +
-            std::string(" for attribute ") + std::string(key.getName())).c_str());
+                            std::string(attributeTypeName(key.getType())) +
+                            std::string(" for attribute ") + std::string(key.getName())).c_str());
         break;
     }
 
@@ -261,8 +273,10 @@ Curves::getBakedCurves(BakedCurves& bakedCurves) const
         bakedCurves.mCurvesVertexCount[i] = getCurvesVertexCount()[i];
         bakedCurves.mVertexCount += bakedCurves.mCurvesVertexCount[i];
     }
+
     bakedCurves.mVertexBuffer.resize(bakedCurves.mVertexCount * bakedCurves.mMotionSampleCount);
     bakedCurves.mRadii.resize(bakedCurves.mVertexCount * bakedCurves.mMotionSampleCount);
+
     for (size_t v = 0; v < bakedCurves.mVertexCount; v++) {
         for (size_t t = 0; t < bakedCurves.mMotionSampleCount; t++) {
             const scene_rdl2::math::Vec3fa& vtx = mVertexBuffer(v, t);

@@ -24,10 +24,11 @@ namespace internal {
 class VDBVelocity
 {
 public:
-    VDBVelocity() : mVelocityGrid(nullptr),
-                    mIsMotionBlurOn(false),
-                    mTShutterOpen(0.f),
-                    mTShutterRange(0.f)
+    VDBVelocity() :
+        mVelocityGrid(nullptr),
+        mIsMotionBlurOn(false),
+        mTShutterOpen(0.f),
+        mTShutterRange(0.f)
     {}
 
     void setVelocityGrid(openvdb::VectorGrid::ConstPtr velocityGrid,
@@ -46,13 +47,15 @@ public:
         mIsMotionBlurOn = true;
     }
 
-    void setShutterValues(float tShutterOpen, float tShutterRange)
+    void setShutterValues(float tShutterOpen,
+                          float tShutterRange)
     {
         mTShutterOpen = tShutterOpen;
         mTShutterRange = tShutterRange;
     }
 
-    void getShutterOpenAndClose(float& shutterOpen, float& shutterClose)
+    void getShutterOpenAndClose(float& shutterOpen,
+                                float& shutterClose)
     {
         shutterOpen = mTShutterOpen;
         shutterClose = mTShutterOpen + mTShutterRange;
@@ -68,6 +71,7 @@ public:
         if (mIsMotionBlurOn) {
             tls->mGeomTls->mStatistics.incCounter(STATS_VELOCITY_GRID_SAMPLES);
             uint32_t threadIdx = tls->mThreadIdx;
+
             // Use backward advection to retrieve velocity v at time t,
             // and apply v on position p with backward advection again to
             // retrieve the final resolved position

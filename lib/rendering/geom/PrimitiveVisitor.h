@@ -35,36 +35,47 @@ class PrimitiveVisitor
 {
 public:
     virtual ~PrimitiveVisitor() = default;
-    /// override this method to apply an opeartion to the
+
+    /// override this method to apply an operation to the
     /// primitives Procedural stores
     virtual void visitPrimitive(Primitive& p);
-    /// override this method to apply an opeartion to the
+
+    /// override this method to apply an operation to the
     /// Curves primitives Procedural stores
     virtual void visitCurves(Curves& c);
-    /// override this method to apply an opeartion to the
+
+    /// override this method to apply an operation to the
     /// Instance primitives Procedural stores
     virtual void visitInstance(Instance& i);
-    /// override this method to apply an opeartion to the
+
+    /// override this method to apply an operation to the
     /// Points primitives Procedural stores
     virtual void visitPoints(Points& p);
-    /// override this method to apply an opeartion to the
+
+    /// override this method to apply an operation to the
     /// PolyMesh primitives Procedural stores
     virtual void visitPolygonMesh(PolygonMesh& p);
-    /// override this method to apply an opeartion to the
+
+    /// override this method to apply an operation to the
     /// PrimitiveGroup primitives Procedural stores
     virtual void visitPrimitiveGroup(PrimitiveGroup& s);
-    /// override this method to apply an opeartion to the
+
+    /// override this method to apply an opertion to the
     /// Sphere primitives Procedural stores
     virtual void visitSphere(Sphere& s);
-    /// override this method to apply an opeartion to the
+
+    /// override this method to apply an operation to the
     /// Box primitives Procedural stores
     virtual void visitBox(Box& b);
-    /// override this method to apply an opeartion to the
+
+    /// override this method to apply an operation to the
     /// SubdivisionMesh primitives Procedural stores
     virtual void visitSubdivisionMesh(SubdivisionMesh& s);
-    /// override this method to apply an opeartion to the
+
+    /// override this method to apply an operation to the
     /// TransformedPrimitive primitives Procedural stores
     virtual void visitTransformedPrimitive(TransformedPrimitive& t);
+
     /// override this method to apply an operation to the
     /// VdbVolume primitives Procedural stores
     virtual void visitVdbVolume(VdbVolume& v);

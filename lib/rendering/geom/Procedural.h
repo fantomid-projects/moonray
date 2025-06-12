@@ -27,7 +27,12 @@ namespace moonray {
 namespace geom {
 
 struct GeometryStatistics {
-    GeometryStatistics() : mFaceCount(0), mMeshVertexCount(0), mCurvesCount(0), mCVCount(0), mInstanceCount(0) {}
+    GeometryStatistics() :
+        mFaceCount(0),
+        mMeshVertexCount(0),
+        mCurvesCount(0),
+        mCVCount(0),
+        mInstanceCount(0) {}
 
     Primitive::size_type mFaceCount;
     Primitive::size_type mMeshVertexCount;
@@ -65,13 +70,19 @@ class Procedural : private scene_rdl2::util::RefCount<Procedural>
     friend class internal::PrimitivePrivateAccess;
 public:
     typedef size_t size_type;
+
     /// Constructor / Destructor
     // A Procedural always captures the State when it is created.
     // A procedural can modify its child procedural / primitive' state during
     // update()
-    Procedural(const State &state): mDeformed(false), mState(state) {}
+    Procedural(const State &state) :
+        mDeformed(false),
+        mState(state) {}
+
     virtual ~Procedural() = default;
+
     Procedural(const Procedural &other) = delete;
+
     const Procedural &operator=(const Procedural &other) = delete;
 
     /// Whether this procedural a leaf procedural
@@ -85,43 +96,45 @@ public:
     /// the renderer based on the generated sub-procedurals / primitives.
     virtual BBox3f bound(const GenerateContext &generateContext,
                          const Mat43 &parent2render) const
-    {  return BBox3f(scene_rdl2::util::False);  }
+    {
+        return BBox3f(scene_rdl2::util::False);
+    }
     
     /// Implementation should create child procedurals / geometric Primitives
     virtual void generate(const GenerateContext &generateContext,
-            const shading::XformSamples &parent2render) = 0;
+                          const shading::XformSamples &parent2render) = 0;
 
     /// @remark For realtime rendering use. Feature film shader development
     ///     does not require this functionality.
     /// @brief Implementation should update child procedurals /
     ///     geometric Primitives
     virtual void update(const UpdateContext &updateContext,
-            const shading::XformSamples &parent2render) {}
+                        const shading::XformSamples &parent2render) {}
 
     /// @remark For realtime rendering use. Feature film shader development
     ///     does not require this functionality.
     /// @brief For each Primitive in this procedural,
     ///     apply a visitor function.
     virtual void forEachPrimitive(PrimitiveVisitor& visitor,
-            bool parallel = true) = 0;
+                                  bool parallel = true) = 0;
 
     /// @remark For realtime rendering use. Feature film shader development
     ///     does not require this functionality.
     /// @brief For each static Primitive, apply a visitor function.
     virtual void forEachStatic(PrimitiveVisitor& visitor,
-            bool parallel = true) = 0;
+                               bool parallel = true) = 0;
 
     /// @remark For realtime rendering use. Feature film shader development
     ///     does not require this functionality.
     /// @brief For each dynamic Primitive, apply a visitor function.
     virtual void forEachDynamic(PrimitiveVisitor& visitor,
-            bool parallel = true) = 0;
+                                bool parallel = true) = 0;
 
     /// @remark For realtime rendering use. Feature film shader development
     ///     does not require this functionality.
     /// @brief For each deformable Primitive, apply a visitor function.
     virtual void forEachDeformable(PrimitiveVisitor& visitor,
-            bool parallel = true) = 0;
+                                   bool parallel = true) = 0;
 
     /// @remark Involves locking! Avoid in performance critical sections
     /// @brief The count of primitives in this procedural

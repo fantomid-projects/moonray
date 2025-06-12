@@ -18,18 +18,19 @@ namespace internal {
 class Box : public NamedPrimitive
 {
 public:
-    Box(float length, float width, float height,
-            LayerAssignmentId&& layerAssignmentId,
-            shading::PrimitiveAttributeTable&& primitiveAttributeTable);
+    Box(float length,
+        float width,
+        float height,
+        LayerAssignmentId&& layerAssignmentId,
+        shading::PrimitiveAttributeTable&& primitiveAttributeTable);
 
     virtual PrimitiveType getType() const override
     {
         return QUADRIC;
     }
 
-    virtual const scene_rdl2::rdl2::Material* getIntersectionMaterial(
-            const scene_rdl2::rdl2::Layer *pRdlLayer,
-            const mcrt_common::Ray &ray) const override;
+    virtual const scene_rdl2::rdl2::Material* getIntersectionMaterial(const scene_rdl2::rdl2::Layer *pRdlLayer,
+                                                                      const mcrt_common::Ray &ray) const override;
 
     virtual int getIntersectionAssignmentId(int primID) const override
     {
@@ -37,8 +38,9 @@ public:
     }
 
     virtual void postIntersect(mcrt_common::ThreadLocalState& tls,
-            const scene_rdl2::rdl2::Layer* pRdlLayer, const mcrt_common::Ray& ray,
-            shading::Intersection& intersection) const override;
+                               const scene_rdl2::rdl2::Layer* pRdlLayer,
+                               const mcrt_common::Ray& ray,
+                               shading::Intersection& intersection) const override;
 
     virtual BBox3f computeAABB() const override;
 

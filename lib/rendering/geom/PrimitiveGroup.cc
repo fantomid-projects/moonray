@@ -34,8 +34,7 @@ struct PrimitiveGroup::Impl
     }
 
     Primitive::size_type getMemory() const {
-        Primitive::size_type memory = sizeof(PrimitiveGroup::Impl) +
-            mChildren.capacity() * sizeof(Primitive*);
+        Primitive::size_type memory = sizeof(PrimitiveGroup::Impl) + mChildren.capacity() * sizeof(Primitive*);
         for (const auto& child : mChildren) {
             memory += child->getMemory();
         }
@@ -96,7 +95,8 @@ PrimitiveGroup::clear()
 }
 
 void
-PrimitiveGroup::forEachPrimitive(PrimitiveVisitor& visitor, bool parallel)
+PrimitiveGroup::forEachPrimitive(PrimitiveVisitor& visitor,
+                                 bool parallel)
 {
     if (parallel) {
         tbb::blocked_range<size_t> range(0, mImpl->mChildren.size());
@@ -114,7 +114,8 @@ PrimitiveGroup::forEachPrimitive(PrimitiveVisitor& visitor, bool parallel)
 }
 
 void
-PrimitiveGroup::forEachStatic(PrimitiveVisitor& visitor, bool parallel)
+PrimitiveGroup::forEachStatic(PrimitiveVisitor& visitor,
+                              bool parallel)
 {
     if (parallel) {
         tbb::blocked_range<size_t> range(0, mImpl->mChildren.size());
@@ -138,7 +139,8 @@ PrimitiveGroup::forEachStatic(PrimitiveVisitor& visitor, bool parallel)
 }
 
 void
-PrimitiveGroup::forEachDynamic(PrimitiveVisitor& visitor, bool parallel)
+PrimitiveGroup::forEachDynamic(PrimitiveVisitor& visitor,
+                               bool parallel)
 {
     if (parallel) {
         tbb::blocked_range<size_t> range(0, mImpl->mChildren.size());
@@ -162,23 +164,22 @@ PrimitiveGroup::forEachDynamic(PrimitiveVisitor& visitor, bool parallel)
 }
 
 void
-PrimitiveGroup::forEachDeformable(PrimitiveVisitor& visitor, bool parallel)
+PrimitiveGroup::forEachDeformable(PrimitiveVisitor& visitor,
+                                  bool parallel)
 {
     if (parallel) {
         tbb::blocked_range<size_t> range(0, mImpl->mChildren.size());
         tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r)
         {
             for (size_t i = r.begin(); i < r.end(); ++i) {
-                if (mImpl->mChildren[i]->getModifiability() ==
-                    Primitive::Modifiability::DEFORMABLE) {
+                if (mImpl->mChildren[i]->getModifiability() == Primitive::Modifiability::DEFORMABLE) {
                     mImpl->mChildren[i]->accept(visitor);
                 }
             }
         });
     } else {
         for (size_t i = 0; i < mImpl->mChildren.size(); ++i) {
-            if (mImpl->mChildren[i]->getModifiability() ==
-                Primitive::Modifiability::DEFORMABLE) {
+            if (mImpl->mChildren[i]->getModifiability() == Primitive::Modifiability::DEFORMABLE) {
                 mImpl->mChildren[i]->accept(visitor);
             }
         }
@@ -186,13 +187,13 @@ PrimitiveGroup::forEachDeformable(PrimitiveVisitor& visitor, bool parallel)
 }
 
 void
-PrimitiveGroup::transformPrimitive(
-        const MotionBlurParams& motionBlurParams,
-        const shading::XformSamples& prim2render)
+PrimitiveGroup::transformPrimitive(const MotionBlurParams& motionBlurParams,
+                                   const shading::XformSamples& prim2render)
 {
     for (auto& child : mImpl->mChildren) {
         internal::PrimitivePrivateAccess::transformPrimitive(child,
-            motionBlurParams, prim2render);
+                                                             motionBlurParams,
+                                                             prim2render);
     }
 }
 
@@ -200,7 +201,7 @@ internal::Primitive*
 PrimitiveGroup::getPrimitiveImpl()
 {
     MNRY_ASSERT_REQUIRE(false, "PrimitiveGroup is an opaque handle wrapper "
-        "that has no internal implementation");
+                               "that has no internal implementation");
     return nullptr;
 }
 

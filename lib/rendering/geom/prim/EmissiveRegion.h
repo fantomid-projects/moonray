@@ -29,19 +29,22 @@ public:
     // not point to instanced volume primitives.  So it can just use
     // the transform from the emission distribution unmodified.
     EmissiveRegion(const Primitive* primitive,
-            const scene_rdl2::rdl2::VolumeShader* volumeShader,
-            int volumeId, int visibilityMask):
+                   const scene_rdl2::rdl2::VolumeShader* volumeShader,
+                   int volumeId,
+                   int visibilityMask) :
         mVolumeId(volumeId),
         mVisibilityMask(visibilityMask),
         mEmissionDistribution(primitive->computeEmissionDistribution(volumeShader)),
         mTransform(mEmissionDistribution->getTransform())
     {}
+
     // This constructor is used by emissive regions that point
     // to shared volume primitives.  It needs to use a distToRender transform
     // that is different than the one stored in the emission distribution.
-    EmissiveRegion(int volumeId, int visibilityMask,
-            std::shared_ptr<EmissionDistribution> emissionDistribution,
-            const EmissionDistribution::Transform &transform):
+    EmissiveRegion(int volumeId,
+                   int visibilityMask,
+                   std::shared_ptr<EmissionDistribution> emissionDistribution,
+                   const EmissionDistribution::Transform &transform) :
         mVolumeId(volumeId),
         mVisibilityMask(visibilityMask),
         mEmissionDistribution(emissionDistribution),
@@ -54,20 +57,44 @@ public:
         return mEmissionDistribution->count();
     }
 
-    void sample(const Vec3f& p, float u1, float u2, float u3,
-            Vec3f& wi, float& pdfWi, float& tEnd, float time) const
+    void sample(const Vec3f& p,
+                float u1,
+                float u2,
+                float u3,
+                Vec3f& wi,
+                float& pdfWi,
+                float& tEnd,
+                float time) const
     {
-        mEmissionDistribution->sample(mTransform, p, u1, u2, u3, wi, pdfWi, tEnd, time);
+        mEmissionDistribution->sample(mTransform,
+                                      p,
+                                      u1, u2, u3,
+                                      wi,
+                                      pdfWi,
+                                      tEnd,
+                                      time);
     }
 
-    float pdf(const Vec3f& p, const Vec3f& wi, float& tEnd, float time) const
+    float pdf(const Vec3f& p,
+              const Vec3f& wi,
+              float& tEnd,
+              float time) const
     {
-        return mEmissionDistribution->pdf(mTransform, p, wi, tEnd, time);
+        return mEmissionDistribution->pdf(mTransform,
+                                          p,
+                                          wi,
+                                          tEnd,
+                                          time);
     }
 
-    Vec3f getEquiAngularPivot(float u1, float u2, float u3, float time) const
+    Vec3f getEquiAngularPivot(float u1,
+                              float u2,
+                              float u3,
+                              float time) const
     {
-        return mEmissionDistribution->sample(mTransform, u1, u2, u3, time);
+        return mEmissionDistribution->sample(mTransform,
+                                             u1, u2, u3,
+                                             time);
     }
 
     bool canIlluminateSSS() const

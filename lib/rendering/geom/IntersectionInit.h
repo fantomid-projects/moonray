@@ -22,7 +22,7 @@ namespace geom {
 /// The ray and resulting intersection are in render space.
 void initIntersectionPhase1(shading::Intersection &isect,
                             mcrt_common::ThreadLocalState *tls,
-                            const mcrt_common::Ray         &ray,
+                            const mcrt_common::Ray &ray,
                             const scene_rdl2::rdl2::Layer *pRdlLayer);
 
 
@@ -40,7 +40,7 @@ void initIntersectionPhase2(shading::Intersection &isect,
 /// intersection are in render space.
 void initIntersectionFull(shading::Intersection &isect,
                           mcrt_common::ThreadLocalState *tls,
-                          const mcrt_common::Ray         &ray,
+                          const mcrt_common::Ray &ray,
                           const scene_rdl2::rdl2::Layer *pRdlLayer,
                           int mirrorDepth,
                           int glossyDepth,

@@ -16,8 +16,12 @@ namespace geom {
 class PolyMeshCalcNv
 {
 public:
-    PolyMeshCalcNv(bool fixInvalid) : mVCount(0), mFCount(0), mMotionSampleCount(0),
+    PolyMeshCalcNv(bool fixInvalid) :
+        mVCount(0),
+        mFCount(0),
+        mMotionSampleCount(0),
         mFixInvalid(fixInvalid) {}
+
     virtual ~PolyMeshCalcNv() {}
 
     // set new vertex/face info and compute vn
@@ -28,7 +32,9 @@ public:
     void update(const PolygonMesh::VertexBuffer &vertices);
 
     size_t getVCount() const { return mVCount; }
-    const float *getVn(uint vId, size_t timeIndex = 0) const {
+
+    const float *getVn(uint vId,
+                       size_t timeIndex = 0) const {
         return (const float *)&mVnv[vId * mMotionSampleCount + timeIndex];
     }
 
@@ -38,7 +44,8 @@ public:
 private:
     // copy index buffer and resize mFnv based on number of triangle or quad
     virtual void setFaceVid(const PolygonMesh::IndexBuffer &indices,
-            size_t motionSampleColunt) = 0;
+                            size_t motionSampleColunt) = 0;
+
     // compute weighted face normal based on face area
     virtual void computeFn(size_t fId) = 0;
 
@@ -46,6 +53,7 @@ protected:
     void setVtx(const PolygonMesh::VertexBuffer &vertices);
 
     void updateVtx(const PolygonMesh::VertexBuffer &vertices);
+
     // compute vertex normal by averaging adjacent face normal
     void computeVn();
 
@@ -69,7 +77,8 @@ public:
     TriMeshCalcNv(bool fixInvalid) : PolyMeshCalcNv(fixInvalid) {}
 private:
     virtual void setFaceVid(const PolygonMesh::IndexBuffer &indices,
-            size_t motionSampleColunt) override;
+                            size_t motionSampleColunt) override;
+
     virtual void computeFn(size_t fId) override;
 
     // Setup Vertex-Face lookup table
@@ -82,7 +91,8 @@ public:
     QuadMeshCalcNv(bool fixInvalid) : PolyMeshCalcNv(fixInvalid) {}
 private:
     virtual void setFaceVid(const PolygonMesh::IndexBuffer &indices,
-            size_t motionSampleColunt) override;
+                            size_t motionSampleColunt) override;
+
     virtual void computeFn(size_t fId) override;
 
     // Setup Vertex-Face lookup table

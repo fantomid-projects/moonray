@@ -21,8 +21,11 @@ class VolumeSampleInfo
 {
 public:
     void initialize(const scene_rdl2::rdl2::VolumeShader* volumeShader,
-                    const Vec3f& sampleRayOrg, const Vec3f& sampleRayDir,
-                    float featureSize, bool canCastShadow, bool isVDB) {
+                    const Vec3f& sampleRayOrg,
+                    const Vec3f& sampleRayDir,
+                    float featureSize,
+                    bool canCastShadow,
+                    bool isVDB) {
         mVolumeShader = volumeShader;
         mSampleRayOrg = sampleRayOrg;
         mSampleRayDir = sampleRayDir;

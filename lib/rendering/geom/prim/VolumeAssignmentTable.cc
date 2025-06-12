@@ -113,7 +113,8 @@ namespace {
 
 // Determine if a layer assignment is the reference of an instance geometry.
 bool
-isSharedReference(const scene_rdl2::rdl2::Layer *layer, int32_t id)
+isSharedReference(const scene_rdl2::rdl2::Layer *layer,
+                  int32_t id)
 {
     const scene_rdl2::rdl2::TraceSet::GeometryPartPair p = layer->lookupGeomAndPart(id);
     const scene_rdl2::rdl2::Geometry *g = p.first;
@@ -130,7 +131,9 @@ isSharedReference(const scene_rdl2::rdl2::Layer *layer, int32_t id)
 }
 
 void
-evaluateInstanceXform(const std::vector<MotionTransform> &instanceXforms, float time, Mat43 &result)
+evaluateInstanceXform(const std::vector<MotionTransform> &instanceXforms,
+                      float time,
+                      Mat43 &result)
 {
     result = Mat43(scene_rdl2::math::one);
     for (const MotionTransform &xform : instanceXforms) {
@@ -145,7 +148,8 @@ evaluateInstanceXform(const std::vector<MotionTransform> &instanceXforms, float 
 class AssignInstanceMasks : public geom::PrimitiveVisitor
 {
 public:
-    AssignInstanceMasks(InstanceMasks &instanceMasks, int32_t mask):
+    AssignInstanceMasks(InstanceMasks &instanceMasks,
+                        int32_t mask):
         mInstanceMasks(instanceMasks),
         mMask(mask)
     {
@@ -153,7 +157,8 @@ public:
 
     void visitPrimitiveGroup(geom::PrimitiveGroup &pg) override
     {
-        pg.forEachPrimitive(*this, /* doParallel = */ false);
+        pg.forEachPrimitive(*this,
+                            false); // doParallel
     }
 
     void visitInstance(geom::Instance &i) override
@@ -193,14 +198,14 @@ public:
     void visitPrimitiveGroup(geom::PrimitiveGroup &pg) override
     {
         // supports multi-level instancing
-        pg.forEachPrimitive(*this, /* isParallel = */ false);
+        pg.forEachPrimitive(*this,
+                            false); // doParallel
     }
 
     void visitInstance(geom::Instance &i) override
     {
         // push this instance onto the instance sequence stacks
-        geom::internal::Primitive *pImpl =
-            geom::internal::PrimitivePrivateAccess::getPrimitiveImpl(&i);
+        geom::internal::Primitive *pImpl = geom::internal::PrimitivePrivateAccess::getPrimitiveImpl(&i);
         geom::internal::Instance *pInst = static_cast<geom::internal::Instance *>(pImpl);
         mInstanceSequence.push_back(pInst);
         mInstanceXform.push_back(pInst->getLocal2Parent());
@@ -234,6 +239,7 @@ public:
                 // add this instance sequence to the volumeIdFSM
                 mVolumeIdFSM.add(mInstanceSequence, volumeId);
             }
+
             ++mVolumeCount;
 
         } else {
@@ -346,10 +352,12 @@ VolumeIdFSM::add(const std::vector<const geom::internal::Instance *> &sequence,
         if (newState == -1) {
             // need to break off a new node
             mNodes.push_back(Node());
-            newState = mNodes[state].addTransition(inst, mNodes.size() - 1);
+            newState = mNodes[state].addTransition(inst,
+                                                   mNodes.size() - 1);
         }
         state = newState;
     }
+
     // we should now be at a leaf node with an unset volumeId
     MNRY_ASSERT(!sequence.empty());
     MNRY_ASSERT(state > 0 && state < static_cast<int>(mNodes.size()));
@@ -360,7 +368,8 @@ VolumeIdFSM::add(const std::vector<const geom::internal::Instance *> &sequence,
 }
 
 int
-VolumeIdFSM::transition(int state, const geom::internal::Instance *to) const
+VolumeIdFSM::transition(int state,
+                        const geom::internal::Instance *to) const
 {
     MNRY_ASSERT(state >= 0 && state < static_cast<int>(mNodes.size()));
     const Node &n = mNodes[state];
@@ -384,7 +393,8 @@ VolumeIdFSM::getVolumeId(int state) const
 }
 
 int
-VolumeIdFSM::Node::addTransition(InstanceId to, NodeIdx nodeIdx)
+VolumeIdFSM::Node::addTransition(InstanceId to,
+                                 NodeIdx nodeIdx)
 {
     MNRY_ASSERT(mTransitions.find(to) == mTransitions.end());
     mTransitions.insert(std::pair<InstanceId, NodeIdx>(to, nodeIdx));
@@ -449,7 +459,8 @@ VolumeAssignmentTable::initLookupTable(const scene_rdl2::rdl2::Layer *layer)
                 if (pleaf->isReference()) {
                     pleaf->getReference()->getPrimitive()->accept(aim);
                 } else {
-                    proc->forEachPrimitive(aim, /* doParallel = */ false);
+                    proc->forEachPrimitive(aim,
+                                           false); // doParallel
                 }
             }
         }
@@ -468,7 +479,8 @@ VolumeAssignmentTable::initLookupTable(const scene_rdl2::rdl2::Layer *layer)
                                       mInstanceXforms,
                                       mInstanceVolumeIds,
                                       volumeCount);
-            proc->forEachPrimitive(avi, /* doParallel = */ false);
+            proc->forEachPrimitive(avi,
+                                   false); // doParallel
         }
     }
 
@@ -480,15 +492,15 @@ VolumeAssignmentTable::initLookupTable(const scene_rdl2::rdl2::Layer *layer)
             if (volumeCount < maxVolumeCount) {
                 mAssignmentIdToVolumeIds[aId].push_back(volumeCount);
                 mVolumeIdToAssignmentId[volumeCount] = aId;
-                mVisibilityMasks[volumeCount] =
-                    layer->lookupGeomAndPart(aId).first->getVisibilityMask();
+                mVisibilityMasks[volumeCount] = layer->lookupGeomAndPart(aId).first->getVisibilityMask();
             }
             ++volumeCount;
         }
     }
 
     // reset volume shaders
-    mVolumeShaders = std::vector<const scene_rdl2::rdl2::VolumeShader *>(assignmentCount, nullptr);
+    mVolumeShaders = std::vector<const scene_rdl2::rdl2::VolumeShader *>(assignmentCount,
+                                                                         nullptr);
 
     // reset shadow linking lookup table
     mShadowLinkings.clear();
@@ -499,6 +511,7 @@ VolumeAssignmentTable::initLookupTable(const scene_rdl2::rdl2::Layer *layer)
         if (!mAssignmentIdToVolumeIds.empty()) {
             mVolumeShaders[aId] = layer->lookupVolumeShader(aId);
             const scene_rdl2::rdl2::ShadowSet* shadowSet = layer->lookupShadowSet(aId);
+
             // add lights to shadow set
             if (shadowSet) {
                 ShadowLinking& shadowLinking = mShadowLinkings[aId];
@@ -512,8 +525,8 @@ VolumeAssignmentTable::initLookupTable(const scene_rdl2::rdl2::Layer *layer)
 
     if (volumeCount > maxVolumeCount) {
         layer->error("The number of volumes (including instanced volumes) "
-            "reaches ", volumeCount,
-            ", which exceeds the maximum limit of ", maxVolumeCount);
+                     "reaches ", volumeCount,
+                     ", which exceeds the maximum limit of ", maxVolumeCount);
     }
 
     // Reduce volumeId indexed arrays to the actual number
@@ -535,21 +548,29 @@ VolumeAssignmentTable::setFeatureSizes(geom::internal::Primitive* prim,
         // store an adjusted feature size in the primitive, if the volume's volume
         // is scaled by the instance transform
         Mat43 primToRender;
-        evaluateInstanceXform(mInstanceXforms[volumeId], /* time = */ 0, primToRender);
+        evaluateInstanceXform(mInstanceXforms[volumeId],
+                             0, // time
+                             primToRender);
+
         const float det = primToRender.l.det();
         MNRY_ASSERT(det > 0.f);
         if (!scene_rdl2::math::isEqual(det, 1.0f)) {
             const float newFs = fs * cbrt(det);
-            prim->setInstanceFeatureSize(volumeId, newFs);
+            prim->setInstanceFeatureSize(volumeId,
+                                         newFs);
         }
     }
 }
 
 bool
-VolumeAssignmentTable::evalInstanceXform(int volumeId, float time, Mat43 &primToRender) const
+VolumeAssignmentTable::evalInstanceXform(int volumeId,
+                                         float time,
+                                         Mat43 &primToRender) const
 {
     if (mInstanceXforms[volumeId].empty()) return false;
-    evaluateInstanceXform(mInstanceXforms[volumeId], time, primToRender);
+    evaluateInstanceXform(mInstanceXforms[volumeId],
+                          time,
+                          primToRender);
     return true;
 }
 

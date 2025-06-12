@@ -19,7 +19,7 @@ namespace geom {
 
 void initIntersectionPhase1(shading::Intersection &isect,
                             mcrt_common::ThreadLocalState *tls,
-                            const mcrt_common::Ray         &ray,
+                            const mcrt_common::Ray &ray,
                             const scene_rdl2::rdl2::Layer *pRdlLayer)
 {
     EXCL_ACCUMULATOR_PROFILE(tls, EXCL_ACCUM_INIT_INTERSECTION);
@@ -28,21 +28,25 @@ void initIntersectionPhase1(shading::Intersection &isect,
     isect.setP(ray.getOrigin() + ray.getDirection() * ray.getEnd());
 
     // Invoke the primitive's post-intersection
-    geom::internal::BVHUserData* userData =
-        static_cast<geom::internal::BVHUserData*>(ray.ext.userData);
+    geom::internal::BVHUserData* userData = static_cast<geom::internal::BVHUserData*>(ray.ext.userData);
     const geom::internal::Primitive* primPtr = userData->mPrimitive;
 
-    primPtr->postIntersect(*tls, pRdlLayer, ray, isect);
+    primPtr->postIntersect(*tls,
+                           pRdlLayer,
+                           ray,
+                           isect);
 
     // shadow ray epsilon is the same for all geometry primitive types.
     isect.setShadowEpsilonHint(primPtr->getRdlGeometry()->getShadowRayEpsilon());
 
     // Set unique index for use in shaders (i.e. StamMap cache)
-    isect.setId(tls->getNextId(), tls->mThreadIdx);
+    isect.setId(tls->getNextId(),
+                tls->mThreadIdx);
 
     scene_rdl2::math::Vec3f dNds, dNdt;
-    const bool curvatureComputed =
-        primPtr->computeIntersectCurvature(ray, isect, dNds, dNdt);
+    const bool curvatureComputed = primPtr->computeIntersectCurvature(ray,
+                                                                      isect,
+                                                                      dNds, dNdt);
 
     if (curvatureComputed) {
         isect.setdNds(dNds);
@@ -69,25 +73,35 @@ void initIntersectionPhase1(shading::Intersection &isect,
                 internal::getInstanceAttr(shading::StandardAttributes::sShadowRayEpsilon,
                                           ray,
                                           primPtr->getRdlGeometry()->getShadowRayEpsilon());
+
             isect.setShadowEpsilonHint(shadowRayEpsilon);
         }
 
         // Only transform dPds, dPdt, and N if they aren't explicitly
         // set on the instance's primitive attribute table
         if (!internal::hasInstanceAttr(shading::StandardAttributes::sdPds, ray)) {
-            isect.setdPds(transformVector(ray.ext.l2r, isect.getdPds()));
+            isect.setdPds(transformVector(ray.ext.l2r,
+                                          isect.getdPds()));
         }
+
         if (!internal::hasInstanceAttr(shading::StandardAttributes::sdPdt, ray)) {
-            isect.setdPdt(transformVector(ray.ext.l2r, isect.getdPdt()));
+            isect.setdPdt(transformVector(ray.ext.l2r,
+                                          isect.getdPdt()));
         }
+
         const scene_rdl2::math::Xform3f r2l = ray.ext.l2r.inverse();
         if (!internal::hasInstanceAttr(shading::StandardAttributes::sNormal, ray)) {
-            isect.setNg(normalize(transformNormal(r2l, isect.getNg())));
-            isect.setN(normalize(transformNormal(r2l, isect.getN())));
+            isect.setNg(normalize(transformNormal(r2l,
+                                                  isect.getNg())));
+            isect.setN(normalize(transformNormal(r2l,
+                                                 isect.getN())));
         }
+
         if (curvatureComputed) {
-            isect.setdNds(transformNormal(r2l, isect.getdNds()));
-            isect.setdNdt(transformNormal(r2l, isect.getdNdt()));
+            isect.setdNds(transformNormal(r2l,
+                                          isect.getdNds()));
+            isect.setdNdt(transformNormal(r2l,
+                                          isect.getdNdt()));
         }
     }
 

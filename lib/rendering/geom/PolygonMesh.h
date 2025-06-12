@@ -79,9 +79,9 @@ public:
 
     /// the constructor for ngons
     PolygonMesh(FaceVertexCount&& faceVertexCount,
-            IndexBuffer&& indices, VertexBuffer&& vertices,
-            LayerAssignmentId&& layerAssignmentId,
-            shading::PrimitiveAttributeTable&& primitiveAttributeTable);
+                IndexBuffer&& indices, VertexBuffer&& vertices,
+                LayerAssignmentId&& layerAssignmentId,
+                shading::PrimitiveAttributeTable&& primitiveAttributeTable);
 
     ~PolygonMesh(); 
 
@@ -105,7 +105,8 @@ public:
     const std::string& getName() const;
 
     // sets the face->part mapping
-    void setParts(size_t partCount, FaceToPartBuffer&& faceToPart);
+    void setParts(size_t partCount,
+                  FaceToPartBuffer&& faceToPart);
 
     /// set the mesh resolution (each edge in control face would be split
     /// into n segments when resolution is n)
@@ -136,7 +137,7 @@ public:
 
     // TODO replace this function with proper VertexBuffer update mechanics
     void updateVertexData(const std::vector<float>& vertexData,
-            const shading::XformSamples& prim2render);
+                          const shading::XformSamples& prim2render);
 
     void recomputeVertexNormals();
 
@@ -152,9 +153,8 @@ private:
 
     /// @remark For renderer internal use, procedural should never call this
     /// @internal
-    virtual void transformPrimitive(
-            const MotionBlurParams& motionBlurParams,
-            const shading::XformSamples& prim2render) override;
+    virtual void transformPrimitive(const MotionBlurParams& motionBlurParams,
+                                    const shading::XformSamples& prim2render) override;
 
 private:
     struct Impl;

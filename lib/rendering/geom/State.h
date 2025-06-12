@@ -58,7 +58,11 @@ public:
         mName.append(suffix);
         return popHint;
     }
-    void popNameSuffix(int popHint)     {  mName.resize(popHint);  }
+
+    void popNameSuffix(int popHint)
+    {
+        mName.resize(popHint);
+    }
 
 
 private:

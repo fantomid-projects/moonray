@@ -18,14 +18,18 @@ namespace geom {
 
 struct Sphere::Impl
 {
-    explicit Impl(internal::Sphere* sphere) : mSphere(sphere) {}
+    explicit Impl(internal::Sphere* sphere) :
+        mSphere(sphere) {}
+
     std::unique_ptr<internal::Sphere> mSphere;
 };
 
-Sphere::Sphere(float radius, LayerAssignmentId&& layerAssignmentId,
-        shading::PrimitiveAttributeTable&& primitiveAttributeTable):
-        mImpl(fauxstd::make_unique<Impl>(new internal::Sphere(radius,
-        std::move(layerAssignmentId), std::move(primitiveAttributeTable))))
+Sphere::Sphere(float radius,
+               LayerAssignmentId&& layerAssignmentId,
+               shading::PrimitiveAttributeTable&& primitiveAttributeTable) :
+    mImpl(fauxstd::make_unique<Impl>(new internal::Sphere(radius,
+                                                          std::move(layerAssignmentId),
+                                                          std::move(primitiveAttributeTable))))
 {
 }
 
@@ -62,9 +66,13 @@ Sphere::getName() const
 }
 
 void
-Sphere::setClippingRange(float zMin, float zMax, float sweepAngle)
+Sphere::setClippingRange(float zMin,
+                         float zMax,
+                         float sweepAngle)
 {
-    mImpl->mSphere->setClippingRange(zMin, zMax, sweepAngle);
+    mImpl->mSphere->setClippingRange(zMin,
+                                     zMax,
+                                     sweepAngle);
 }
 
 void
@@ -92,9 +100,8 @@ Sphere::getIsNormalReversed() const
 }
 
 void
-Sphere::transformPrimitive(
-        const MotionBlurParams& motionBlurParams,
-        const shading::XformSamples& prim2render)
+Sphere::transformPrimitive(const MotionBlurParams& motionBlurParams,
+                           const shading::XformSamples& prim2render)
 {
     mImpl->mSphere->setTransform(prim2render[0]);
 }

@@ -17,7 +17,7 @@ class Sphere : public NamedPrimitive
 {
 public:
     Sphere(float radius, LayerAssignmentId&& layerAssignmentId,
-            shading::PrimitiveAttributeTable&& primitiveAttributeTable);
+           shading::PrimitiveAttributeTable&& primitiveAttributeTable);
 
     virtual PrimitiveType getType() const override
     {
@@ -29,13 +29,13 @@ public:
         return mLayerAssignmentId.getConstId();
     }
 
-    virtual const scene_rdl2::rdl2::Material* getIntersectionMaterial(
-            const scene_rdl2::rdl2::Layer *pRdlLayer,
-            const mcrt_common::Ray &ray) const override;
+    virtual const scene_rdl2::rdl2::Material* getIntersectionMaterial(const scene_rdl2::rdl2::Layer *pRdlLayer,
+                                                                      const mcrt_common::Ray &ray) const override;
 
     virtual void postIntersect(mcrt_common::ThreadLocalState& tls,
-            const scene_rdl2::rdl2::Layer* pRdlLayer, const mcrt_common::Ray& ray,
-            shading::Intersection& intersection) const override;
+                               const scene_rdl2::rdl2::Layer* pRdlLayer,
+                               const mcrt_common::Ray& ray,
+                               shading::Intersection& intersection) const override;
 
     virtual BBox3f computeAABB() const override;
 
@@ -66,8 +66,9 @@ public:
     virtual RTCOccludedFunctionN getOccludedFunction() const override;
 
     virtual bool computeIntersectCurvature(const mcrt_common::Ray &ray,
-            const shading::Intersection &intersection,
-            Vec3f &dnds, Vec3f &dndt) const override;
+                                           const shading::Intersection &intersection,
+                                           Vec3f &dnds,
+                                           Vec3f &dndt) const override;
 
     float getRadius() const
     {
@@ -99,13 +100,26 @@ public:
         return mP2L;
     }
 
-    void setClippingRange(float zMin, float zMax, float sweepAngle)
+    void setClippingRange(float zMin,
+                          float zMax,
+                          float sweepAngle)
     {
-        mZMin = scene_rdl2::math::clamp(scene_rdl2::math::min(zMin, zMax), -mRadius, mRadius);
-        mZMax = scene_rdl2::math::clamp(scene_rdl2::math::max(zMin, zMax), -mRadius, mRadius);
-        mThetaMin = acos(scene_rdl2::math::clamp(mZMin / mRadius, -1.0f, 1.0f));
-        mThetaMax = acos(scene_rdl2::math::clamp(mZMax / mRadius, -1.0f, 1.0f));
-        mPhiMax = scene_rdl2::math::degreesToRadians(scene_rdl2::math::clamp(sweepAngle, 0.0f, 360.0f));
+        mZMin = scene_rdl2::math::clamp(scene_rdl2::math::min(zMin, zMax),
+                                        -mRadius,
+                                        mRadius);
+
+        mZMax = scene_rdl2::math::clamp(scene_rdl2::math::max(zMin, zMax),
+                                        -mRadius,
+                                        mRadius);
+
+        mThetaMin = acos(scene_rdl2::math::clamp(mZMin / mRadius,
+                                                 -1.0f, 1.0f));
+
+        mThetaMax = acos(scene_rdl2::math::clamp(mZMax / mRadius,
+                                                 -1.0f, 1.0f));
+
+        mPhiMax = scene_rdl2::math::degreesToRadians(scene_rdl2::math::clamp(sweepAngle,
+                                                                             0.0f, 360.0f));
     }
 
     void setTransform(const Mat43& xform)

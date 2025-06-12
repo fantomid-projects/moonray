@@ -22,19 +22,18 @@ namespace internal {
 using namespace scene_rdl2::math;
 using namespace moonray::shading;
 
-BezierSpanChains::BezierSpanChains(
-        Curves::Type type,
-        geom::Curves::SubType subtype,
-        geom::Curves::CurvesVertexCount&& curvesVertexCount,
-        geom::Curves::VertexBuffer&& vertices,
-        LayerAssignmentId&& layerAssignmentId,
-        PrimitiveAttributeTable&& primitiveAttributeTable):
-        CubicSpline(type,
-                    subtype,
-                    std::move(curvesVertexCount),
-                    std::move(vertices),
-                    std::move(layerAssignmentId),
-                    std::move(primitiveAttributeTable))
+BezierSpanChains::BezierSpanChains(Curves::Type type,
+                                   geom::Curves::SubType subtype,
+                                   geom::Curves::CurvesVertexCount&& curvesVertexCount,
+                                   geom::Curves::VertexBuffer&& vertices,
+                                   LayerAssignmentId&& layerAssignmentId,
+                                   PrimitiveAttributeTable&& primitiveAttributeTable):
+                                   CubicSpline(type,
+                                               subtype,
+                                               std::move(curvesVertexCount),
+                                               std::move(vertices),
+                                               std::move(layerAssignmentId),
+                                               std::move(primitiveAttributeTable))
 {
     // allocate/calculate index buffer
     size_t curvesCount = getCurvesCount();
@@ -50,7 +49,9 @@ BezierSpanChains::BezierSpanChains(
         varyingCount += spansInChain[i] + 1;
         faceVaryingCount.push_back(spansInChain[i] + 1);
     }
+
     mSpanCount = spanCount;
+
     // allocate/fill the index buffer
     mIndexBuffer.reserve(mSpanCount);
     size_t vertexOffset = 0;
@@ -63,11 +64,15 @@ BezierSpanChains::BezierSpanChains(
     }
 
     if (mLayerAssignmentId.getType() == LayerAssignmentId::Type::VARYING) {
-        MNRY_ASSERT_REQUIRE(
-            mLayerAssignmentId.getVaryingId().size() == curvesCount);
+        MNRY_ASSERT_REQUIRE(mLayerAssignmentId.getVaryingId().size() == curvesCount);
     }
+
     setAttributes(Attributes::interleave(mPrimitiveAttributeTable,
-        0, curvesCount, varyingCount, faceVaryingCount, getVertexCount()));
+                                         0,
+                                         curvesCount,
+                                         varyingCount,
+                                         faceVaryingCount,
+                                         getVertexCount()));
 }
 
 } // namespace internal

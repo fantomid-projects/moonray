@@ -19,18 +19,21 @@ namespace geom {
 class Instance::Impl : public internal::Instance {
 public:
     explicit Impl(const shading::XformSamples& xform,
-            std::shared_ptr<SharedPrimitive> reference,
-            shading::PrimitiveAttributeTable&& primitiveAttributeTable) :
-        internal::Instance(xform, reference, std::move(primitiveAttributeTable))
+                  std::shared_ptr<SharedPrimitive> reference,
+                  shading::PrimitiveAttributeTable&& primitiveAttributeTable) :
+        internal::Instance(xform,
+                           reference,
+                           std::move(primitiveAttributeTable))
     {}
 
 };
 
 Instance::Instance(const shading::XformSamples& xform,
-        std::shared_ptr<SharedPrimitive> reference,
-        shading::PrimitiveAttributeTable&& primitiveAttributeTable) :
-    mImpl(new Instance::Impl(xform, reference,
-    std::move(primitiveAttributeTable)))
+                   std::shared_ptr<SharedPrimitive> reference,
+                   shading::PrimitiveAttributeTable&& primitiveAttributeTable) :
+    mImpl(new Instance::Impl(xform,
+                             reference,
+                             std::move(primitiveAttributeTable)))
 {
 }
 
@@ -62,13 +65,16 @@ Instance::getReference() const
 }
 
 void
-Instance::transformPrimitive(
-        const MotionBlurParams& motionBlurParams,
-        const shading::XformSamples& prim2render)
+Instance::transformPrimitive(const MotionBlurParams& motionBlurParams,
+                             const shading::XformSamples& prim2render)
 {
     float shutterOpenDelta, shutterCloseDelta;
-    motionBlurParams.getMotionBlurDelta(shutterOpenDelta, shutterCloseDelta);
-    mImpl->appendXform(prim2render, shutterOpenDelta, shutterCloseDelta);
+    motionBlurParams.getMotionBlurDelta(shutterOpenDelta,
+                                        shutterCloseDelta);
+
+    mImpl->appendXform(prim2render,
+                       shutterOpenDelta,
+                       shutterCloseDelta);
 
     if (mImpl->getAttributes() != nullptr) {
         mImpl->getAttributes()->transformAttributes(prim2render,

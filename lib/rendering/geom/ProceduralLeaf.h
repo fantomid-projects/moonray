@@ -48,25 +48,25 @@ public:
     /// @brief For each Primitive in this procedural,
     ///     apply a visitor function.
     virtual void forEachPrimitive(PrimitiveVisitor& visitor,
-            bool parallel = true) override;
+                                  bool parallel = true) override;
 
     /// @remark For realtime rendering use. Feature film shader development
     ///     does not require this functionality.
     /// @brief For each static Primitive, apply a visitor function.
     virtual void forEachStatic(PrimitiveVisitor& visitor,
-            bool parallel = true) override;
+                               bool parallel = true) override;
 
     /// @remark For realtime rendering use. Feature film shader development
     ///     does not require this functionality.
     /// @brief For each dynamic Primitive, apply a visitor function.
     virtual void forEachDynamic(PrimitiveVisitor& visitor,
-            bool parallel = true) override;
+                                bool parallel = true) override;
 
     /// @remark For realtime rendering use. Feature film shader development
     ///     does not require this functionality.
     /// @brief For each deformable Primitive, apply a visitor function.
     virtual void forEachDeformable(PrimitiveVisitor& visitor,
-            bool parallel = true) override;
+                                   bool parallel = true) override;
 
     /// @remark Involves locking! Avoid in performance critical section
     /// @brief The count of primitives in this procedural
@@ -86,8 +86,8 @@ public:
 protected:
     /// Add a Primitive to the scene
     void addPrimitive(std::unique_ptr<Primitive> p,
-            const MotionBlurParams& motionBlurParams,
-            const shading::XformSamples& parent2render);
+                      const MotionBlurParams& motionBlurParams,
+                      const shading::XformSamples& parent2render);
 
     /// request the primitive container be at least enough to
     /// contain n primitives

@@ -55,10 +55,10 @@ class FaceVaryingAttributes
 {
 public:
     FaceVaryingAttributes(const int controlVertexCount,
-            const SubdivisionMesh::FaceVertexCount& controlFaceVertexCount,
-            const SubdivisionMesh::IndexBuffer& controlIndices,
-            const PrimitiveAttributeTable& primitiveAttributeTable,
-            const int firstFaceVaryingChannel)
+                          const SubdivisionMesh::FaceVertexCount& controlFaceVertexCount,
+                          const SubdivisionMesh::IndexBuffer& controlIndices,
+                          const PrimitiveAttributeTable& primitiveAttributeTable,
+                          const int firstFaceVaryingChannel)
     {
         int maxFvarKey = -1;
         std::vector<AttributeKey> fvarKeys;
@@ -68,50 +68,66 @@ public:
             if (rate == RATE_FACE_VARYING) {
                 // face varying before process should be the same size as
                 // control index buffer
-                MNRY_ASSERT_REQUIRE(
-                    kv.second[0]->size() == controlIndices.size());
+                MNRY_ASSERT_REQUIRE(kv.second[0]->size() == controlIndices.size());
+
                 fvarKeys.push_back(key);
                 if (key > maxFvarKey) {
                     maxFvarKey = key;
                 }
             }
         }
+
         mKeyToBufferIndex.resize(maxFvarKey + 1, -1);
         int channel = firstFaceVaryingChannel;
         for (const auto& key : fvarKeys) {
             switch (key.getType()) {
             case scene_rdl2::rdl2::TYPE_FLOAT:
                 addAttributeBuffer(TypedAttributeKey<float>(key),
-                    controlVertexCount, controlFaceVertexCount, controlIndices,
-                    primitiveAttributeTable, channel);
+                                   controlVertexCount,
+                                   controlFaceVertexCount,
+                                   controlIndices,
+                                   primitiveAttributeTable,
+                                   channel);
                 break;
             case scene_rdl2::rdl2::TYPE_RGB:
                 addAttributeBuffer(TypedAttributeKey<scene_rdl2::math::Color>(key),
-                    controlVertexCount, controlFaceVertexCount, controlIndices,
-                    primitiveAttributeTable, channel);
+                                   controlVertexCount,
+                                   controlFaceVertexCount,
+                                   controlIndices,
+                                   primitiveAttributeTable,
+                                   channel);
                 break;
             case scene_rdl2::rdl2::TYPE_RGBA:
                 addAttributeBuffer(TypedAttributeKey<scene_rdl2::math::Color4>(key),
-                    controlVertexCount, controlFaceVertexCount, controlIndices,
-                    primitiveAttributeTable, channel);
+                                   controlVertexCount,
+                                   controlFaceVertexCount,
+                                   controlIndices,
+                                   primitiveAttributeTable,
+                                   channel);
                 break;
             case scene_rdl2::rdl2::TYPE_VEC2F:
                 addAttributeBuffer(TypedAttributeKey<Vec2f>(key),
-                    controlVertexCount, controlFaceVertexCount, controlIndices,
-                    primitiveAttributeTable, channel);
+                                   controlVertexCount,
+                                   controlFaceVertexCount,
+                                   controlIndices,
+                                   primitiveAttributeTable,
+                                   channel);
                 break;
             case scene_rdl2::rdl2::TYPE_VEC3F:
                 addAttributeBuffer(TypedAttributeKey<Vec3f>(key),
-                    controlVertexCount, controlFaceVertexCount, controlIndices,
-                    primitiveAttributeTable, channel);
+                                   controlVertexCount,
+                                   controlFaceVertexCount,
+                                   controlIndices,
+                                   primitiveAttributeTable,
+                                   channel);
                 break;
             default:
                 // we can only tessellate float based attributes
                 MNRY_ASSERT_REQUIRE(false,
-                    (std::string("unsupported attribute type ") +
-                    std::string(attributeTypeName(key.getType())) +
-                    std::string(" for face varying atttribute ") +
-                    std::string(key.getName())).c_str());
+                                    (std::string("unsupported attribute type ") +
+                                    std::string(attributeTypeName(key.getType())) +
+                                    std::string(" for face varying atttribute ") +
+                                    std::string(key.getName())).c_str());
                 break;
             }
             channel++;
@@ -129,70 +145,99 @@ public:
 
     // this method is called during postIntersect stage. Interpolate requested
     // face varying attribute and fill the result to intersection
-    void fillAttributes(Intersection& intersection, int faceId,
-            float w1, float w2, float w3, float w4) const
+    void fillAttributes(Intersection& intersection,
+                        int faceId,
+                        float w1,
+                        float w2,
+                        float w3,
+                        float w4) const
     {
         for (const auto k : intersection.getTable()->getRequiredAttributes()) {
             if (hasAttribute(k)) {
-                fillAttribute(k, intersection, faceId, w1, w2, w3, w4);
+                fillAttribute(k,
+                              intersection,
+                              faceId,
+                              w1, w2, w3, w4);
             }
         }
         for (const auto k : intersection.getTable()->getOptionalAttributes()) {
             if (hasAttribute(k)) {
-                fillAttribute(k, intersection, faceId, w1, w2, w3, w4);
+                fillAttribute(k,
+                              intersection,
+                              faceId,
+                              w1, w2, w3, w4);
             }
         }
     }
 
-    void fillAttribute(AttributeKey key, Intersection& intersection, int faceId,
-            float w1, float w2, float w3, float w4) const
+    void fillAttribute(AttributeKey key,
+                       Intersection& intersection,
+                       int faceId,
+                       float w1,
+                       float w2,
+                       float w3,
+                       float w4) const
     {
         switch (key.getType()) {
         case scene_rdl2::rdl2::TYPE_FLOAT:
-            fillAttribute(TypedAttributeKey<float>(key), intersection,
-                faceId, w1, w2, w3, w4);
+            fillAttribute(TypedAttributeKey<float>(key),
+                          intersection,
+                          faceId,
+                          w1, w2, w3, w4);
             break;
         case scene_rdl2::rdl2::TYPE_RGB:
-            fillAttribute(TypedAttributeKey<scene_rdl2::math::Color>(key), intersection,
-                faceId, w1, w2, w3, w4);
+            fillAttribute(TypedAttributeKey<scene_rdl2::math::Color>(key),
+                          intersection,
+                          faceId,
+                          w1, w2, w3, w4);
             break;
         case scene_rdl2::rdl2::TYPE_RGBA:
-            fillAttribute(TypedAttributeKey<scene_rdl2::math::Color4>(key), intersection,
-                faceId, w1, w2, w3, w4);
+            fillAttribute(TypedAttributeKey<scene_rdl2::math::Color4>(key),
+                          intersection,
+                          faceId,
+                          w1, w2, w3, w4);
             break;
         case scene_rdl2::rdl2::TYPE_VEC2F:
-            fillAttribute(TypedAttributeKey<Vec2f>(key), intersection,
-                faceId, w1, w2, w3, w4);
+            fillAttribute(TypedAttributeKey<Vec2f>(key),
+                          intersection,
+                          faceId,
+                          w1, w2, w3, w4);
             break;
         case scene_rdl2::rdl2::TYPE_VEC3F:
-            fillAttribute(TypedAttributeKey<Vec3f>(key), intersection,
-                faceId, w1, w2, w3, w4);
+            fillAttribute(TypedAttributeKey<Vec3f>(key),
+                          intersection,
+                          faceId,
+                          w1, w2, w3, w4);
             break;
         default:
             // we can only tessellate float based attributes
             MNRY_ASSERT(false,
-                (std::string("unsupported attribute type ") +
-                std::string(attributeTypeName(key.getType())) +
-                std::string(" for face varying atttribute ") +
-                std::string(key.getName())).c_str());
+                        (std::string("unsupported attribute type ") +
+                        std::string(attributeTypeName(key.getType())) +
+                        std::string(" for face varying atttribute ") +
+                        std::string(key.getName())).c_str());
             break;
         }
     }
 
     template <typename T> void
-    fillAttribute(TypedAttributeKey<T> key, Intersection& intersection,
-            int faceId, float w1, float w2, float w3, float w4) const
+    fillAttribute(TypedAttributeKey<T> key,
+                  Intersection& intersection,
+                  int faceId,
+                  float w1,
+                  float w2,
+                  float w3,
+                  float w4) const
     {
         const auto& attributeBuffer = getAttributeBuffer(key);
         int vid1 = attributeBuffer.mIndices[sQuadVertexCount * faceId    ];
         int vid2 = attributeBuffer.mIndices[sQuadVertexCount * faceId + 1];
         int vid3 = attributeBuffer.mIndices[sQuadVertexCount * faceId + 2];
         int vid4 = attributeBuffer.mIndices[sQuadVertexCount * faceId + 3];
-        const T* data = reinterpret_cast<const T*>(
-            attributeBuffer.mData.data());
+        const T* data = reinterpret_cast<const T*>(attributeBuffer.mData.data());
         intersection.setAttribute(key,
-            w1 * data[vid1] + w2 * data[vid2] +
-            w3 * data[vid3] + w4 * data[vid4]);
+                                  w1 * data[vid1] + w2 * data[vid2] +
+                                  w3 * data[vid3] + w4 * data[vid4]);
     }
 
     bool hasAttribute(AttributeKey key) const
@@ -227,7 +272,7 @@ public:
     size_t getMemory() const
     {
         size_t result = scene_rdl2::util::getVectorMemory(mAttributeBuffers) +
-            scene_rdl2::util::getVectorMemory(mKeyToBufferIndex);
+                        scene_rdl2::util::getVectorMemory(mKeyToBufferIndex);
         for (const auto& attributeBuffer : mAttributeBuffers) {
             result += scene_rdl2::util::getVectorMemory(attributeBuffer.mData);
             result += scene_rdl2::util::getVectorMemory(attributeBuffer.mIndices);
@@ -238,8 +283,7 @@ public:
     // this method is called when we do the reverse normal operation. Since the
     // main control mesh index buffer got reversed, all the corresponding
     // face varying attribute index buffers will also need to be reversed
-    void reverseControlIndices(
-        const SubdivisionMesh::FaceVertexCount& controlFaceVertexCount)
+    void reverseControlIndices(const SubdivisionMesh::FaceVertexCount& controlFaceVertexCount)
     {
         size_t faceCount = controlFaceVertexCount.size();
         for (auto& buffer : mAttributeBuffers) {
@@ -247,7 +291,7 @@ public:
             for (size_t i = 0; i < faceCount; ++i) {
                 int nFv = controlFaceVertexCount[i];
                 std::reverse(buffer.mIndices.begin() + indexOffset,
-                    buffer.mIndices.begin() + indexOffset + nFv);
+                             buffer.mIndices.begin() + indexOffset + nFv);
                 indexOffset += nFv;
             }
         }
@@ -256,11 +300,11 @@ public:
 private:
     template <typename T> void
     addAttributeBuffer(const TypedAttributeKey<T>& key,
-            const int controlVertexCount,
-            const SubdivisionMesh::FaceVertexCount controlFaceVertexCount,
-            const SubdivisionMesh::IndexBuffer controlIndices,
-            const PrimitiveAttributeTable& primitiveAttributeTable,
-            const int channel)
+                       const int controlVertexCount,
+                       const SubdivisionMesh::FaceVertexCount controlFaceVertexCount,
+                       const SubdivisionMesh::IndexBuffer controlIndices,
+                       const PrimitiveAttributeTable& primitiveAttributeTable,
+                       const int channel)
     {
         AttributeBuffer buffer;
         size_t stride = sizeof(T) / sizeof(float);
@@ -269,8 +313,8 @@ private:
         buffer.mData.resize(stride * controlVertexCount);
         buffer.mChannel = channel;
         const auto& attribute = primitiveAttributeTable.getAttribute(key);
-        std::vector<std::vector<FVarVertex<T>>> fvarVertexGroups(
-            controlVertexCount);
+        std::vector<std::vector<FVarVertex<T>>> fvarVertexGroups(controlVertexCount);
+
         // most of the face varying attributes still use the same data
         // on one vertex across all face sharing the vertex, so the fully
         // expanded face varying attribute is not optimal in memory usage
@@ -289,8 +333,7 @@ private:
                 if (fvarVertexGroups[vid].empty()) {
                     int fvarVid = vid;
                     fvarVertexGroups[vid].emplace_back(data, fvarVid);
-                    memcpy(&buffer.mData[stride * fvarVid], &data,
-                        sizeof(T));
+                    memcpy(&buffer.mData[stride * fvarVid], &data, sizeof(T));
                     buffer.mIndices.push_back(fvarVid);
                 } else {
                     bool foundDuplicatedVertex = false;
@@ -306,8 +349,7 @@ private:
                         for (size_t d = 0; d < stride; ++d) {
                             buffer.mData.push_back(0.0f);
                         }
-                        memcpy(&buffer.mData[stride * fvarVid], &data,
-                            sizeof(T));
+                        memcpy(&buffer.mData[stride * fvarVid], &data, sizeof(T));
                         fvarVertexGroups[vid].emplace_back(data, fvarVid);
                         buffer.mIndices.push_back(fvarVid);
                     }
@@ -325,11 +367,11 @@ private:
 };
 
 OpenSubdivMesh::OpenSubdivMesh(SubdivisionMesh::Scheme scheme,
-        SubdivisionMesh::FaceVertexCount&& faceVertexCount,
-        SubdivisionMesh::IndexBuffer&& indices,
-        SubdivisionMesh::VertexBuffer&& vertices,
-        LayerAssignmentId&& layerAssignmentId,
-        PrimitiveAttributeTable&& primitiveAttributeTable):
+                               SubdivisionMesh::FaceVertexCount&& faceVertexCount,
+                               SubdivisionMesh::IndexBuffer&& indices,
+                               SubdivisionMesh::VertexBuffer&& vertices,
+                               LayerAssignmentId&& layerAssignmentId,
+                               PrimitiveAttributeTable&& primitiveAttributeTable):
     SubdMesh(scheme,
              std::move(faceVertexCount),
              std::move(indices),
@@ -367,13 +409,13 @@ size_t
 OpenSubdivMesh::getMotionSamplesCount() const
 {
     return mControlMeshData ?
-        mControlMeshData->mVertices.get_time_steps() :
-        mTessellatedVertices.get_time_steps();
+           mControlMeshData->mVertices.get_time_steps() :
+           mTessellatedVertices.get_time_steps();
 }
 
 static OpenSubdiv::Far::TopologyRefiner*
 createTopologyRefiner(const ControlMeshData& controlMeshData,
-        const FaceVaryingAttributes& faceVaryingAttributes)
+                      const FaceVaryingAttributes& faceVaryingAttributes)
 {
     typedef OpenSubdiv::Far::TopologyDescriptor Descriptor;
     typedef OpenSubdiv::Far::TopologyRefinerFactory<Descriptor> RefinerFactory;
@@ -466,22 +508,21 @@ createTopologyRefiner(const ControlMeshData& controlMeshData,
     const auto& fvarKeys = faceVaryingAttributes.getAllKeys();
     size_t fvarAttributesCount = fvarKeys.size();
     int textureVertexCount = controlMeshData.mTextureVertices.size();
-    bool hasFaceVaryingTextureSt =
-        controlMeshData.mTextureRate == RATE_FACE_VARYING;
-    // if there is textureSt, it will occupies one extra face varying channel
+
+    // if there is textureSt, it will occupy one extra face varying channel
+    bool hasFaceVaryingTextureSt = controlMeshData.mTextureRate == RATE_FACE_VARYING;
     size_t fvarChannelCount = hasFaceVaryingTextureSt ?
-        1 + fvarAttributesCount : fvarAttributesCount;
+                              1 + fvarAttributesCount :
+                              fvarAttributesCount;
     std::vector<Descriptor::FVarChannel> channels(fvarChannelCount);
     if (hasFaceVaryingTextureSt) {
         channels[sTextureStFVarChannel].numValues = textureVertexCount;
-        channels[sTextureStFVarChannel].valueIndices =
-            (const int*)controlMeshData.mTextureIndices.data();
+        channels[sTextureStFVarChannel].valueIndices = (const int*)controlMeshData.mTextureIndices.data();
     }
     for (const auto& key : fvarKeys) {
         const auto& attribute = faceVaryingAttributes.getAttributeBuffer(key);
         channels[attribute.mChannel].numValues = attribute.getVertexCount();
-        channels[attribute.mChannel].valueIndices =
-            (const int*)attribute.mIndices.data();
+        channels[attribute.mChannel].valueIndices = (const int*)attribute.mIndices.data();
     }
     desc.numFVarChannels = fvarChannelCount;
     desc.fvarChannels = channels.data();
@@ -489,30 +530,24 @@ createTopologyRefiner(const ControlMeshData& controlMeshData,
     // Subdivision properties assigned to topology (creases, corners and holes):
     desc.numCreases = controlMeshData.mCreaseSharpness.size();
     if (desc.numCreases) {
-        desc.creaseVertexIndexPairs =
-            (const int*)controlMeshData.mCreaseIndices.data();
-        desc.creaseWeights =
-            (const float*)controlMeshData.mCreaseSharpness.data();
+        desc.creaseVertexIndexPairs = (const int*)controlMeshData.mCreaseIndices.data();
+        desc.creaseWeights = (const float*)controlMeshData.mCreaseSharpness.data();
     }
 
     desc.numCorners = controlMeshData.mCornerSharpness.size();
     if (desc.numCorners) {
-        desc.cornerVertexIndices =
-            (const int*)controlMeshData.mCornerIndices.data();
-        desc.cornerWeights =
-            (const float*)controlMeshData.mCornerSharpness.data();
+        desc.cornerVertexIndices = (const int*)controlMeshData.mCornerIndices.data();
+        desc.cornerWeights = (const float*)controlMeshData.mCornerSharpness.data();
     }
 
     desc.numHoles = ignoreHoles ? 0 : controlMeshData.mHoleIndices.size();
     if (desc.numHoles) {
-        desc.holeIndices =
-            (const int*)controlMeshData.mHoleIndices.data();
+        desc.holeIndices = (const int*)controlMeshData.mHoleIndices.data();
     }
 
     // Instantiate a TopologyRefiner from the descripor
-    OpenSubdiv::Far::TopologyRefiner* refiner = RefinerFactory::Create(desc,
-        RefinerFactory::Options(osdScheme, osdOptions));
-    return refiner;
+    RefinerFactory::Options options(osdScheme, osdOptions);
+    return  RefinerFactory::Create(desc, options);
 }
 
 // This is the control point OpenSubdiv use to weight sum final limit surface
@@ -520,9 +555,7 @@ createTopologyRefiner(const ControlMeshData& controlMeshData,
 struct PatchCV
 {
     explicit PatchCV(size_t size)
-    : mData(size)
-    {
-    }
+    : mData(size) {}
 
     finline void Clear(void* = nullptr) {
         std::fill(mData.begin(), mData.end(), Vec3fa{0.0f});
@@ -574,14 +607,14 @@ struct PrimVarCV
 };
 
 // Provide a list of cluster vertices. Each cluster should be in C0
-// continuity during limit surface evaluation stage  but the continuity breaks
+// continuity during limit surface evaluation stage but the continuity breaks
 // after displacement due to the fact that each vertex in cluster can have
 // different texture st coordinate. The current solution to avoid crack is
 // simply glue all vertices in cluster to the average position
 void
 getOverlapVertexClusters(const FaceVaryingSeams& faceVaryingSeams,
-        const SubdTessellatedVertexLookup& tessellatedVertexLookup,
-        std::vector<std::vector<int>>& vertexClusters)
+                         const SubdTessellatedVertexLookup& tessellatedVertexLookup,
+                         std::vector<std::vector<int>>& vertexClusters)
 {
     // overlap vertices
     for (const auto& vertices : faceVaryingSeams.mOverlapVertices) {
@@ -610,12 +643,8 @@ getOverlapVertexClusters(const FaceVaryingSeams& faceVaryingSeams,
         // camera frustum. In this kind of situation we just skip the
         // later displacement stitching
         bool mismatchEdgeVertexCount = false;
-        int edge0VertexCount =
-            tessellatedVertexLookup.getEdgeVertexCount(
-            edges.second[0].mEdgeId0);
-        int edge1VertexCount =
-            tessellatedVertexLookup.getEdgeVertexCount(
-            edges.second[0].mEdgeId1);
+        int edge0VertexCount = tessellatedVertexLookup.getEdgeVertexCount(edges.second[0].mEdgeId0);
+        int edge1VertexCount = tessellatedVertexLookup.getEdgeVertexCount(edges.second[0].mEdgeId1);
         for (size_t c = 1; c < clusterSize; ++c) {
             if (tessellatedVertexLookup.getEdgeVertexCount(
                 edges.second[c].mEdgeId0) != edge0VertexCount) {
@@ -636,8 +665,8 @@ getOverlapVertexClusters(const FaceVaryingSeams& faceVaryingSeams,
             std::vector<int> vertexCluster;
             for (size_t n = 0; n < clusterSize; ++n) {
                 // edge0 end point is midEdgeVertex
-                int vid = tessellatedVertexLookup.getEdgeVertexId(
-                    edges.second[n].mEdgeId0, v, true);
+                int vid = tessellatedVertexLookup.getEdgeVertexId(edges.second[n].mEdgeId0,
+                                                                  v, true);
                 // may encounter vertices in unassigned face
                 if (vid < 0) {
                     continue;
@@ -651,8 +680,7 @@ getOverlapVertexClusters(const FaceVaryingSeams& faceVaryingSeams,
         // midEdgeVertex
         std::vector<int> vertexCluster;
         for (size_t n = 0; n < clusterSize; ++n) {
-            int vid = tessellatedVertexLookup.getTessellatedVertexId(
-                edges.second[n].mMidEdgeVertexId);
+            int vid = tessellatedVertexLookup.getTessellatedVertexId(edges.second[n].mMidEdgeVertexId);
             // may encounter vertices in unassigned face
             if (vid < 0) {
                 continue;
@@ -667,8 +695,8 @@ getOverlapVertexClusters(const FaceVaryingSeams& faceVaryingSeams,
             std::vector<int> vertexCluster;
             for (size_t n = 0; n < clusterSize; ++n) {
                 // edge1 start point is midEdgeVertex
-                int vid = tessellatedVertexLookup.getEdgeVertexId(
-                    edges.second[n].mEdgeId1, v, false);
+                int vid = tessellatedVertexLookup.getEdgeVertexId(edges.second[n].mEdgeId1,
+                                                                  v, false);
                 // may encounter vertices in unassigned face
                 if (vid < 0) {
                     continue;
@@ -684,38 +712,39 @@ getOverlapVertexClusters(const FaceVaryingSeams& faceVaryingSeams,
 
 std::vector<SubdTessellationFactor>
 OpenSubdivMesh::computeSubdTessellationFactor(const scene_rdl2::rdl2::Layer *pRdlLayer,
-        const std::vector<mcrt_common::Frustum>& frustums,
-        const std::vector<mcrt_common::Fishtum>& fishtums,
-        bool enableDisplacement,
-        bool noTessellation) const
+                                              const std::vector<mcrt_common::Frustum>& frustums,
+                                              const std::vector<mcrt_common::Fishtum>& fishtums,
+                                              bool enableDisplacement,
+                                              bool noTessellation) const
 {
-    const SubdivisionMesh::FaceVertexCount& faceVertexCount =
-        mControlMeshData->mFaceVertexCount;
-    const SubdivisionMesh::VertexBuffer& vertices =
-        mControlMeshData->mVertices;
-    const SubdivisionMesh::IndexBuffer& indices =
-        mControlMeshData->mIndices;
+    const SubdivisionMesh::FaceVertexCount& faceVertexCount = mControlMeshData->mFaceVertexCount;
+    const SubdivisionMesh::VertexBuffer& vertices = mControlMeshData->mVertices;
+    const SubdivisionMesh::IndexBuffer& indices = mControlMeshData->mIndices;
+
     std::vector<SubdTessellationFactor> tessellationFactors;
+
     // only do adaptive tessellation when adaptiveError > 0
     // and if we either have frustums or a fisheye camera
-    bool haveViewInfo = !frustums.empty() || !fishtums.empty();
-    if (mAdaptiveError > scene_rdl2::math::sEpsilon &&
-        haveViewInfo && !noTessellation) {
-        SubdTopologyIdLookup topologyIdLookup(vertices.size(), faceVertexCount,
-            indices, noTessellation);
-        tessellationFactors.reserve(
-            topologyIdLookup.getQuadrangulatedFaceCount());
+    const bool haveViewInfo = !frustums.empty() || !fishtums.empty();
+    if (mAdaptiveError > scene_rdl2::math::sEpsilon && haveViewInfo && !noTessellation) {
+        SubdTopologyIdLookup topologyIdLookup(vertices.size(),
+                                              faceVertexCount,
+                                              indices,
+                                              noTessellation);
+        tessellationFactors.reserve(topologyIdLookup.getQuadrangulatedFaceCount());
 
         float pixelsPerScreenHeight;
         if (!frustums.empty()) {
-            pixelsPerScreenHeight = frustums[0].mViewport[3] - frustums[0].mViewport[1];
+            pixelsPerScreenHeight = frustums[0].mViewport[3] -
+                                    frustums[0].mViewport[1];
         } else {
             MNRY_ASSERT_REQUIRE(!fishtums.empty());
             pixelsPerScreenHeight = fishtums[0].mHeight;
         }
 
-        float pixelsPerEdge = mAdaptiveError;
-        float edgesPerScreenHeight = pixelsPerScreenHeight / pixelsPerEdge;
+        const float pixelsPerEdge = mAdaptiveError;
+        const float edgesPerScreenHeight = pixelsPerScreenHeight /
+                                           pixelsPerEdge;
 
         std::unordered_map<int, int> edgeTessellationFactor;
         size_t motionSampleCount = vertices.get_time_steps();
@@ -736,11 +765,9 @@ OpenSubdivMesh::computeSubdTessellationFactor(const scene_rdl2::rdl2::Layer *pRd
             if (enableDisplacement) {
                 int assignmentId = getControlFaceAssignmentId(f);
                 if (assignmentId != -1) {
-                    const scene_rdl2::rdl2::Displacement* displacement =
-                        pRdlLayer->lookupDisplacement(assignmentId);
+                    const scene_rdl2::rdl2::Displacement* displacement = pRdlLayer->lookupDisplacement(assignmentId);
                     if (displacement) {
-                        padding = displacement->get(
-                            scene_rdl2::rdl2::Displacement::sBoundPadding);
+                        padding = displacement->get(scene_rdl2::rdl2::Displacement::sBoundPadding);
                         if (padding < 0.0f) {
                             padding = 0.0f;
                         }
@@ -776,10 +803,8 @@ OpenSubdivMesh::computeSubdTessellationFactor(const scene_rdl2::rdl2::Layer *pRd
                     int vid1 = indices[indexOffset + (v + 1) % nFv];
                     int eid = topologyIdLookup.getEdgeId(vid0, vid1);
                     int vidMid = topologyIdLookup.getEdgeChildVertex(eid);
-                    factor.mEdgeId0[v] =
-                        topologyIdLookup.getEdgeId(vid0, vidMid);
-                    factor.mEdgeId1[v] =
-                        topologyIdLookup.getEdgeId(vidMid, vid1);
+                    factor.mEdgeId0[v] = topologyIdLookup.getEdgeId(vid0, vidMid);
+                    factor.mEdgeId1[v] = topologyIdLookup.getEdgeId(vidMid, vid1);
 
                     for (size_t t = 0; t < motionSampleCount; ++t) {
                         const Vec3f& v0 = vertices(vid0, t).asVec3f();
@@ -788,17 +813,24 @@ OpenSubdivMesh::computeSubdTessellationFactor(const scene_rdl2::rdl2::Layer *pRd
                         int edge0Factor = 0;
                         int edge1Factor = 0;
                         if (inView) {
-                            edge0Factor = computeEdgeVertexCount(v0, vMid,
-                                edgesPerScreenHeight, c2s, fishtums);
-                            edge1Factor = computeEdgeVertexCount(vMid, v1,
-                                edgesPerScreenHeight, c2s, fishtums);
+                            edge0Factor = computeEdgeVertexCount(v0,
+                                                                 vMid,
+                                                                 edgesPerScreenHeight,
+                                                                 c2s,
+                                                                 fishtums);
+
+                            edge1Factor = computeEdgeVertexCount(vMid,
+                                                                 v1,
+                                                                 edgesPerScreenHeight,
+                                                                 c2s,
+                                                                 fishtums);
                         }
-                        edgeTessellationFactor[factor.mEdgeId0[v]] = scene_rdl2::math::max(
-                            edge0Factor,
-                            edgeTessellationFactor[factor.mEdgeId0[v]]);
-                        edgeTessellationFactor[factor.mEdgeId1[v]] = scene_rdl2::math::max(
-                            edge1Factor,
-                            edgeTessellationFactor[factor.mEdgeId1[v]]);
+                        edgeTessellationFactor[factor.mEdgeId0[v]] =
+                            scene_rdl2::math::max(edge0Factor,
+                                                  edgeTessellationFactor[factor.mEdgeId0[v]]);
+                        edgeTessellationFactor[factor.mEdgeId1[v]] =
+                            scene_rdl2::math::max(edge1Factor,
+                                                  edgeTessellationFactor[factor.mEdgeId1[v]]);
                     }
                 }
                 tessellationFactors.push_back(factor);
@@ -819,15 +851,10 @@ OpenSubdivMesh::computeSubdTessellationFactor(const scene_rdl2::rdl2::Layer *pRd
                     int vidMid0 = topologyIdLookup.getEdgeChildVertex(eid0);
                     int eidn_1 = topologyIdLookup.getEdgeId(vid0, vidn_1);
                     int vidMidn_1 = topologyIdLookup.getEdgeChildVertex(eidn_1);
-                    factor.mEdgeId0[0] =
-                        topologyIdLookup.getEdgeId(vid0, vidMid0);
-                    factor.mEdgeId0[1] =
-                        topologyIdLookup.getEdgeId(vidMid0, vidCenter);
-                    factor.mEdgeId0[2] =
-                        topologyIdLookup.getEdgeId(vidCenter, vidMidn_1);
-                    factor.mEdgeId0[3] =
-                        topologyIdLookup.getEdgeId(vidMidn_1, vid0);
-
+                    factor.mEdgeId0[0] = topologyIdLookup.getEdgeId(vid0, vidMid0);
+                    factor.mEdgeId0[1] = topologyIdLookup.getEdgeId(vidMid0, vidCenter);
+                    factor.mEdgeId0[2] = topologyIdLookup.getEdgeId(vidCenter, vidMidn_1);
+                    factor.mEdgeId0[3] = topologyIdLookup.getEdgeId(vidMidn_1, vid0);
                     for (size_t t = 0; t < motionSampleCount; ++t) {
                         const Vec3f& v0 = vertices(vid0, t).asVec3f();
                         const Vec3f& v1 = vertices(vid1, t).asVec3f();
@@ -838,28 +865,29 @@ OpenSubdivMesh::computeSubdTessellationFactor(const scene_rdl2::rdl2::Layer *pRd
                         int edgeMidCenterFactor = 0;
                         int edgen_1Factor = 0;
                         if (inView) {
-                            edge0Factor = computeEdgeVertexCount(
-                                v0, vMid0,
-                                edgesPerScreenHeight, c2s, fishtums);
-                            edgeMidCenterFactor = computeEdgeVertexCount(
-                                vMid0, vCenter,
-                                edgesPerScreenHeight, c2s, fishtums);
-                            edgen_1Factor = computeEdgeVertexCount(
-                                v0, vMidN_1,
-                                edgesPerScreenHeight, c2s, fishtums);
+                            edge0Factor = computeEdgeVertexCount(v0, vMid0,
+                                                                 edgesPerScreenHeight,
+                                                                 c2s, fishtums);
+                            edgeMidCenterFactor = computeEdgeVertexCount(vMid0, vCenter,
+                                                                         edgesPerScreenHeight,
+                                                                         c2s, fishtums);
+                            edgen_1Factor = computeEdgeVertexCount(v0, vMidN_1,
+                                                                   edgesPerScreenHeight,
+                                                                   c2s, fishtums);
                         }
-                        edgeTessellationFactor[factor.mEdgeId0[0]] = scene_rdl2::math::max(
-                            edge0Factor,
-                            edgeTessellationFactor[factor.mEdgeId0[0]]);
-                        edgeTessellationFactor[factor.mEdgeId0[1]] = scene_rdl2::math::max(
-                            edgeMidCenterFactor,
-                            edgeTessellationFactor[factor.mEdgeId0[1]]);
+                        edgeTessellationFactor[factor.mEdgeId0[0]] =
+                            scene_rdl2::math::max(edge0Factor,
+                                                  edgeTessellationFactor[factor.mEdgeId0[0]]);
+                        edgeTessellationFactor[factor.mEdgeId0[1]] =
+                            scene_rdl2::math::max(edgeMidCenterFactor,
+                                                  edgeTessellationFactor[factor.mEdgeId0[1]]);
+
                         // the third edge that we omit here will be covered
                         // by neighbor quadrangulated quad so we can skip the
                         // effort calculating it twice
-                        edgeTessellationFactor[factor.mEdgeId0[3]] = scene_rdl2::math::max(
-                            edgen_1Factor,
-                            edgeTessellationFactor[factor.mEdgeId0[3]]);
+                        edgeTessellationFactor[factor.mEdgeId0[3]] =
+                            scene_rdl2::math::max(edgen_1Factor,
+                                                  edgeTessellationFactor[factor.mEdgeId0[3]]);
                     }
                     factor.mEdgeId1[0] = -1;
                     factor.mEdgeId1[1] = -1;
@@ -870,6 +898,7 @@ OpenSubdivMesh::computeSubdTessellationFactor(const scene_rdl2::rdl2::Layer *pRd
             }
             indexOffset += nFv;
         }
+
         // Clamp the maximum tessellation factor based on user specified
         // mesh resolution. Otherwise the tessellation factor can get out
         // of control when the edge is extremely close to camera near plane
@@ -877,11 +906,13 @@ OpenSubdivMesh::computeSubdTessellationFactor(const scene_rdl2::rdl2::Layer *pRd
         for (size_t i = 0; i < tessellationFactors.size(); ++i) {
             for (size_t e = 0; e < sQuadVertexCount; ++e) {
                 int eid0 = tessellationFactors[i].mEdgeId0[e];
-                tessellationFactors[i].mEdge0Factor[e] = scene_rdl2::math::clamp(
-                    edgeTessellationFactor[eid0], 0, maxEdgeVertexCount);
+                tessellationFactors[i].mEdge0Factor[e] =
+                    scene_rdl2::math::clamp(edgeTessellationFactor[eid0], 0,
+                                            maxEdgeVertexCount);
                 int eid1 = tessellationFactors[i].mEdgeId1[e];
-                tessellationFactors[i].mEdge1Factor[e] = scene_rdl2::math::clamp(
-                    edgeTessellationFactor[eid1], 0, maxEdgeVertexCount);
+                tessellationFactors[i].mEdge1Factor[e] =
+                    scene_rdl2::math::clamp(edgeTessellationFactor[eid1], 0,
+                                            maxEdgeVertexCount);
             }
         }
     } else {
@@ -922,22 +953,23 @@ OpenSubdivMesh::computeSubdTessellationFactor(const scene_rdl2::rdl2::Layer *pRd
 // loop through all control faces, quadrangulate n-gons and put all the
 // needed topology info into SubdQuadTopology.
 std::vector<SubdQuadTopology>
-OpenSubdivMesh::generateSubdQuadTopology(
-        const scene_rdl2::rdl2::Layer* pRdlLayer,
-        const SubdTopologyIdLookup& topologyIdLookup,
-        const SubdivisionMesh::FaceVertexCount& faceVertexCount,
-        const SubdivisionMesh::IndexBuffer& faceVaryingIndices,
-        bool noTessellation) const
+OpenSubdivMesh::generateSubdQuadTopology(const scene_rdl2::rdl2::Layer* pRdlLayer,
+                                         const SubdTopologyIdLookup& topologyIdLookup,
+                                         const SubdivisionMesh::FaceVertexCount& faceVertexCount,
+                                         const SubdivisionMesh::IndexBuffer& faceVaryingIndices,
+                                         bool noTessellation) const
 {
     std::vector<SubdQuadTopology> quadTopologies;
     quadTopologies.reserve(topologyIdLookup.getQuadrangulatedFaceCount());
+
     // the code logic is similar to Far::PtexIndices::initializePtexIndices
     int indexOffset = 0;
     for (size_t f = 0; f < faceVertexCount.size(); ++f) {
         int assignmentId = getControlFaceAssignmentId(f);
         bool hasAssignment = assignmentId != -1 &&
-            (pRdlLayer->lookupMaterial(assignmentId) != nullptr ||
-             pRdlLayer->lookupVolumeShader(assignmentId) != nullptr);
+                             (pRdlLayer->lookupMaterial(assignmentId) != nullptr ||
+                              pRdlLayer->lookupVolumeShader(assignmentId) != nullptr);
+
         int nFv = faceVertexCount[f];
         if (nFv == sQuadVertexCount) {
             // regular face
@@ -961,10 +993,8 @@ OpenSubdivMesh::generateSubdQuadTopology(
                     int vMidId = topologyIdLookup.getEdgeChildVertex(eid);
                     quadTopology.mCornerVertexId[v] = vid0;
                     quadTopology.mMidEdgeVertexId[v] = vMidId;
-                    quadTopology.mEdgeId0[v] =
-                        topologyIdLookup.getEdgeId(vid0, vMidId);
-                    quadTopology.mEdgeId1[v] =
-                        topologyIdLookup.getEdgeId(vMidId, vid1);
+                    quadTopology.mEdgeId0[v] = topologyIdLookup.getEdgeId(vid0, vMidId);
+                    quadTopology.mEdgeId1[v] = topologyIdLookup.getEdgeId(vMidId, vid1);
                 }
             }
             quadTopology.mControlFaceId = f;
@@ -990,8 +1020,7 @@ OpenSubdivMesh::generateSubdQuadTopology(
                 } else {
                     int cv0 = faceVaryingIndices[indexOffset + c];
                     int cv1 = faceVaryingIndices[indexOffset + (c + 1) % nFv];
-                    int cvn_1 = faceVaryingIndices[
-                        indexOffset + (c + nFv - 1) % nFv];
+                    int cvn_1 = faceVaryingIndices[indexOffset + (c + nFv - 1) % nFv];
                     int eid0 = topologyIdLookup.getEdgeId(cv0, cv1);
                     int eidn_1 = topologyIdLookup.getEdgeId(cv0, cvn_1);
                     // *--*  *: corner vertex
@@ -1050,21 +1079,17 @@ struct DisplacementFootprint
 // A special case that all edge tessellation factor are 0 in the control quad
 // We can generate more optimal index buffer by handling this case explicitly
 void
-generateZeroStitchIndexBufferAndSurfaceSamples(
-        const SubdQuadTopology& quadTopology,
-        const SubdTessellatedVertexLookup& tessellatedVertexLookup,
-        int fid, int assignmentId, SubdivisionMesh::IndexBuffer& indices,
-        std::vector<LimitSurfaceSample>& limitSurfaceSamples,
-        std::vector<int>* tessellatedToControlFace)
+generateZeroStitchIndexBufferAndSurfaceSamples(const SubdQuadTopology& quadTopology,
+                                               const SubdTessellatedVertexLookup& tessellatedVertexLookup,
+                                               int fid, int assignmentId,
+                                               SubdivisionMesh::IndexBuffer& indices,
+                                               std::vector<LimitSurfaceSample>& limitSurfaceSamples,
+                                               std::vector<int>* tessellatedToControlFace)
 {
-    int v0 = tessellatedVertexLookup.getTessellatedVertexId(
-        quadTopology.mCornerVertexId[0]);
-    int v1 = tessellatedVertexLookup.getTessellatedVertexId(
-        quadTopology.mCornerVertexId[1]);
-    int v2 = tessellatedVertexLookup.getTessellatedVertexId(
-        quadTopology.mCornerVertexId[2]);
-    int v3 = tessellatedVertexLookup.getTessellatedVertexId(
-        quadTopology.mCornerVertexId[3]);
+    int v0 = tessellatedVertexLookup.getTessellatedVertexId(quadTopology.mCornerVertexId[0]);
+    int v1 = tessellatedVertexLookup.getTessellatedVertexId(quadTopology.mCornerVertexId[1]);
+    int v2 = tessellatedVertexLookup.getTessellatedVertexId(quadTopology.mCornerVertexId[2]);
+    int v3 = tessellatedVertexLookup.getTessellatedVertexId(quadTopology.mCornerVertexId[3]);
 
     if (quadTopology.nonQuadParent()) {
         indices.push_back(v0);
@@ -1080,16 +1105,11 @@ generateZeroStitchIndexBufferAndSurfaceSamples(
         limitSurfaceSamples[v2].mUvDelta = Vec2f(1.0f, 1.0f);
         limitSurfaceSamples[v3].mUvDelta = Vec2f(1.0f, 1.0f);
     } else {
-        int mv0 = tessellatedVertexLookup.getTessellatedVertexId(
-            quadTopology.mMidEdgeVertexId[0]);
-        int mv1 = tessellatedVertexLookup.getTessellatedVertexId(
-            quadTopology.mMidEdgeVertexId[1]);
-        int mv2 = tessellatedVertexLookup.getTessellatedVertexId(
-            quadTopology.mMidEdgeVertexId[2]);
-        int mv3 = tessellatedVertexLookup.getTessellatedVertexId(
-            quadTopology.mMidEdgeVertexId[3]);
-        int center = tessellatedVertexLookup.getInteriorVertexId(
-            fid, 0, 0, 1);
+        int mv0 = tessellatedVertexLookup.getTessellatedVertexId(quadTopology.mMidEdgeVertexId[0]);
+        int mv1 = tessellatedVertexLookup.getTessellatedVertexId(quadTopology.mMidEdgeVertexId[1]);
+        int mv2 = tessellatedVertexLookup.getTessellatedVertexId(quadTopology.mMidEdgeVertexId[2]);
+        int mv3 = tessellatedVertexLookup.getTessellatedVertexId(quadTopology.mMidEdgeVertexId[3]);
+        int center = tessellatedVertexLookup.getInteriorVertexId(fid, 0, 0, 1);
         //  v3----mv2-----v2
         //  |      |      |
         //  |      |      |
@@ -1116,6 +1136,7 @@ generateZeroStitchIndexBufferAndSurfaceSamples(
         indices.push_back(center);
         indices.push_back(mv2);
         indices.push_back(v3);
+
         if (tessellatedToControlFace) {
             tessellatedToControlFace->push_back(quadTopology.mControlFaceId);
             tessellatedToControlFace->push_back(quadTopology.mControlFaceId);
@@ -1127,18 +1148,22 @@ generateZeroStitchIndexBufferAndSurfaceSamples(
         limitSurfaceSamples[mv0].mAssignmentId = assignmentId;
         limitSurfaceSamples[mv0].mUv = Vec2f(0.5f, 0.0f);
         limitSurfaceSamples[mv0].mUvDelta = Vec2f(0.5f, 0.5f);
+
         limitSurfaceSamples[mv1].mFaceId = fid;
         limitSurfaceSamples[mv1].mAssignmentId = assignmentId;
         limitSurfaceSamples[mv1].mUv = Vec2f(1.0f, 0.5f);
         limitSurfaceSamples[mv1].mUvDelta = Vec2f(0.5f, 0.5f);
+
         limitSurfaceSamples[mv2].mFaceId = fid;
         limitSurfaceSamples[mv2].mAssignmentId = assignmentId;
         limitSurfaceSamples[mv2].mUv = Vec2f(0.5f, 1.0f);
         limitSurfaceSamples[mv2].mUvDelta = Vec2f(0.5f, 0.5f);
+
         limitSurfaceSamples[mv3].mFaceId = fid;
         limitSurfaceSamples[mv3].mAssignmentId = assignmentId;
         limitSurfaceSamples[mv3].mUv = Vec2f(0.0f, 0.5f);
         limitSurfaceSamples[mv3].mUvDelta = Vec2f(0.5f, 0.5f);
+
         limitSurfaceSamples[center].mFaceId = fid;
         limitSurfaceSamples[center].mAssignmentId = assignmentId;
         limitSurfaceSamples[center].mUv = Vec2f(0.5f, 0.5f);
@@ -1168,43 +1193,50 @@ generateZeroStitchIndexBufferAndSurfaceSamples(
 // of LimitSurfaceSample, which is the ingredient to cook out the final
 // tessellated vertex buffer
 void
-OpenSubdivMesh::generateIndexBufferAndSurfaceSamples(
-        const std::vector<SubdQuadTopology>& quadTopologies,
-        const SubdTessellatedVertexLookup& tessellatedVertexLookup,
-        bool noTessellation,
-        SubdivisionMesh::IndexBuffer& indices,
-        std::vector<LimitSurfaceSample>& limitSurfaceSamples,
-        std::vector<int>* tessellatedToControlFace) const
+OpenSubdivMesh::generateIndexBufferAndSurfaceSamples(const std::vector<SubdQuadTopology>& quadTopologies,
+                                                     const SubdTessellatedVertexLookup& tessellatedVertexLookup,
+                                                     bool noTessellation,
+                                                     SubdivisionMesh::IndexBuffer& indices,
+                                                     std::vector<LimitSurfaceSample>& limitSurfaceSamples,
+                                                     std::vector<int>* tessellatedToControlFace) const
 {
     // simplest case, only render control cage
     if (noTessellation) {
         generateControlMeshIndexBufferAndSurfaceSamples(quadTopologies,
-            tessellatedVertexLookup, indices, limitSurfaceSamples,
-            tessellatedToControlFace);
+                                                        tessellatedVertexLookup,
+                                                        indices,
+                                                        limitSurfaceSamples,
+                                                        tessellatedToControlFace);
         return;
     }
+
     // we need to use arena to allocate temporary data structure for
     // outer/interior ring stitching
     mcrt_common::ThreadLocalState *tls = mcrt_common::getFrameUpdateTLS();
     scene_rdl2::alloc::Arena *arena = &tls->mArena;
 
-    size_t tessellatedVertexCount =
-        tessellatedVertexLookup.getTessellatedVertexCount();
+    size_t tessellatedVertexCount = tessellatedVertexLookup.getTessellatedVertexCount();
     limitSurfaceSamples.resize(tessellatedVertexCount);
+
     for (size_t f = 0; f < quadTopologies.size(); ++f) {
         const SubdQuadTopology& quadTopology = quadTopologies[f];
         if (!quadTopology.mHasAssignment) {
             continue;
         }
-        int assignmentId = getControlFaceAssignmentId(
-            quadTopology.mControlFaceId);
+
+        int assignmentId = getControlFaceAssignmentId(quadTopology.mControlFaceId);
+
         if (tessellatedVertexLookup.noRingToStitch(quadTopology)) {
             // the case we can easily construct 4 quads for regular quad
             // control face and 1 quad for quadrangulated child quad from
             // irregular n-gons control face
             generateZeroStitchIndexBufferAndSurfaceSamples(quadTopology,
-                tessellatedVertexLookup, f, assignmentId, indices,
-                limitSurfaceSamples, tessellatedToControlFace);
+                                                           tessellatedVertexLookup,
+                                                           f,
+                                                           assignmentId,
+                                                           indices,
+                                                           limitSurfaceSamples,
+                                                           tessellatedToControlFace);
             continue;
         }
 
@@ -1222,34 +1254,29 @@ OpenSubdivMesh::generateIndexBufferAndSurfaceSamples(
         // |  -------------  *
         // |                 |
         // *--*---*---*---*--*
+
         // index buffer
-        int interiorRowVertexCount =
-            tessellatedVertexLookup.getInteriorRowVertexCount(quadTopology);
-        int interiorColVertexCount =
-            tessellatedVertexLookup.getInteriorColVertexCount(quadTopology);
+        int interiorRowVertexCount = tessellatedVertexLookup.getInteriorRowVertexCount(quadTopology);
+        int interiorColVertexCount = tessellatedVertexLookup.getInteriorColVertexCount(quadTopology);
         for (int i = 0; i < interiorRowVertexCount - 1; ++i) {
             for (int j = 0; j < interiorColVertexCount - 1; ++j) {
-                indices.push_back(tessellatedVertexLookup.getInteriorVertexId(
-                    f, i, j, interiorColVertexCount));
-                indices.push_back(tessellatedVertexLookup.getInteriorVertexId(
-                    f, i, j + 1, interiorColVertexCount));
-                indices.push_back(tessellatedVertexLookup.getInteriorVertexId(
-                    f, i + 1, j + 1, interiorColVertexCount));
-                indices.push_back(tessellatedVertexLookup.getInteriorVertexId(
-                    f, i + 1, j, interiorColVertexCount));
+                indices.push_back(tessellatedVertexLookup.getInteriorVertexId(f, i,     j,     interiorColVertexCount));
+                indices.push_back(tessellatedVertexLookup.getInteriorVertexId(f, i,     j + 1, interiorColVertexCount));
+                indices.push_back(tessellatedVertexLookup.getInteriorVertexId(f, i + 1, j + 1, interiorColVertexCount));
+                indices.push_back(tessellatedVertexLookup.getInteriorVertexId(f, i + 1, j,     interiorColVertexCount));
                 if (tessellatedToControlFace) {
-                    tessellatedToControlFace->push_back(
-                        quadTopology.mControlFaceId);
+                    tessellatedToControlFace->push_back(quadTopology.mControlFaceId);
                 }
             }
         }
+
         float du = 1.0f / (float)(1 + interiorColVertexCount);
         float dv = 1.0f / (float)(1 + interiorRowVertexCount);
+
         // limit surface samples
         for (int i = 0; i < interiorRowVertexCount; ++i) {
             for (int j = 0; j < interiorColVertexCount; ++j) {
-                int vid = tessellatedVertexLookup.getInteriorVertexId(
-                    f, i, j, interiorColVertexCount);
+                int vid = tessellatedVertexLookup.getInteriorVertexId(f, i, j, interiorColVertexCount);
                 limitSurfaceSamples[vid].mFaceId = f;
                 limitSurfaceSamples[vid].mAssignmentId = assignmentId;
                 limitSurfaceSamples[vid].mUv = Vec2f((j + 1) * du, (i + 1) * dv);
@@ -1266,14 +1293,22 @@ OpenSubdivMesh::generateIndexBufferAndSurfaceSamples(
             StitchPoint* innerRing = nullptr;
             StitchPoint* outerRing = nullptr;
             int innerRingVertexCount, outerRingVertexCount;
-            generateSubdStitchRings(arena, quadTopology, f, 0,
-                tessellatedVertexLookup,
-                interiorRowVertexCount, interiorColVertexCount,
-                innerRing, innerRingVertexCount,
-                outerRing, outerRingVertexCount);
-            stitchRings(innerRing, innerRingVertexCount,
-                outerRing, outerRingVertexCount, indices,
-                quadTopology.mControlFaceId, tessellatedToControlFace);
+            generateSubdStitchRings(arena,
+                                    quadTopology,
+                                    f,
+                                    0, // corner index
+                                    tessellatedVertexLookup,
+                                    interiorRowVertexCount, interiorColVertexCount,
+                                    innerRing, innerRingVertexCount,
+                                    outerRing, outerRingVertexCount);
+            stitchRings(innerRing,
+                        innerRingVertexCount,
+                        outerRing,
+                        outerRingVertexCount,
+                        indices,
+                        quadTopology.mControlFaceId,
+                        tessellatedToControlFace);
+
             // limit surface samples
             for (int i = 0; i < outerRingVertexCount; ++i) {
                 int vid = outerRing[i].mVertexId;
@@ -1283,6 +1318,7 @@ OpenSubdivMesh::generateIndexBufferAndSurfaceSamples(
                 limitSurfaceSamples[vid].mUvDelta = Vec2f(du, dv);
             }
         }
+
         // stitch right interior and outer ring edge
         //      *
         //     /|
@@ -1300,14 +1336,25 @@ OpenSubdivMesh::generateIndexBufferAndSurfaceSamples(
             StitchPoint* innerRing = nullptr;
             StitchPoint* outerRing = nullptr;
             int innerRingVertexCount, outerRingVertexCount;
-            generateSubdStitchRings(arena, quadTopology, f, 1,
-                tessellatedVertexLookup,
-                interiorRowVertexCount, interiorColVertexCount,
-                innerRing, innerRingVertexCount,
-                outerRing, outerRingVertexCount);
-            stitchRings(innerRing, innerRingVertexCount,
-                outerRing, outerRingVertexCount, indices,
-                quadTopology.mControlFaceId, tessellatedToControlFace);
+            generateSubdStitchRings(arena,
+                                    quadTopology,
+                                    f,
+                                    1, // corner index
+                                    tessellatedVertexLookup,
+                                    interiorRowVertexCount,
+                                    interiorColVertexCount,
+                                    innerRing,
+                                    innerRingVertexCount,
+                                    outerRing,
+                                    outerRingVertexCount);
+            stitchRings(innerRing,
+                        innerRingVertexCount,
+                        outerRing,
+                        outerRingVertexCount,
+                        indices,
+                        quadTopology.mControlFaceId,
+                        tessellatedToControlFace);
+
             // limit surface samples
             for (int i = 0; i < outerRingVertexCount; ++i) {
                 int vid = outerRing[i].mVertexId;
@@ -1317,6 +1364,7 @@ OpenSubdivMesh::generateIndexBufferAndSurfaceSamples(
                 limitSurfaceSamples[vid].mUvDelta = Vec2f(du, dv);
             }
         }
+
         // stitch top interior and outer ring edge
         //   *---*----*----*---*
         //    \ / \ / | \ / \ /
@@ -1326,24 +1374,34 @@ OpenSubdivMesh::generateIndexBufferAndSurfaceSamples(
             StitchPoint* innerRing = nullptr;
             StitchPoint* outerRing = nullptr;
             int innerRingVertexCount, outerRingVertexCount;
-            generateSubdStitchRings(arena, quadTopology, f, 2,
-                tessellatedVertexLookup,
-                interiorRowVertexCount, interiorColVertexCount,
-                innerRing, innerRingVertexCount,
-                outerRing, outerRingVertexCount);
-            stitchRings(innerRing, innerRingVertexCount,
-                outerRing, outerRingVertexCount, indices,
-                quadTopology.mControlFaceId, tessellatedToControlFace);
+            generateSubdStitchRings(arena,quadTopology,
+                                    f,
+                                    2, // corner index
+                                    tessellatedVertexLookup,
+                                    interiorRowVertexCount,
+                                    interiorColVertexCount,
+                                    innerRing,
+                                    innerRingVertexCount,
+                                    outerRing,
+                                    outerRingVertexCount);
+            stitchRings(innerRing,
+                        innerRingVertexCount,
+                        outerRing,
+                        outerRingVertexCount,
+                        indices,
+                        quadTopology.mControlFaceId,
+                        tessellatedToControlFace);
+
             // limit surface samples
             for (int i = 0; i < outerRingVertexCount; ++i) {
                 int vid = outerRing[i].mVertexId;
                 limitSurfaceSamples[vid].mFaceId = f;
                 limitSurfaceSamples[vid].mAssignmentId = assignmentId;
-                limitSurfaceSamples[vid].mUv =
-                    Vec2f(1.0f - outerRing[i].mT, 1.0f);
+                limitSurfaceSamples[vid].mUv = Vec2f(1.0f - outerRing[i].mT, 1.0f);
                 limitSurfaceSamples[vid].mUvDelta = Vec2f(du, dv);
             }
         }
+
         // stitch left interior and outer ring edge
         //   *
         //   |\
@@ -1361,21 +1419,31 @@ OpenSubdivMesh::generateIndexBufferAndSurfaceSamples(
             StitchPoint* innerRing = nullptr;
             StitchPoint* outerRing = nullptr;
             int innerRingVertexCount, outerRingVertexCount;
-            generateSubdStitchRings(arena, quadTopology, f, 3,
-                tessellatedVertexLookup,
-                interiorRowVertexCount, interiorColVertexCount,
-                innerRing, innerRingVertexCount,
-                outerRing, outerRingVertexCount);
-            stitchRings(innerRing, innerRingVertexCount,
-                outerRing, outerRingVertexCount, indices,
-                quadTopology.mControlFaceId, tessellatedToControlFace);
+            generateSubdStitchRings(arena,
+                                    quadTopology,
+                                    f,
+                                    3, // corner index
+                                    tessellatedVertexLookup,
+                                    interiorRowVertexCount,
+                                    interiorColVertexCount,
+                                    innerRing,
+                                    innerRingVertexCount,
+                                    outerRing,
+                                    outerRingVertexCount);
+            stitchRings(innerRing,
+                        innerRingVertexCount,
+                        outerRing,
+                        outerRingVertexCount,
+                        indices,
+                        quadTopology.mControlFaceId,
+                        tessellatedToControlFace);
+
             // limit surface samples
             for (int i = 0; i < outerRingVertexCount; ++i) {
                 int vid = outerRing[i].mVertexId;
                 limitSurfaceSamples[vid].mFaceId = f;
                 limitSurfaceSamples[vid].mAssignmentId = assignmentId;
-                limitSurfaceSamples[vid].mUv =
-                    Vec2f(0.0f, 1.0f - outerRing[i].mT);
+                limitSurfaceSamples[vid].mUv = Vec2f(0.0f, 1.0f - outerRing[i].mT);
                 limitSurfaceSamples[vid].mUvDelta = Vec2f(du, dv);
             }
         }
@@ -1386,15 +1454,13 @@ OpenSubdivMesh::generateIndexBufferAndSurfaceSamples(
 // subd resolution <= 1). This is still a common production case when
 // the mesh are simple enough or far from camera with minimum LOD required
 void
-OpenSubdivMesh::generateControlMeshIndexBufferAndSurfaceSamples(
-        const std::vector<SubdQuadTopology>& quadTopologies,
-        const SubdTessellatedVertexLookup& tessellatedVertexLookup,
-        SubdivisionMesh::IndexBuffer& indices,
-        std::vector<LimitSurfaceSample>& limitSurfaceSamples,
-        std::vector<int>* tessellatedToControlFace) const
+OpenSubdivMesh::generateControlMeshIndexBufferAndSurfaceSamples(const std::vector<SubdQuadTopology>& quadTopologies,
+                                                                const SubdTessellatedVertexLookup& tessellatedVertexLookup,
+                                                                SubdivisionMesh::IndexBuffer& indices,
+                                                                std::vector<LimitSurfaceSample>& limitSurfaceSamples,
+                                                                std::vector<int>* tessellatedToControlFace) const
 {
-    size_t tessellatedVertexCount =
-        tessellatedVertexLookup.getTessellatedVertexCount();
+    size_t tessellatedVertexCount = tessellatedVertexLookup.getTessellatedVertexCount();
     limitSurfaceSamples.resize(tessellatedVertexCount);
     for (size_t f = 0; f < quadTopologies.size();) {
         const SubdQuadTopology& quadTopology = quadTopologies[f];
@@ -1402,25 +1468,21 @@ OpenSubdivMesh::generateControlMeshIndexBufferAndSurfaceSamples(
             ++f;
             continue;
         }
-        int assignmentId = getControlFaceAssignmentId(
-            quadTopology.mControlFaceId);
+        int assignmentId = getControlFaceAssignmentId(quadTopology.mControlFaceId);
 
         if (quadTopology.nonQuadParent()) {
             size_t nFv = 1;
             int controlFaceId = quadTopology.mControlFaceId;
-            while ((f + nFv) < quadTopologies.size() &&
-                quadTopologies[f + nFv].mControlFaceId == controlFaceId) {
+            while ((f + nFv) < quadTopologies.size() && quadTopologies[f + nFv].mControlFaceId == controlFaceId) {
                 ++nFv;
             }
             MNRY_ASSERT_REQUIRE(nFv >= 3);
+
             // split this n-gons into a series of degened quad (triangle)
-            int v0 = tessellatedVertexLookup.getTessellatedVertexId(
-                quadTopology.mCornerVertexId[0]);
+            int v0 = tessellatedVertexLookup.getTessellatedVertexId(quadTopology.mCornerVertexId[0]);
             for (size_t offset = 1; offset <= (nFv - 2); ++offset) {
-                int v1 = tessellatedVertexLookup.getTessellatedVertexId(
-                    quadTopologies[f + offset].mCornerVertexId[0]);
-                int v2 = tessellatedVertexLookup.getTessellatedVertexId(
-                    quadTopologies[f + offset + 1].mCornerVertexId[0]);
+                int v1 = tessellatedVertexLookup.getTessellatedVertexId(quadTopologies[f + offset].mCornerVertexId[0]);
+                int v2 = tessellatedVertexLookup.getTessellatedVertexId(quadTopologies[f + offset + 1].mCornerVertexId[0]);
                 indices.push_back(v0);
                 indices.push_back(v1);
                 indices.push_back(v2);
@@ -1430,8 +1492,7 @@ OpenSubdivMesh::generateControlMeshIndexBufferAndSurfaceSamples(
                 }
             }
             for (size_t offset = 0; offset < nFv; ++offset) {
-                int v = tessellatedVertexLookup.getTessellatedVertexId(
-                    quadTopologies[f + offset].mCornerVertexId[0]);
+                int v = tessellatedVertexLookup.getTessellatedVertexId(quadTopologies[f + offset].mCornerVertexId[0]);
                 limitSurfaceSamples[v].mFaceId = f + offset;
                 limitSurfaceSamples[v].mAssignmentId = assignmentId;
                 limitSurfaceSamples[v].mUv = Vec2f(0.0f, 0.0f);
@@ -1439,14 +1500,10 @@ OpenSubdivMesh::generateControlMeshIndexBufferAndSurfaceSamples(
             }
             f += nFv;
         } else {
-            int v0 = tessellatedVertexLookup.getTessellatedVertexId(
-                quadTopology.mCornerVertexId[0]);
-            int v1 = tessellatedVertexLookup.getTessellatedVertexId(
-                quadTopology.mCornerVertexId[1]);
-            int v2 = tessellatedVertexLookup.getTessellatedVertexId(
-                quadTopology.mCornerVertexId[2]);
-            int v3 = tessellatedVertexLookup.getTessellatedVertexId(
-                quadTopology.mCornerVertexId[3]);
+            int v0 = tessellatedVertexLookup.getTessellatedVertexId(quadTopology.mCornerVertexId[0]);
+            int v1 = tessellatedVertexLookup.getTessellatedVertexId(quadTopology.mCornerVertexId[1]);
+            int v2 = tessellatedVertexLookup.getTessellatedVertexId(quadTopology.mCornerVertexId[2]);
+            int v3 = tessellatedVertexLookup.getTessellatedVertexId(quadTopology.mCornerVertexId[3]);
             indices.push_back(v0);
             indices.push_back(v1);
             indices.push_back(v2);
@@ -1454,7 +1511,6 @@ OpenSubdivMesh::generateControlMeshIndexBufferAndSurfaceSamples(
             if (tessellatedToControlFace) {
                 tessellatedToControlFace->push_back(quadTopology.mControlFaceId);
             }
-
             limitSurfaceSamples[v0].mFaceId = f;
             limitSurfaceSamples[v0].mAssignmentId = assignmentId;
             limitSurfaceSamples[v0].mUv = Vec2f(0.0f, 0.0f);
@@ -1478,19 +1534,20 @@ OpenSubdivMesh::generateControlMeshIndexBufferAndSurfaceSamples(
 
 void
 generatePatchCvs(const OpenSubdiv::Far::TopologyRefiner* refiner,
-        const OpenSubdiv::Far::PatchTable* patchTable,
-        const SubdivisionMesh::VertexBuffer& controlVertices,
-        const Vector<Vec2f>& textureVertices,
-        AttributeRate textureRate,
-        std::vector<PatchCV>& patchCvs,
-        std::vector<TextureCV>& textureCvs,
-        bool requireUniformFix,
-        uint motionSampleCount)
+                 const OpenSubdiv::Far::PatchTable* patchTable,
+                 const SubdivisionMesh::VertexBuffer& controlVertices,
+                 const Vector<Vec2f>& textureVertices,
+                 AttributeRate textureRate,
+                 std::vector<PatchCV>& patchCvs,
+                 std::vector<TextureCV>& textureCvs,
+                 bool requireUniformFix,
+                 uint motionSampleCount)
 {
     // compute the total number of points we need to evaluate patchTable
     // we use local points around extraordinary features.
     int nRefinerVertices = refiner->GetNumVerticesTotal();
     int nLocalPoints = patchTable->GetNumLocalPoints();
+
     // create a buffer to hold the position of the refined vertices and
     // local points, then copy the control vertices at the beginning.
     patchCvs.resize(nRefinerVertices + nLocalPoints, PatchCV(motionSampleCount));
@@ -1499,10 +1556,11 @@ generatePatchCvs(const OpenSubdiv::Far::TopologyRefiner* refiner,
             patchCvs[i].mData[t] = controlVertices(i, t);
         }
     }
+
     // adaptive refinement may result in fewer levels than maxIsolation
     int nRefinedLevels = refiner->GetNumLevels();
-    // interpolate patchCvs: they will be the control vertices
-    // of the limit patches
+
+    // interpolate patchCvs: they will be the control vertices of the limit patches
     PatchCV* src = &patchCvs[0];
     for (int level = 1; level < nRefinedLevels; ++level) {
         PatchCV* dst = src + refiner->GetLevel(level - 1).GetNumVertices();
@@ -1512,14 +1570,12 @@ generatePatchCvs(const OpenSubdiv::Far::TopologyRefiner* refiner,
 
     // evaluate local points from interpolated patchCvs
     patchTable->ComputeLocalPointValues(&patchCvs[0],
-        &patchCvs[nRefinerVertices]);
+                                        &patchCvs[nRefinerVertices]);
 
     // allocate and initialize textureCvs if we have texture st provided
     if (textureRate == RATE_FACE_VARYING) {
-        int nFVarRefinerVertices = refiner->GetNumFVarValuesTotal(
-            sTextureStFVarChannel);
-        int nFVarLocalPoints = patchTable->GetNumLocalPointsFaceVarying(
-            sTextureStFVarChannel);
+        int nFVarRefinerVertices = refiner->GetNumFVarValuesTotal(sTextureStFVarChannel);
+        int nFVarLocalPoints = patchTable->GetNumLocalPointsFaceVarying(sTextureStFVarChannel);
         textureCvs.resize(nFVarRefinerVertices + nFVarLocalPoints);
         for (size_t i = 0; i < textureVertices.size(); ++i) {
             textureCvs[i].mSt = textureVertices[i];
@@ -1527,21 +1583,20 @@ generatePatchCvs(const OpenSubdiv::Far::TopologyRefiner* refiner,
 
         TextureCV* src = &textureCvs[0];
         for (int level = 1; level < nRefinedLevels; ++level) {
-            TextureCV* dst = src +
-                refiner->GetLevel(level - 1).GetNumFVarValues(
-                sTextureStFVarChannel);
-            OpenSubdiv::Far::PrimvarRefiner(*refiner).InterpolateFaceVarying(
-                level, src, dst, sTextureStFVarChannel);
+            TextureCV* dst = src + refiner->GetLevel(level - 1).GetNumFVarValues(sTextureStFVarChannel);
+            OpenSubdiv::Far::PrimvarRefiner(*refiner).InterpolateFaceVarying(level,
+                                                                             src, dst,
+                                                                             sTextureStFVarChannel);
             src = dst;
         }
         patchTable->ComputeLocalPointValuesFaceVarying(&textureCvs[0],
-            &textureCvs[nFVarRefinerVertices], sTextureStFVarChannel);
+                                                       &textureCvs[nFVarRefinerVertices],
+                                                       sTextureStFVarChannel);
 
         // see comment in variable initialized location for detail explanation
         // why we need to do this OpenSubdiv-3.1 workaround.
         if (requireUniformFix) {
-            size_t fvarPatchPointOffset =
-                refiner->GetLevel(0).GetNumFVarValues(sTextureStFVarChannel);
+            size_t fvarPatchPointOffset = refiner->GetLevel(0).GetNumFVarValues(sTextureStFVarChannel);
             for (size_t i = fvarPatchPointOffset; i < textureCvs.size(); ++i) {
                 textureCvs[i - fvarPatchPointOffset] = textureCvs[i];
             }
@@ -1554,95 +1609,98 @@ generatePatchCvs(const OpenSubdiv::Far::TopologyRefiner* refiner,
 
         TextureCV* src = &textureCvs[0];
         for (int level = 1; level < nRefinedLevels; ++level) {
-            TextureCV* dst = src +
-                refiner->GetLevel(level - 1).GetNumVertices();
-            OpenSubdiv::Far::PrimvarRefiner(*refiner).Interpolate(
-                level, src, dst);
+            TextureCV* dst = src + refiner->GetLevel(level - 1).GetNumVertices();
+            OpenSubdiv::Far::PrimvarRefiner(*refiner).Interpolate(level,
+                                                                  src, dst);
             src = dst;
         }
         patchTable->ComputeLocalPointValues(&textureCvs[0],
-            &textureCvs[nRefinerVertices]);
+                                            &textureCvs[nRefinerVertices]);
     }
 }
 
 void
 generatePrimVarCvs(const OpenSubdiv::Far::TopologyRefiner* refiner,
-        const OpenSubdiv::Far::PatchTable* patchTable,
-        Attributes* primitiveAttributes,
-        FaceVaryingAttributes& faceVaryingAttributes,
-        size_t controlVertexCount,
-        std::vector<float>& varyingData,
-        std::vector<PrimVarCV>& varyingPrimVarCvs,
-        std::vector<float>& vertexData,
-        std::vector<PrimVarCV>& vertexPrimVarCvs,
-        std::unordered_map<int, std::vector<PrimVarCV>>& faceVaryingPrimVarCvs,
-        bool requireUniformFix)
+                   const OpenSubdiv::Far::PatchTable* patchTable,
+                   Attributes* primitiveAttributes,
+                   FaceVaryingAttributes& faceVaryingAttributes,
+                   size_t controlVertexCount,
+                   std::vector<float>& varyingData,
+                   std::vector<PrimVarCV>& varyingPrimVarCvs,
+                   std::vector<float>& vertexData,
+                   std::vector<PrimVarCV>& vertexPrimVarCvs,
+                   std::unordered_map<int, std::vector<PrimVarCV>>& faceVaryingPrimVarCvs,
+                   bool requireUniformFix)
 {
     // compute the total number of points we need to evaluate patchTable
     // we use local points around extraordinary features.
     int nRefinerVertices = refiner->GetNumVerticesTotal();
     int nRefinedLevels = refiner->GetNumLevels();
+
     if (primitiveAttributes->hasVaryingAttributes()) {
         int nLocalPoints = patchTable->GetNumLocalPointsVarying();
-        size_t floatPerCV =
-            primitiveAttributes->getVaryingAttributesStride() / sizeof(float);
-        varyingData.resize(
-            (nRefinerVertices + nLocalPoints) * floatPerCV);
+        size_t floatPerCV = primitiveAttributes->getVaryingAttributesStride() / sizeof(float);
+        varyingData.resize((nRefinerVertices + nLocalPoints) * floatPerCV);
         varyingPrimVarCvs.resize(nRefinerVertices + nLocalPoints);
+
         // this is the buffer we are going to write tessellated attributes into
         // but we need to keep its current content (per control vertex attributes)
         // during tessellation stage for patch evaluation, so we copy the
         // current content to a temporary buffer varyingData
         float* attributesData = primitiveAttributes->getVaryingAttributesData();
         std::copy(attributesData,
-            attributesData + floatPerCV * controlVertexCount,
-            varyingData.begin());
+                  attributesData + floatPerCV * controlVertexCount,
+                  varyingData.begin());
+
         for (size_t i = 0; i < varyingPrimVarCvs.size(); ++i) {
             varyingPrimVarCvs[i].mData = &(varyingData[i * floatPerCV]);
             varyingPrimVarCvs[i].mFloatPerCV= floatPerCV;
         }
+
         PrimVarCV* src = &varyingPrimVarCvs[0];
         for (int level = 1; level < nRefinedLevels; ++level) {
-            PrimVarCV* dst = src +
-                refiner->GetLevel(level - 1).GetNumVertices();
+            PrimVarCV* dst = src + refiner->GetLevel(level - 1).GetNumVertices();
             OpenSubdiv::Far::PrimvarRefiner(*refiner).InterpolateVarying(level,
-                src, dst);
+                                                                         src, dst);
             src = dst;
         }
+
         // evaluate local points from interpolated patchCvs
         patchTable->ComputeLocalPointValuesVarying(&varyingPrimVarCvs[0],
-            &varyingPrimVarCvs[nRefinerVertices]);
+                                                   &varyingPrimVarCvs[nRefinerVertices]);
     }
+
     if (primitiveAttributes->hasVertexAttributes()) {
         int nLocalPoints = patchTable->GetNumLocalPoints();
-        size_t floatPerCV =
-            primitiveAttributes->getVertexAttributesStride() / sizeof(float);
-        vertexData.resize(
-            (nRefinerVertices + nLocalPoints) * floatPerCV);
+        size_t floatPerCV = primitiveAttributes->getVertexAttributesStride() / sizeof(float);
+        vertexData.resize((nRefinerVertices + nLocalPoints) * floatPerCV);
         vertexPrimVarCvs.resize(nRefinerVertices + nLocalPoints);
+
         // this is the buffer we are going to write tessellated attributes into
         // but we need to keep its current content (per control vertex attributes)
         // during tessellation stage for patch evaluation, so we copy the
         // current content to a temporary buffer vertexData
         float* attributesData = primitiveAttributes->getVertexAttributesData();
         std::copy(attributesData,
-            attributesData + floatPerCV * controlVertexCount,
-            vertexData.begin());
+                  attributesData + floatPerCV * controlVertexCount,
+                  vertexData.begin());
+
         for (size_t i = 0; i < vertexPrimVarCvs.size(); ++i) {
             vertexPrimVarCvs[i].mData = &(vertexData[i * floatPerCV]);
             vertexPrimVarCvs[i].mFloatPerCV= floatPerCV;
         }
+
         PrimVarCV* src = &vertexPrimVarCvs[0];
         for (int level = 1; level < nRefinedLevels; ++level) {
-            PrimVarCV* dst = src +
-                refiner->GetLevel(level - 1).GetNumVertices();
+            PrimVarCV* dst = src + refiner->GetLevel(level - 1).GetNumVertices();
             OpenSubdiv::Far::PrimvarRefiner(*refiner).Interpolate(level,
-                src, dst);
+                                                                  src, dst);
             src = dst;
         }
+
         // evaluate local points from interpolated patchCvs
         patchTable->ComputeLocalPointValues(&vertexPrimVarCvs[0],
-            &vertexPrimVarCvs[nRefinerVertices]);
+                                            &vertexPrimVarCvs[nRefinerVertices]);
     }
 
     for (auto& key: faceVaryingAttributes.getAllKeys()) {
@@ -1650,8 +1708,7 @@ generatePrimVarCvs(const OpenSubdiv::Far::TopologyRefiner* refiner,
         size_t floatPerCV = attributeBuffer.mFloatPerVertex;
         int channel = attributeBuffer.mChannel;
         int nFVarRefinerVertices = refiner->GetNumFVarValuesTotal(channel);
-        int nFVarLocalPoints = patchTable->GetNumLocalPointsFaceVarying(
-            channel);
+        int nFVarLocalPoints = patchTable->GetNumLocalPointsFaceVarying(channel);
         int cvCount = nFVarRefinerVertices + nFVarLocalPoints;
         attributeBuffer.mData.resize(floatPerCV * cvCount);
         std::vector<PrimVarCV> primVarCVs(cvCount);
@@ -1661,20 +1718,21 @@ generatePrimVarCvs(const OpenSubdiv::Far::TopologyRefiner* refiner,
         }
         PrimVarCV* src = &primVarCVs[0];
         for (int level = 1; level < nRefinedLevels; ++level) {
-            PrimVarCV* dst = src +
-                refiner->GetLevel(level - 1).GetNumFVarValues(channel);
-            OpenSubdiv::Far::PrimvarRefiner(*refiner).InterpolateFaceVarying(
-                level, src, dst, channel);
+            PrimVarCV* dst = src + refiner->GetLevel(level - 1).GetNumFVarValues(channel);
+            OpenSubdiv::Far::PrimvarRefiner(*refiner).InterpolateFaceVarying(level,
+                                                                             src, dst,
+                                                                             channel);
             src = dst;
         }
+
         patchTable->ComputeLocalPointValuesFaceVarying(&primVarCVs[0],
-            &primVarCVs[nFVarRefinerVertices], channel);
+                                                       &primVarCVs[nFVarRefinerVertices],
+                                                       channel);
 
         // see comment in variable initialized location for detail explanation
         // why we need to do this OpenSubdiv-3.1 workaround.
         if (requireUniformFix) {
-            size_t fvarPatchPointOffset =
-                refiner->GetLevel(0).GetNumFVarValues(channel);
+            size_t fvarPatchPointOffset = refiner->GetLevel(0).GetNumFVarValues(channel);
             for (size_t i = fvarPatchPointOffset; i < primVarCVs.size(); ++i) {
                 primVarCVs[i - fvarPatchPointOffset] = primVarCVs[i];
             }
@@ -1685,37 +1743,31 @@ generatePrimVarCvs(const OpenSubdiv::Far::TopologyRefiner* refiner,
 
 void
 evalLimitSurface(const OpenSubdiv::Far::PatchTable* patchTable,
-        const std::vector<LimitSurfaceSample>& limitSurfaceSamples,
-        const std::vector<PatchCV>& patchCvs,
-        const std::vector<TextureCV>& textureCvs,
-        AttributeRate textureRate,
-        SubdivisionMesh::VertexBuffer& tessellatedVertices,
-        VertexBuffer<Vec3f, InterleavedTraits>& surfaceNormal,
-        VertexBuffer<Vec2f, InterleavedTraits>& surfaceSt,
-        VertexBuffer<Vec3f, InterleavedTraits>& surfaceDpds,
-        VertexBuffer<Vec3f, InterleavedTraits>& surfaceDpdt,
-        std::vector<DisplacementFootprint>& displacementFootprints,
-        bool& hasBadDerivatives, bool requireUniformFix,
-        uint motionSampleCount)
+                 const std::vector<LimitSurfaceSample>& limitSurfaceSamples,
+                 const std::vector<PatchCV>& patchCvs,
+                 const std::vector<TextureCV>& textureCvs,
+                 AttributeRate textureRate,
+                 SubdivisionMesh::VertexBuffer& tessellatedVertices,
+                 VertexBuffer<Vec3f, InterleavedTraits>& surfaceNormal,
+                 VertexBuffer<Vec2f, InterleavedTraits>& surfaceSt,
+                 VertexBuffer<Vec3f, InterleavedTraits>& surfaceDpds,
+                 VertexBuffer<Vec3f, InterleavedTraits>& surfaceDpdt,
+                 std::vector<DisplacementFootprint>& displacementFootprints,
+                 bool& hasBadDerivatives, bool requireUniformFix,
+                 uint motionSampleCount)
 {
     // allocate tessellated vertex/index buffer to hold the evaluation result
     size_t tessellatedVertexCount = limitSurfaceSamples.size();
-    tessellatedVertices = SubdivisionMesh::VertexBuffer(
-        tessellatedVertexCount, motionSampleCount);
-    surfaceNormal = VertexBuffer<Vec3f, InterleavedTraits>(
-        tessellatedVertexCount, motionSampleCount);
-    surfaceSt = VertexBuffer<Vec2f, InterleavedTraits>(
-        tessellatedVertexCount, 1);
-    surfaceDpds = VertexBuffer<Vec3f, InterleavedTraits>(
-        tessellatedVertexCount, motionSampleCount);
-    surfaceDpdt = VertexBuffer<Vec3f, InterleavedTraits>(
-        tessellatedVertexCount, motionSampleCount);
+    tessellatedVertices = SubdivisionMesh::VertexBuffer(tessellatedVertexCount, motionSampleCount);
+    surfaceNormal = VertexBuffer<Vec3f, InterleavedTraits>(tessellatedVertexCount, motionSampleCount);
+    surfaceSt = VertexBuffer<Vec2f, InterleavedTraits>(tessellatedVertexCount, 1);
+    surfaceDpds = VertexBuffer<Vec3f, InterleavedTraits>(tessellatedVertexCount, motionSampleCount);
+    surfaceDpdt = VertexBuffer<Vec3f, InterleavedTraits>(tessellatedVertexCount, motionSampleCount);
     displacementFootprints.resize(tessellatedVertexCount);
     bool hasTextureSt = textureRate != RATE_UNKNOWN;
     hasBadDerivatives = false;
     OpenSubdiv::Far::PatchMap patchMap(*patchTable);
-    tbb::blocked_range<size_t> range =
-        tbb::blocked_range<size_t>(0, tessellatedVertexCount);
+    tbb::blocked_range<size_t> range = tbb::blocked_range<size_t>(0, tessellatedVertexCount);
     tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
         for (size_t i = r.begin(); i < r.end(); ++i) {
             int fid = limitSurfaceSamples[i].mFaceId;
@@ -1724,8 +1776,7 @@ evalLimitSurface(const OpenSubdiv::Far::PatchTable* patchTable,
             }
             const Vec2f& uv = limitSurfaceSamples[i].mUv;
             const Vec2f& uvDelta = limitSurfaceSamples[i].mUvDelta;
-            const OpenSubdiv::Far::PatchTable::PatchHandle* handle =
-                patchMap.FindPatch(fid, uv[0], uv[1]);
+            const OpenSubdiv::Far::PatchTable::PatchHandle* handle = patchMap.FindPatch(fid, uv[0], uv[1]);
             // 20 is the maximum patch control point number opensubdiv use
             // (Gregory patch in particular)
             float pWeights[20];
@@ -1735,8 +1786,14 @@ evalLimitSurface(const OpenSubdiv::Far::PatchTable* patchTable,
             float duvWeights[20];
             float dvvWeights[20];
             const auto& cvIndices = patchTable->GetPatchVertices(*handle);
-            patchTable->EvaluateBasis(*handle, uv[0], uv[1], pWeights,
-                duWeights, dvWeights, duuWeights, duvWeights, dvvWeights);
+            patchTable->EvaluateBasis(*handle,
+                                      uv[0], uv[1],
+                                      pWeights,
+                                      duWeights,
+                                      dvWeights,
+                                      duuWeights,
+                                      duvWeights,
+                                      dvvWeights);
             Vec3fa pos[motionSampleCount];
             Vec3fa dpdu[motionSampleCount];
             Vec3fa dpdv[motionSampleCount];
@@ -1765,8 +1822,7 @@ evalLimitSurface(const OpenSubdiv::Far::PatchTable* patchTable,
             for (size_t t = 0; t < motionSampleCount; ++t) {
                 tessellatedVertices(i, t) = pos[t];
                 Vec3f N = scene_rdl2::math::cross(dpdu[t], dpdv[t]);
-                float tolerance = 1e-5f *
-                    (scene_rdl2::math::length(dpdu[t]) + scene_rdl2::math::length(dpdv[t]));
+                float tolerance = 1e-5f * (scene_rdl2::math::length(dpdu[t]) + scene_rdl2::math::length(dpdv[t]));
                 if (scene_rdl2::math::length(N) <= tolerance) {
                     // degenerated normal caused by degenerated derivatives,
                     // which can happen when vertices on control face overlap
@@ -1797,17 +1853,19 @@ evalLimitSurface(const OpenSubdiv::Far::PatchTable* patchTable,
                     // and we can use:
                     // N = normalize(dNdu * du + dNdv * dv);
                     //
-                    Vec3fa dndu = scene_rdl2::math::cross(dpduu[t], dpdv[t]) +
-                        scene_rdl2::math::cross(dpdu[t], dpduv[t]);
-                    Vec3fa dndv = scene_rdl2::math::cross(dpduv[t], dpdv[t]) +
-                        scene_rdl2::math::cross(dpdu[t], dpdvv[t]);
+                    Vec3fa dndu = scene_rdl2::math::cross(dpduu[t], dpdv[t]) + scene_rdl2::math::cross(dpdu[t], dpduv[t]);
+                    Vec3fa dndv = scene_rdl2::math::cross(dpduv[t], dpdv[t]) + scene_rdl2::math::cross(dpdu[t], dpdvv[t]);
                     float uFlip = (uv[0] >= 1.0f) ? -1.0f : 1.0f;
                     float vFlip = (uv[1] >= 1.0f) ? -1.0f : 1.0f;
-                    surfaceNormal(i, t) = normalize(
-                        (dndu * uFlip + dndv * vFlip).asVec3f());
+                    surfaceNormal(i, t) = normalize((dndu * uFlip + dndv * vFlip).asVec3f());
+
                     // TODO find a better way to fix the degenerated derivatives
-                    patchTable->EvaluateBasis(*handle, 0.5f, 0.5f, pWeights,
-                        duWeights, dvWeights);
+                    patchTable->EvaluateBasis(*handle,
+                                              0.5f, 0.5f,
+                                              pWeights,
+                                              duWeights,
+                                              dvWeights);
+
                     dpdu[t] = Vec3fa(0.0f);
                     dpdv[t] = Vec3fa(0.0f);
                     for (int j = 0; j < cvIndices.size(); ++j) {
@@ -1815,11 +1873,12 @@ evalLimitSurface(const OpenSubdiv::Far::PatchTable* patchTable,
                         dpdu[t] += duWeights[j] * cv;
                         dpdv[t] += dvWeights[j] * cv;
                     }
-                    // the above approximation still doesn't work, use the fixed
+
+                    // If the above approximation still doesn't work, use the fixed
                     // derivatives to generate shading normal
                     if (!scene_rdl2::math::isFinite(surfaceNormal(i, t))) {
-                        surfaceNormal(i, t) = normalize(
-                            scene_rdl2::math::cross(dpdu[t], dpdv[t]));
+                        surfaceNormal(i, t) = normalize(scene_rdl2::math::cross(dpdu[t], dpdv[t]));
+
                         // really don't know what to do at this point...
                         if (!scene_rdl2::math::isFinite(surfaceNormal(i, t))) {
                             dpdu[t] = Vec3fa(1, 0, 0, 0);
@@ -1838,27 +1897,37 @@ evalLimitSurface(const OpenSubdiv::Far::PatchTable* patchTable,
                 float pWeights[20];
                 float duWeights[20];
                 float dvWeights[20];
-                const auto& textureCvIndices =
-                    textureRate == RATE_FACE_VARYING ?
-                    patchTable->GetPatchFVarValues(*handle, sTextureStFVarChannel) :
-                    patchTable->GetPatchVertices(*handle);
+                const auto& textureCvIndices = textureRate == RATE_FACE_VARYING ?
+                                               patchTable->GetPatchFVarValues(*handle, sTextureStFVarChannel) :
+                                               patchTable->GetPatchVertices(*handle);
 
                 if (!requireUniformFix) {
                     if (textureRate == RATE_FACE_VARYING) {
                         patchTable->EvaluateBasisFaceVarying(*handle,
-                            uv[0], uv[1], pWeights, duWeights, dvWeights,
-                            0, 0, 0, sTextureStFVarChannel);
+                                                             uv[0], uv[1],
+                                                             pWeights,
+                                                             duWeights,
+                                                             dvWeights,
+                                                             0, 0, 0,
+                                                             sTextureStFVarChannel);
                     } else {
                         patchTable->EvaluateBasis(*handle,
-                            uv[0], uv[1], pWeights, duWeights, dvWeights);
+                                                  uv[0], uv[1],
+                                                  pWeights,
+                                                  duWeights,
+                                                  dvWeights);
                     }
                 } else {
                     // see comment in variable initialized location for detail
                     // explanation why we need to do this OpenSubdiv-3.1
                     // workaround.
-                    patchTable->EvaluateBasis(*handle, uv[0], uv[1],
-                        pWeights, duWeights, dvWeights);
+                    patchTable->EvaluateBasis(*handle,
+                                              uv[0], uv[1],
+                                              pWeights,
+                                              duWeights,
+                                              dvWeights);
                 }
+
                 Vec2f st(0.0f);
                 Vec2f dstdu(0.0f);
                 Vec2f dstdv(0.0f);
@@ -1868,12 +1937,14 @@ evalLimitSurface(const OpenSubdiv::Far::PatchTable* patchTable,
                     dstdu += duWeights[j] * cv;
                     dstdv += dvWeights[j] * cv;
                 }
+
                 surfaceSt(i) = st;
                 Vec3f dpds[motionSampleCount];
                 Vec3f dpdt[motionSampleCount];
                 for (size_t t = 0; t < motionSampleCount; ++t) {
                     computePartialsWithRespect2Texture(dpdu[t], dpdv[t],
-                        dstdu, dstdv, dpds[t], dpdt[t]);
+                                                       dstdu, dstdv,
+                                                       dpds[t], dpdt[t]);
                     surfaceDpds(i, t) = dpds[t];
                     surfaceDpdt(i, t) = dpdt[t];
                 }
@@ -1885,10 +1956,8 @@ evalLimitSurface(const OpenSubdiv::Far::PatchTable* patchTable,
                     surfaceDpds(i, t) = dpdu[t];
                     surfaceDpdt(i, t) = dpdv[t];
                 }
-                displacementFootprints[i].mDst[0] =
-                    Vec2f(0.5f * uvDelta[0], 0.0f);
-                displacementFootprints[i].mDst[1] =
-                    Vec2f(0.0f, 0.5f * uvDelta[1]);
+                displacementFootprints[i].mDst[0] = Vec2f(0.5f * uvDelta[0], 0.0f);
+                displacementFootprints[i].mDst[1] = Vec2f(0.0f, 0.5f * uvDelta[1]);
             }
         }
     });
@@ -1896,28 +1965,27 @@ evalLimitSurface(const OpenSubdiv::Far::PatchTable* patchTable,
 
 void
 evalLimitAttributes(const OpenSubdiv::Far::PatchTable* patchTable,
-        const std::vector<LimitSurfaceSample>& limitSurfaceSamples,
-        const std::vector<PrimVarCV>& varyingPrimVarCvs,
-        const std::vector<PrimVarCV>& vertexPrimVarCvs,
-        const std::unordered_map<int, std::vector<LimitSurfaceSample>>&
-        fvarLimitSamples,
-        const std::unordered_map<int, std::vector<PrimVarCV>>&
-        faceVaryingPrimVarCvs,
-        std::unordered_map<int, SubdivisionMesh::IndexBuffer>&& fvarIndices,
-        Attributes* primitiveAttributes,
-        FaceVaryingAttributes& faceVaryingAttributes,
-        bool requireUniformFix)
+                    const std::vector<LimitSurfaceSample>& limitSurfaceSamples,
+                    const std::vector<PrimVarCV>& varyingPrimVarCvs,
+                    const std::vector<PrimVarCV>& vertexPrimVarCvs,
+                    const std::unordered_map<int, std::vector<LimitSurfaceSample>>&
+                    fvarLimitSamples,
+                    const std::unordered_map<int, std::vector<PrimVarCV>>&
+                    faceVaryingPrimVarCvs,
+                    std::unordered_map<int, SubdivisionMesh::IndexBuffer>&& fvarIndices,
+                    Attributes* primitiveAttributes,
+                    FaceVaryingAttributes& faceVaryingAttributes,
+                    bool requireUniformFix)
 {
     OpenSubdiv::Far::PatchMap patchMap(*patchTable);
     size_t tessellatedVertexCount = limitSurfaceSamples.size();
+
     if (primitiveAttributes->hasVaryingAttributes()) {
-         // allocate tessellated attributes buffer to hold the evaluation result
+        // allocate tessellated attributes buffer to hold the evaluation result
         primitiveAttributes->resizeVaryingAttributes(tessellatedVertexCount);
         float* attributesData = primitiveAttributes->getVaryingAttributesData();
-        size_t floatPerCV =
-            primitiveAttributes->getVaryingAttributesStride() / sizeof(float);
-        tbb::blocked_range<size_t> range =
-            tbb::blocked_range<size_t>(0, tessellatedVertexCount);
+        size_t floatPerCV = primitiveAttributes->getVaryingAttributesStride() / sizeof(float);
+        tbb::blocked_range<size_t> range = tbb::blocked_range<size_t>(0, tessellatedVertexCount);
         tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
             for (size_t i = r.begin(); i < r.end(); ++i) {
                 int fid = limitSurfaceSamples[i].mFaceId;
@@ -1925,13 +1993,13 @@ evalLimitAttributes(const OpenSubdiv::Far::PatchTable* patchTable,
                     continue;
                 }
                 const Vec2f& uv = limitSurfaceSamples[i].mUv;
-                const OpenSubdiv::Far::PatchTable::PatchHandle* handle =
-                    patchMap.FindPatch(fid, uv[0], uv[1]);
+                const OpenSubdiv::Far::PatchTable::PatchHandle* handle = patchMap.FindPatch(fid,
+                                                                                            uv[0], uv[1]);
                 float vWeights[20];
-                const auto& cvIndices = patchTable->GetPatchVaryingVertices(
-                    *handle);
-                patchTable->EvaluateBasisVarying(
-                    *handle, uv[0], uv[1], vWeights);
+                const auto& cvIndices = patchTable->GetPatchVaryingVertices(*handle);
+                patchTable->EvaluateBasisVarying(*handle,
+                                                 uv[0], uv[1],
+                                                 vWeights);
                 float* result = attributesData + i * floatPerCV;
                 memset(result, 0, sizeof(float) * floatPerCV);
                 for (int j = 0; j < cvIndices.size(); ++j) {
@@ -1948,10 +2016,8 @@ evalLimitAttributes(const OpenSubdiv::Far::PatchTable* patchTable,
         // allocate tessellated attributes buffer to hold the evaluation result
         primitiveAttributes->resizeVertexAttributes(tessellatedVertexCount);
         float* attributesData = primitiveAttributes->getVertexAttributesData();
-        size_t floatPerCV =
-            primitiveAttributes->getVertexAttributesStride() / sizeof(float);
-        tbb::blocked_range<size_t> range =
-            tbb::blocked_range<size_t>(0, tessellatedVertexCount);
+        size_t floatPerCV = primitiveAttributes->getVertexAttributesStride() / sizeof(float);
+        tbb::blocked_range<size_t> range = tbb::blocked_range<size_t>(0, tessellatedVertexCount);
         tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
             for (size_t i = r.begin(); i < r.end(); ++i) {
                 int fid = limitSurfaceSamples[i].mFaceId;
@@ -1959,8 +2025,8 @@ evalLimitAttributes(const OpenSubdiv::Far::PatchTable* patchTable,
                     continue;
                 }
                 const Vec2f& uv = limitSurfaceSamples[i].mUv;
-                const OpenSubdiv::Far::PatchTable::PatchHandle* handle =
-                    patchMap.FindPatch(fid, uv[0], uv[1]);
+                const OpenSubdiv::Far::PatchTable::PatchHandle* handle = patchMap.FindPatch(fid,
+                                                                                            uv[0], uv[1]);
                 float vWeights[20];
                 const auto& cvIndices = patchTable->GetPatchVertices(*handle);
                 patchTable->EvaluateBasis(*handle, uv[0], uv[1], vWeights);
@@ -1980,15 +2046,11 @@ evalLimitAttributes(const OpenSubdiv::Far::PatchTable* patchTable,
         auto& attributeBuffer = faceVaryingAttributes.getAttributeBuffer(key);
         size_t floatPerCV = attributeBuffer.mFloatPerVertex;
         int channel = attributeBuffer.mChannel;
-        const std::vector<LimitSurfaceSample>& limitSamples =
-            fvarLimitSamples.find(channel)->second;
-        const std::vector<PrimVarCV>& primVarCVs =
-            faceVaryingPrimVarCvs.find(channel)->second;
+        const std::vector<LimitSurfaceSample>& limitSamples = fvarLimitSamples.find(channel)->second;
+        const std::vector<PrimVarCV>& primVarCVs = faceVaryingPrimVarCvs.find(channel)->second;
         size_t fvarTessellatedVertexCount = limitSamples.size();
-        std::vector<float> tessellatedData(
-            fvarTessellatedVertexCount * floatPerCV);
-        tbb::blocked_range<size_t> range =
-            tbb::blocked_range<size_t>(0, fvarTessellatedVertexCount);
+        std::vector<float> tessellatedData(fvarTessellatedVertexCount * floatPerCV);
+        tbb::blocked_range<size_t> range = tbb::blocked_range<size_t>(0, fvarTessellatedVertexCount);
         tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
             for (size_t i = r.begin(); i < r.end(); ++i) {
                 int fid = limitSamples[i].mFaceId;
@@ -1996,21 +2058,27 @@ evalLimitAttributes(const OpenSubdiv::Far::PatchTable* patchTable,
                     continue;
                 }
                 const Vec2f& uv = limitSamples[i].mUv;
-                const OpenSubdiv::Far::PatchTable::PatchHandle* handle =
-                    patchMap.FindPatch(fid, uv[0], uv[1]);
+                const OpenSubdiv::Far::PatchTable::PatchHandle* handle = patchMap.FindPatch(fid,
+                                                                                            uv[0], uv[1]);
                 float fvWeights[20];
-                const auto& cvIndices = patchTable->GetPatchFVarValues(
-                    *handle, channel);
+                const auto& cvIndices = patchTable->GetPatchFVarValues(*handle,
+                                                                       channel);
 
                 if (!requireUniformFix) {
-                    patchTable->EvaluateBasisFaceVarying(*handle, uv[0], uv[1],
-                        fvWeights, 0, 0, 0, 0, 0, channel);
+                    patchTable->EvaluateBasisFaceVarying(*handle,
+                                                         uv[0], uv[1],
+                                                         fvWeights,
+                                                         0, 0, 0, 0, 0,
+                                                         channel);
                 } else {
                     // see comment in variable initialized location for detail
                     // explanation why we need to do this OpenSubdiv-3.1
                     // workaround.
-                    patchTable->EvaluateBasis(*handle, uv[0], uv[1], fvWeights);
+                    patchTable->EvaluateBasis(*handle,
+                                              uv[0], uv[1],
+                                              fvWeights);
                 }
+
                 float* result = &tessellatedData[i * floatPerCV];
                 memset(result, 0, sizeof(float) * floatPerCV);
                 for (int j = 0; j < cvIndices.size(); ++j) {
@@ -2021,6 +2089,7 @@ evalLimitAttributes(const OpenSubdiv::Far::PatchTable* patchTable,
                 }
             }
         });
+
         // replace the primvar control points with final tesselalted result
         attributeBuffer.mData.swap(tessellatedData);
         attributeBuffer.mIndices.swap(fvarIndices.find(channel)->second);
@@ -2028,14 +2097,17 @@ evalLimitAttributes(const OpenSubdiv::Far::PatchTable* patchTable,
 }
 
 void
-OpenSubdivMesh::tessellate(const TessellationParams& tessellationParams, TessellationStats& stats)
+OpenSubdivMesh::tessellate(const TessellationParams& tessellationParams,
+                           TessellationStats& stats)
 {
     if (mIsMeshFinalized) {
         return;
     }
 
     MNRY_ASSERT_REQUIRE(mControlMeshData);
+
     auto& primitiveAttributeTable = mControlMeshData->mPrimitiveAttributeTable;
+
     // process texture st if it is provided
     bool hasTextureSt = mControlMeshData->initTextureSt();
     if (hasTextureSt) {
@@ -2050,6 +2122,7 @@ OpenSubdivMesh::tessellate(const TessellationParams& tessellationParams, Tessell
             primitiveAttributeTable.erase(StandardAttributes::sUv);
         }
     }
+
     int controlVertexCount = mControlMeshData->mVertices.size();
 
     // extract out face varying attributes. At this moment the Attributes API
@@ -2059,11 +2132,13 @@ OpenSubdivMesh::tessellate(const TessellationParams& tessellationParams, Tessell
     // and interpolation separately from attributes with other rate.
     // if there is face varying texture st, it would occupy the first
     // face varying channel
-    int firstFaceVaryingChannel =
-        mControlMeshData->mTextureRate == RATE_FACE_VARYING ? 1 : 0;
+    int firstFaceVaryingChannel = mControlMeshData->mTextureRate == RATE_FACE_VARYING ? 1 : 0;
     mFaceVaryingAttributes.reset(new FaceVaryingAttributes(controlVertexCount,
-        mControlMeshData->mFaceVertexCount, mControlMeshData->mIndices,
-        primitiveAttributeTable, firstFaceVaryingChannel));
+                                                           mControlMeshData->mFaceVertexCount,
+                                                           mControlMeshData->mIndices,
+                                                           primitiveAttributeTable,
+                                                           firstFaceVaryingChannel));
+
     // Remove face varying attributes from primitiveAttributeTable
     // to avoid duplicated memory usage
     for (auto& key : mFaceVaryingAttributes->getAllKeys()) {
@@ -2072,9 +2147,11 @@ OpenSubdivMesh::tessellate(const TessellationParams& tessellationParams, Tessell
 
     // interleave PrimitiveAttributeTable
     setAttributes(Attributes::interleave(primitiveAttributeTable,
-        mPartCount,
-        mControlMeshData->mFaceVertexCount.size(), controlVertexCount,
-        mControlMeshData->mFaceVertexCount, controlVertexCount));
+                                         mPartCount,
+                                         mControlMeshData->mFaceVertexCount.size(),
+                                         controlVertexCount,
+                                         mControlMeshData->mFaceVertexCount,
+                                         controlVertexCount));
 
     getAttributes()->transformAttributes(mControlMeshData->mXforms,
                                          mControlMeshData->mShutterOpenDelta,
@@ -2086,17 +2163,20 @@ OpenSubdivMesh::tessellate(const TessellationParams& tessellationParams, Tessell
     // reverse normals reverses orientation and negates normals
     if (mIsNormalReversed) {
         reverseOrientation(mControlMeshData->mFaceVertexCount,
-                         mControlMeshData->mIndices, mAttributes);
+                           mControlMeshData->mIndices,
+                           mAttributes);
+
         if (hasTextureSt) {
             mControlMeshData->reverseTextureIndices();
         }
+
         // we extract all the face varying attributes to
         // mFaceVaryingAttributes now (instead of having them
         // live in mAttributes) so we need to manually reverse
         // their indices here
-        mFaceVaryingAttributes->reverseControlIndices(
-            mControlMeshData->mFaceVertexCount);
+        mFaceVaryingAttributes->reverseControlIndices(mControlMeshData->mFaceVertexCount);
     }
+
     if (mIsNormalReversed) mAttributes->negateNormal();
 
     // get the rdl layer
@@ -2107,85 +2187,113 @@ OpenSubdivMesh::tessellate(const TessellationParams& tessellationParams, Tessell
 
     // calculate edge tessellation factor based on either user specified
     // resolution (uniform) or camera frustum info (adaptive)
-    std::vector<SubdTessellationFactor> tessellationFactors =
-        computeSubdTessellationFactor(pRdlLayer, tessellationParams.mFrustums, tessellationParams.mFishtums,
-            tessellationParams.mEnableDisplacement, noTessellation);
+    std::vector<SubdTessellationFactor> tessellationFactors = computeSubdTessellationFactor(pRdlLayer,
+                                                                                            tessellationParams.mFrustums,
+                                                                                            tessellationParams.mFishtums,
+                                                                                            tessellationParams.mEnableDisplacement,
+                                                                                            noTessellation);
+
     stats.mMemoryUsed += tessellationFactors.size() * sizeof(SubdTessellationFactor);
 
     // analyze control faces and generate quadTopologies, which are used
     // for generating tessellated vertices and indices later
 
     // A bit confusing when texture st is using vertex rate instead of
-    // face varying rate... the faceVaryingIndices is "potentially"
-    // face varying that if you feed in a vertex rate it still works fine
+    // face varying rate.  The faceVaryingIndices is "potentially"
+    // face varying but if you feed in a vertex rate it still works fine.
     // With face varying rate it will locate edges that use different
-    // vertex values in neighbor faces, with vertex rate we will not find
-    // this kind of edges
+    // vertex values in the neighbor faces.  With vertex rate we will not find
+    // these kind of edges
     const SubdivisionMesh::IndexBuffer& faceVaryingIndices = hasTextureSt ?
-        mControlMeshData->mTextureIndices : mControlMeshData->mIndices;
+                                                             mControlMeshData->mTextureIndices :
+                                                             mControlMeshData->mIndices;
+
     size_t coarseVertexCount = hasTextureSt ?
-        mControlMeshData->mTextureVertices.size() :
-        mControlMeshData->mVertices.size();
+                               mControlMeshData->mTextureVertices.size() :
+                               mControlMeshData->mVertices.size();
+
     SubdTopologyIdLookup topologyIdLookup(coarseVertexCount,
-        mControlMeshData->mFaceVertexCount, mControlMeshData->mIndices,
-        faceVaryingIndices, noTessellation);
-    std::vector<SubdQuadTopology> quadTopologies = generateSubdQuadTopology(
-        pRdlLayer, topologyIdLookup, mControlMeshData->mFaceVertexCount,
-        faceVaryingIndices, noTessellation);
+                                          mControlMeshData->mFaceVertexCount,
+                                          mControlMeshData->mIndices,
+                                          faceVaryingIndices,
+                                          noTessellation);
+
+    std::vector<SubdQuadTopology> quadTopologies = generateSubdQuadTopology(pRdlLayer,
+                                                                            topologyIdLookup,
+                                                                            mControlMeshData->mFaceVertexCount,
+                                                                            faceVaryingIndices,
+                                                                            noTessellation);
+
     stats.mMemoryUsed += quadTopologies.size() * sizeof(SubdQuadTopology);
 
     MNRY_ASSERT_REQUIRE(tessellationFactors.size() == quadTopologies.size());
+
     SubdTessellatedVertexLookup tessellatedVertexLookup(quadTopologies,
-        topologyIdLookup, tessellationFactors, noTessellation);
+                                                        topologyIdLookup,
+                                                        tessellationFactors,
+                                                        noTessellation);
+
     // generate the tessellated index buffer and
     // sample points for limit surface evaluation
     std::vector<LimitSurfaceSample> limitSurfaceSamples;
     mTessellatedToControlFace.clear();
+
     generateIndexBufferAndSurfaceSamples(quadTopologies,
-        tessellatedVertexLookup, noTessellation, mTessellatedIndices,
-        limitSurfaceSamples, &mTessellatedToControlFace);
+                                         tessellatedVertexLookup,
+                                         noTessellation,
+                                         mTessellatedIndices,
+                                         limitSurfaceSamples,
+                                         &mTessellatedToControlFace);
+
     // for each face varying attribute, generate its own limitSurfaceSamples
     // and tessellated index buffer
     std::unordered_map<int, std::vector<LimitSurfaceSample>> fvarLimitSamples;
     std::unordered_map<int, SubdivisionMesh::IndexBuffer> fvarIndices;
     for (auto& key: mFaceVaryingAttributes->getAllKeys()) {
+
         auto& attributeBuffer = mFaceVaryingAttributes->getAttributeBuffer(key);
+
         SubdTopologyIdLookup fvarTopologyIdLookup(attributeBuffer.getVertexCount(),
-            mControlMeshData->mFaceVertexCount, attributeBuffer.mIndices,
-            noTessellation);
-        std::vector<SubdQuadTopology> fvarQuadTopologies =
-            generateSubdQuadTopology(pRdlLayer,
-            fvarTopologyIdLookup, mControlMeshData->mFaceVertexCount,
-            attributeBuffer.mIndices, noTessellation);
+                                                  mControlMeshData->mFaceVertexCount,
+                                                  attributeBuffer.mIndices,
+                                                  noTessellation);
+
+        std::vector<SubdQuadTopology> fvarQuadTopologies = generateSubdQuadTopology(pRdlLayer,
+                                                                                    fvarTopologyIdLookup,
+                                                                                    mControlMeshData->mFaceVertexCount,
+                                                                                    attributeBuffer.mIndices,
+                                                                                    noTessellation);
         stats.mMemoryUsed += fvarQuadTopologies.size() * sizeof(SubdQuadTopology);
 
-        MNRY_ASSERT_REQUIRE(
-            tessellationFactors.size() == fvarQuadTopologies.size());
-        SubdTessellatedVertexLookup fvarTessellatedVertexLookup(
-            fvarQuadTopologies, fvarTopologyIdLookup,
-            tessellationFactors, noTessellation);
+        MNRY_ASSERT_REQUIRE(tessellationFactors.size() == fvarQuadTopologies.size());
+
+        SubdTessellatedVertexLookup fvarTessellatedVertexLookup(fvarQuadTopologies,
+                                                                fvarTopologyIdLookup,
+                                                                tessellationFactors,
+                                                                noTessellation);
+
         std::vector<LimitSurfaceSample> limitSamples;
         SubdivisionMesh::IndexBuffer tessellatedIndices;
         generateIndexBufferAndSurfaceSamples(fvarQuadTopologies,
-            fvarTessellatedVertexLookup, noTessellation, tessellatedIndices,
-            limitSamples);
+                                             fvarTessellatedVertexLookup,
+                                             noTessellation,
+                                             tessellatedIndices,
+                                             limitSamples);
+
         stats.mMemoryUsed += limitSamples.size() * sizeof(LimitSurfaceSample);
 
-        fvarLimitSamples.insert(
-            {attributeBuffer.mChannel, std::move(limitSamples)});
-        fvarIndices.insert(
-            {attributeBuffer.mChannel, tessellatedIndices});
+        fvarLimitSamples.insert({attributeBuffer.mChannel, std::move(limitSamples)});
+        fvarIndices.insert({attributeBuffer.mChannel, tessellatedIndices});
     }
 
     stats.mMemoryUsed += limitSurfaceSamples.size() * sizeof(LimitSurfaceSample);
 
     // generate a TopologyRefiner
-    OpenSubdiv::Far::TopologyRefiner* refiner = createTopologyRefiner(
-        *mControlMeshData, *mFaceVaryingAttributes);
+    OpenSubdiv::Far::TopologyRefiner* refiner = createTopologyRefiner(*mControlMeshData,
+                                                                      *mFaceVaryingAttributes);
 
-    bool hasFaceVaryingAttributes =
-        mControlMeshData->mTextureRate == RATE_FACE_VARYING ||
-        mFaceVaryingAttributes->getAllKeys().size() > 0;
+    bool hasFaceVaryingAttributes = mControlMeshData->mTextureRate == RATE_FACE_VARYING ||
+                                    mFaceVaryingAttributes->getAllKeys().size() > 0;
 
     // Unfortunate work around for OpenSubdiv-3.1...
     // There are two problems/bugs with the way a PatchTable is constructed
@@ -2226,8 +2334,7 @@ OpenSubdivMesh::tessellate(const TessellationParams& tessellationParams, Tessell
     bool requireUniformFix = false;
     bool hasCreaseOrCorner = this->hasSubdCreases() || this->hasSubdCorners();
     if (mControlMeshData->mScheme != SubdivisionMesh::Scheme::CATMULL_CLARK) {
-        refiner->RefineUniform(
-           OpenSubdiv::Far::TopologyRefiner::UniformOptions(1));
+        refiner->RefineUniform(OpenSubdiv::Far::TopologyRefiner::UniformOptions(1));
         requireUniformFix = true;
     } else {
         // determine a suitably accurate depth for feature adaptive refinement
@@ -2236,12 +2343,8 @@ OpenSubdivMesh::tessellate(const TessellationParams& tessellationParams, Tessell
         // avoid over-representing irregular features beyond tessellation accuracy
         const int maxCreaseDepth = 6;
 
-        int tessDepth = scene_rdl2::math::clamp(
-            scene_rdl2::math::log2i(tessellatedVertexLookup.getMaxEdgeResolution()) + 1,
-            1, 10);
-
+        int tessDepth = scene_rdl2::math::clamp(scene_rdl2::math::log2i(tessellatedVertexLookup.getMaxEdgeResolution()) + 1, 1, 10);
         int creaseDepth = hasCreaseOrCorner ? maxCreaseDepth : tessDepth;
-
         int maxDepth = std::max(tessDepth, creaseDepth);
         int minDepth = std::min(tessDepth, creaseDepth);
 
@@ -2256,40 +2359,55 @@ OpenSubdivMesh::tessellate(const TessellationParams& tessellationParams, Tessell
 
     // generate PatchTable that we will use to evaluate the surface limit
     OpenSubdiv::Far::PatchTableFactory::Options patchOptions;
-    patchOptions.SetEndCapType(
-        OpenSubdiv::Far::PatchTableFactory::Options::ENDCAP_GREGORY_BASIS);
+    patchOptions.SetEndCapType(OpenSubdiv::Far::PatchTableFactory::Options::ENDCAP_GREGORY_BASIS);
     patchOptions.generateFVarTables = hasFaceVaryingAttributes;
     patchOptions.generateFVarLegacyLinearPatches = false;
     patchOptions.useInfSharpPatch = hasCreaseOrCorner;
-    const OpenSubdiv::Far::PatchTable* patchTable =
-        OpenSubdiv::Far::PatchTableFactory::Create(*refiner, patchOptions);
+    const OpenSubdiv::Far::PatchTable* patchTable = OpenSubdiv::Far::PatchTableFactory::Create(*refiner,
+                                                                                               patchOptions);
 
     std::vector<DisplacementFootprint> displacementFootprints;
-
     {
         // evaluate limit surface samples to form the final tessellated mesh
         size_t motionSampleCount = getMotionSamplesCount();
         std::vector<TextureCV> textureCvs;
         bool hasBadDerivatives = false;
         AttributeRate textureRate = mControlMeshData->mTextureRate;
+
         // generate patch cvs for sample point limit surface evaluation
         std::vector<PatchCV> patchCvs;
-        generatePatchCvs(refiner, patchTable, mControlMeshData->mVertices,
-            mControlMeshData->mTextureVertices, textureRate,
-            patchCvs, textureCvs, requireUniformFix, motionSampleCount);
+        generatePatchCvs(refiner,
+                         patchTable,
+                         mControlMeshData->mVertices,
+                         mControlMeshData->mTextureVertices,
+                         textureRate,
+                         patchCvs,
+                         textureCvs,
+                         requireUniformFix,
+                         motionSampleCount);
+
         stats.mMemoryUsed += textureCvs.size() * sizeof(TextureCV);
         stats.mMemoryUsed += patchCvs.size() * sizeof(PatchCV);
 
-        evalLimitSurface(patchTable, limitSurfaceSamples, patchCvs,
-            textureCvs, textureRate, mTessellatedVertices, mSurfaceNormal,
-            mSurfaceSt, mSurfaceDpds, mSurfaceDpdt, displacementFootprints,
-            hasBadDerivatives, requireUniformFix, motionSampleCount);
+        evalLimitSurface(patchTable,
+                         limitSurfaceSamples,
+                         patchCvs,
+                         textureCvs,
+                         textureRate,
+                         mTessellatedVertices,
+                         mSurfaceNormal,
+                         mSurfaceSt,
+                         mSurfaceDpds,
+                         mSurfaceDpdt,
+                         displacementFootprints,
+                         hasBadDerivatives,
+                         requireUniformFix,
+                         motionSampleCount);
+
         if (hasBadDerivatives) {
             const scene_rdl2::rdl2::Geometry* pRdlGeometry = getRdlGeometry();
             MNRY_ASSERT(pRdlGeometry != nullptr);
-            pRdlGeometry->debug("mesh ", getName(),
-                " contains bad derivatives that may cause incorrect"
-                " rendering result");
+            pRdlGeometry->debug("mesh ", getName(), " contains bad derivatives that may cause incorrect rendering result");
         }
     }
 
@@ -2298,38 +2416,56 @@ OpenSubdivMesh::tessellate(const TessellationParams& tessellationParams, Tessell
     {
         // tessellate primitive attributes
         Attributes* primitiveAttributes = getAttributes();
+
         // varyingData, vertexData hold the actual content PrimVarCV refer to
         std::vector<PrimVarCV> varyingPrimVarCvs;
         std::vector<float> varyingData;
         std::vector<PrimVarCV> vertexPrimVarCvs;
         std::vector<float> vertexData;
         std::unordered_map<int, std::vector<PrimVarCV>> faceVaryingPrimVarCvs;
-        generatePrimVarCvs(refiner, patchTable,
-            primitiveAttributes, *mFaceVaryingAttributes, controlVertexCount,
-            varyingData, varyingPrimVarCvs,
-            vertexData, vertexPrimVarCvs, faceVaryingPrimVarCvs,
-            requireUniformFix);
+
+        generatePrimVarCvs(refiner,
+                           patchTable,
+                           primitiveAttributes,
+                           *mFaceVaryingAttributes,
+                           controlVertexCount,
+                           varyingData,
+                           varyingPrimVarCvs,
+                           vertexData,
+                           vertexPrimVarCvs,
+                           faceVaryingPrimVarCvs,
+                           requireUniformFix);
+
         stats.mMemoryUsed += varyingPrimVarCvs.size() * sizeof(PrimVarCV);
         stats.mMemoryUsed += varyingData.size() * sizeof(float);
         stats.mMemoryUsed += vertexPrimVarCvs.size() * sizeof(PrimVarCV);
         stats.mMemoryUsed += vertexData.size() * sizeof(float);
+
         for (auto &v : faceVaryingPrimVarCvs) {
             stats.mMemoryUsed += v.second.size() * sizeof(PrimVarCV);
         }
 
-        evalLimitAttributes(patchTable, limitSurfaceSamples,
-            varyingPrimVarCvs, vertexPrimVarCvs,
-            fvarLimitSamples, faceVaryingPrimVarCvs, std::move(fvarIndices),
-            primitiveAttributes, *mFaceVaryingAttributes,
-            requireUniformFix);
+        evalLimitAttributes(patchTable,
+                            limitSurfaceSamples,
+                            varyingPrimVarCvs,
+                            vertexPrimVarCvs,
+                            fvarLimitSamples,
+                            faceVaryingPrimVarCvs,
+                            std::move(fvarIndices),
+                            primitiveAttributes,
+                            *mFaceVaryingAttributes,
+                            requireUniformFix);
     }
 
     // apply displacement
     if (tessellationParams.mEnableDisplacement && hasDisplacementAssignment(pRdlLayer)) {
-        displaceMesh(pRdlLayer, limitSurfaceSamples, displacementFootprints,
-            tessellatedVertexLookup, topologyIdLookup.getFaceVaryingSeams(),
-            tessellationParams.mFrustums[0],
-            tessellationParams.mWorld2Render);
+        displaceMesh(pRdlLayer,
+                     limitSurfaceSamples,
+                     displacementFootprints,
+                     tessellatedVertexLookup,
+                     topologyIdLookup.getFaceVaryingSeams(),
+                     tessellationParams.mFrustums[0],
+                     tessellationParams.mWorld2Render);
     }
 
     // For the baked volume shader grid, we want to set the transform
@@ -2343,6 +2479,7 @@ OpenSubdivMesh::tessellate(const TessellationParams& tessellationParams, Tessell
     if (!tessellationParams.mFastGeomUpdate && !tessellationParams.mIsBaking) {
         mControlMeshData.reset();
     }
+
     delete refiner;
     delete patchTable;
 
@@ -2354,18 +2491,15 @@ OpenSubdivMesh::getTessellatedMesh(TessellatedMesh& tessMesh) const
 {
     tessMesh.mIndexBufferType = MeshIndexType::QUAD;
     tessMesh.mFaceCount = getTessellatedMeshFaceCount();
-    tessMesh.mIndexBufferDesc.mData =
-        static_cast<const void*>(mTessellatedIndices.data());
+    tessMesh.mIndexBufferDesc.mData = static_cast<const void*>(mTessellatedIndices.data());
     tessMesh.mIndexBufferDesc.mOffset = 0;
-    tessMesh.mIndexBufferDesc.mStride =
-        sQuadVertexCount * sizeof(geom::Primitive::IndexType);
+    tessMesh.mIndexBufferDesc.mStride = sQuadVertexCount * sizeof(geom::Primitive::IndexType);
 
     tessMesh.mVertexCount = getTessellatedMeshVertexCount();
     size_t motionSampleCount = getMotionSamplesCount();
     size_t vertexSize = sizeof(SubdivisionMesh::VertexBuffer::value_type);
     size_t vertexStride = motionSampleCount * vertexSize;
-    const void* data = tessMesh.mVertexCount > 0  ?
-        mTessellatedVertices.data() : nullptr;
+    const void* data = tessMesh.mVertexCount > 0  ? mTessellatedVertices.data() : nullptr;
     for (size_t t = 0; t < motionSampleCount; ++t) {
         size_t offset = t * vertexSize;
         tessMesh.mVertexBufferDesc.emplace_back(data, offset, vertexStride);
@@ -2761,9 +2895,12 @@ OpenSubdivMesh::getBakedMesh(BakedMesh& bakedMesh) const
 }
 
 bool
-OpenSubdivMesh::bakePosMap(int width, int height, int udim,
-        TypedAttributeKey<Vec2f> stKey,
-        Vec3fa *posResult, Vec3f *nrmResult) const
+OpenSubdivMesh::bakePosMap(int width,
+                           int height,
+                           int udim,
+                           TypedAttributeKey<Vec2f> stKey,
+                           Vec3fa *posResult,
+                           Vec3f *nrmResult) const
 {
     const int faceVertexCount = 4; // tessellated mesh is always quads
     for (size_t faceId = 0; faceId < getTessellatedMeshFaceCount(); ++faceId) {
@@ -2917,8 +3054,11 @@ OpenSubdivMesh::hasAttribute(AttributeKey key) const
 }
 
 void
-OpenSubdivMesh::setRequiredAttributes(int primId, float time, float u, float v,
-    float w, bool isFirst, Intersection& intersection) const
+OpenSubdivMesh::setRequiredAttributes(int primId,
+                                      float time,
+                                      float u, float v, float w,
+                                      bool isFirst,
+                                      Intersection& intersection) const
 {
     // In Embree, quad is internally handled as a pair of
     // two triangles (v0, v1, v3) and (v2, v3, v1).
@@ -2952,14 +3092,21 @@ OpenSubdivMesh::setRequiredAttributes(int primId, float time, float u, float v,
 
     // primitive attributes interpolation
     const Attributes* primitiveAttributes = getAttributes();
-    MeshInterpolator interpolator(primitiveAttributes, time, partId,
-        controlFaceId, id1, id2, id3, id4, wq[0], wq[1], wq[2], wq[3],
-        primId, id1, id2, id3, id4, wq[0], wq[1], wq[2], wq[3]);
+    MeshInterpolator interpolator(primitiveAttributes,
+                                  time,
+                                  partId,
+                                  controlFaceId,
+                                  id1, id2, id3, id4,
+                                  wq[0], wq[1], wq[2], wq[3],
+                                  primId,
+                                  id1, id2, id3, id4,
+                                  wq[0], wq[1], wq[2], wq[3]);
     intersection.setRequiredAttributes(interpolator);
     // explicitly handling face varying attributes here for now
     // constant/uniform/varying/vertex are handled by setRequiredAttributes
-    mFaceVaryingAttributes->fillAttributes(intersection, primId,
-        wq[0], wq[1], wq[2], wq[3]);
+    mFaceVaryingAttributes->fillAttributes(intersection,
+                                           primId,
+                                           wq[0], wq[1], wq[2], wq[3]);
 
     // Add an interpolated N, dPds, and dPdt to the intersection
     // if they exist in the primitive attribute table
@@ -2970,8 +3117,9 @@ OpenSubdivMesh::setRequiredAttributes(int primId, float time, float u, float v,
 
 void
 OpenSubdivMesh::postIntersect(mcrt_common::ThreadLocalState& tls,
-        const scene_rdl2::rdl2::Layer* pRdlLayer, const mcrt_common::Ray& ray,
-        Intersection& intersection) const
+                              const scene_rdl2::rdl2::Layer* pRdlLayer,
+                              const mcrt_common::Ray& ray,
+                              Intersection& intersection) const
 {
     int primId = ray.primID;
     int controlFaceId = mTessellatedToControlFace[primId];
@@ -3117,7 +3265,9 @@ OpenSubdivMesh::postIntersect(mcrt_common::ThreadLocalState& tls,
 
 bool
 OpenSubdivMesh::computeIntersectCurvature(const mcrt_common::Ray& ray,
-        const Intersection& intersection, Vec3f& dnds, Vec3f& dndt) const
+                                          const Intersection& intersection,
+                                          Vec3f& dnds,
+                                          Vec3f& dndt) const
 {
     uint32_t vid1, vid2, vid3;
     intersection.getIds(vid1, vid2, vid3);
@@ -3172,7 +3322,7 @@ OpenSubdivMesh::copy() const
 
 void
 OpenSubdivMesh::updateVertexData(const std::vector<float>& vertexData,
-        const std::vector<Mat43>& prim2render)
+                                 const std::vector<Mat43>& prim2render)
 {
     // TODO the original design of updateVertexData has been dated quite a lot
     // that we should spend some time redesign it. It doesn't support
@@ -3246,7 +3396,9 @@ OpenSubdivMesh::computeAABBAtTimeStep(int timeStep) const
 }
 
 void
-OpenSubdivMesh::getST(int tessFaceId, float u, float v, Vec2f& st) const
+OpenSubdivMesh::getST(int tessFaceId,
+                      float u, float v,
+                      Vec2f& st) const
 {
     size_t id1, id2, id3;
     const auto indices = &mTessellatedIndices[sQuadVertexCount * tessFaceId];
@@ -3281,12 +3433,15 @@ OpenSubdivMesh::getIntersectionAssignmentId(int primID) const
 
 void
 OpenSubdivMesh::computeAttributesDerivatives(const AttributeTable* table,
-        size_t vid1, size_t vid2, size_t vid3, float time,
-        Intersection& intersection) const
+                                             size_t vid1, size_t vid2, size_t vid3,
+                                             float time,
+                                             Intersection& intersection) const
 {
     std::array<float , 4> invA = {1.0f, 0.0f, 0.0f, 1.0f};
-    computeStInverse(mSurfaceSt(vid1), mSurfaceSt(vid2), mSurfaceSt(vid3),
-        invA);
+    computeStInverse(mSurfaceSt(vid1),
+                     mSurfaceSt(vid2),
+                     mSurfaceSt(vid3),
+                     invA);
     Attributes* attrs = getAttributes();
     for (auto key: table->getDifferentialAttributes()) {
         if (!attrs->isSupported(key)) {
@@ -3295,34 +3450,46 @@ OpenSubdivMesh::computeAttributesDerivatives(const AttributeTable* table,
         if (attrs->getRate(key) == RATE_VARYING) {
             switch (key.getType()) {
             case scene_rdl2::rdl2::TYPE_FLOAT:
-                computeVaryingAttributeDerivatives(
-                    TypedAttributeKey<float>(key),
-                    vid1, vid2, vid3, time, invA, intersection);
+                computeVaryingAttributeDerivatives(TypedAttributeKey<float>(key),
+                                                   vid1, vid2, vid3,
+                                                   time,
+                                                   invA,
+                                                   intersection);
                 break;
             case scene_rdl2::rdl2::TYPE_RGB:
-                computeVaryingAttributeDerivatives(
-                    TypedAttributeKey<scene_rdl2::math::Color>(key),
-                    vid1, vid2, vid3, time, invA, intersection);
+                computeVaryingAttributeDerivatives(TypedAttributeKey<scene_rdl2::math::Color>(key),
+                                                   vid1, vid2, vid3,
+                                                   time,
+                                                   invA,
+                                                   intersection);
                 break;
             case scene_rdl2::rdl2::TYPE_RGBA:
-                computeVaryingAttributeDerivatives(
-                    TypedAttributeKey<scene_rdl2::math::Color4>(key),
-                    vid1, vid2, vid3, time, invA, intersection);
+                computeVaryingAttributeDerivatives(TypedAttributeKey<scene_rdl2::math::Color4>(key),
+                                                   vid1, vid2, vid3,
+                                                   time,
+                                                   invA,
+                                                   intersection);
                 break;
             case scene_rdl2::rdl2::TYPE_VEC2F:
-                computeVaryingAttributeDerivatives(
-                    TypedAttributeKey<scene_rdl2::math::Vec2f>(key),
-                    vid1, vid2, vid3, time, invA, intersection);
+                computeVaryingAttributeDerivatives(TypedAttributeKey<scene_rdl2::math::Vec2f>(key),
+                                                   vid1, vid2, vid3,
+                                                   time,
+                                                   invA,
+                                                   intersection);
                 break;
             case scene_rdl2::rdl2::TYPE_VEC3F:
-                computeVaryingAttributeDerivatives(
-                    TypedAttributeKey<scene_rdl2::math::Vec3f>(key),
-                    vid1, vid2, vid3, time, invA, intersection);
+                computeVaryingAttributeDerivatives(TypedAttributeKey<scene_rdl2::math::Vec3f>(key),
+                                                   vid1, vid2, vid3,
+                                                   time,
+                                                   invA,
+                                                   intersection);
                 break;
             case scene_rdl2::rdl2::TYPE_MAT4F:
-                computeVaryingAttributeDerivatives(
-                    TypedAttributeKey<scene_rdl2::math::Mat4f>(key),
-                    vid1, vid2, vid3, time, invA, intersection);
+                computeVaryingAttributeDerivatives(TypedAttributeKey<scene_rdl2::math::Mat4f>(key),
+                                                   vid1, vid2, vid3,
+                                                   time,
+                                                   invA,
+                                                   intersection);
                 break;
             default:
                 break;
@@ -3331,34 +3498,46 @@ OpenSubdivMesh::computeAttributesDerivatives(const AttributeTable* table,
         } else if (attrs->getRate(key) == RATE_VERTEX) {
             switch (key.getType()) {
             case scene_rdl2::rdl2::TYPE_FLOAT:
-                computeVertexAttributeDerivatives(
-                    TypedAttributeKey<float>(key),
-                    vid1, vid2, vid3, time, invA, intersection);
+                computeVertexAttributeDerivatives(TypedAttributeKey<float>(key),
+                                                  vid1, vid2, vid3,
+                                                  time,
+                                                  invA,
+                                                  intersection);
                 break;
             case scene_rdl2::rdl2::TYPE_RGB:
-                computeVertexAttributeDerivatives(
-                    TypedAttributeKey<scene_rdl2::math::Color>(key),
-                    vid1, vid2, vid3, time, invA, intersection);
+                computeVertexAttributeDerivatives(TypedAttributeKey<scene_rdl2::math::Color>(key),
+                                                  vid1, vid2, vid3,
+                                                  time,
+                                                  invA,
+                                                  intersection);
                 break;
             case scene_rdl2::rdl2::TYPE_RGBA:
-                computeVertexAttributeDerivatives(
-                    TypedAttributeKey<scene_rdl2::math::Color4>(key),
-                    vid1, vid2, vid3, time, invA, intersection);
+                computeVertexAttributeDerivatives(TypedAttributeKey<scene_rdl2::math::Color4>(key),
+                                                  vid1, vid2, vid3,
+                                                  time,
+                                                  invA,
+                                                  intersection);
                 break;
             case scene_rdl2::rdl2::TYPE_VEC2F:
-                computeVertexAttributeDerivatives(
-                    TypedAttributeKey<scene_rdl2::math::Vec2f>(key),
-                    vid1, vid2, vid3, time, invA, intersection);
+                computeVertexAttributeDerivatives(TypedAttributeKey<scene_rdl2::math::Vec2f>(key),
+                                                  vid1, vid2, vid3,
+                                                  time,
+                                                  invA,
+                                                  intersection);
                 break;
             case scene_rdl2::rdl2::TYPE_VEC3F:
-                computeVertexAttributeDerivatives(
-                    TypedAttributeKey<scene_rdl2::math::Vec3f>(key),
-                    vid1, vid2, vid3, time, invA, intersection);
+                computeVertexAttributeDerivatives(TypedAttributeKey<scene_rdl2::math::Vec3f>(key),
+                                                  vid1, vid2, vid3,
+                                                  time,
+                                                  invA,
+                                                  intersection);
                 break;
             case scene_rdl2::rdl2::TYPE_MAT4F:
-                computeVertexAttributeDerivatives(
-                    TypedAttributeKey<scene_rdl2::math::Mat4f>(key),
-                    vid1, vid2, vid3, time, invA, intersection);
+                computeVertexAttributeDerivatives(TypedAttributeKey<scene_rdl2::math::Mat4f>(key),
+                                                  vid1, vid2, vid3,
+                                                  time,
+                                                  invA,
+                                                  intersection);
                 break;
             default:
                 break;
@@ -3368,13 +3547,22 @@ OpenSubdivMesh::computeAttributesDerivatives(const AttributeTable* table,
 }
 
 static inline bool 
-outsideFrustum(uint8_t* outcodes, int vid0, int vid1, int vid2, int vid3)
+outsideFrustum(uint8_t* outcodes,
+               int vid0, 
+               int vid1,
+               int vid2,
+               int vid3)
 {
     return ((outcodes[vid0] & outcodes[vid1] & outcodes[vid2] & outcodes[vid3]) != 0);
 }
 
 static inline bool 
-insideFrustum(uint8_t* outcodes, int vid0, int vid1, int vid2, int vid3, uint8_t& outcode)
+insideFrustum(uint8_t* outcodes,
+              int vid0,
+              int vid1,
+              int vid2,
+              int vid3,
+              uint8_t& outcode)
 {
     outcode = (outcodes[vid0] | outcodes[vid1] | outcodes[vid2] | outcodes[vid3]);
     return (outcode == 0);
@@ -3384,12 +3572,12 @@ insideFrustum(uint8_t* outcodes, int vid0, int vid1, int vid2, int vid3, uint8_t
 
 void
 OpenSubdivMesh::displaceMesh(const scene_rdl2::rdl2::Layer *pRdlLayer,
-        const std::vector<LimitSurfaceSample>& limitSurfaceSamples,
-        const std::vector<DisplacementFootprint>& displacementFootprints,
-        const SubdTessellatedVertexLookup& tessellatedVertexLookup,
-        const FaceVaryingSeams& faceVaryingSeams,
-        const mcrt_common::Frustum& frustum,
-        const scene_rdl2::math::Mat4d& world2render)
+                             const std::vector<LimitSurfaceSample>& limitSurfaceSamples,
+                             const std::vector<DisplacementFootprint>& displacementFootprints,
+                             const SubdTessellatedVertexLookup& tessellatedVertexLookup,
+                             const FaceVaryingSeams& faceVaryingSeams,
+                             const mcrt_common::Frustum& frustum,
+                             const scene_rdl2::math::Mat4d& world2render)
 {
     size_t motionSampleCount = getMotionSamplesCount();
     size_t tessellatedVertexCount = getTessellatedMeshVertexCount();
@@ -3423,8 +3611,7 @@ OpenSubdivMesh::displaceMesh(const scene_rdl2::rdl2::Layer *pRdlLayer,
     MNRY_ASSERT_REQUIRE(isDisplaced);
     memset(isDisplaced, 0, sizeof(bool) * tessellatedVertexCount);
 
-    tbb::blocked_range<size_t> range =
-        tbb::blocked_range<size_t>(0, tessellatedVertexCount);
+    tbb::blocked_range<size_t> range = tbb::blocked_range<size_t>(0, tessellatedVertexCount);
     tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
         mcrt_common::ThreadLocalState *tls = mcrt_common::getFrameUpdateTLS();
         shading::TLState *shadingTls = MNRY_VERIFY(tls->mShadingTls.get());
@@ -3434,8 +3621,7 @@ OpenSubdivMesh::displaceMesh(const scene_rdl2::rdl2::Layer *pRdlLayer,
             if (assignmentId == -1) {
                 continue;
             }
-            const scene_rdl2::rdl2::Displacement* displacement =
-                pRdlLayer->lookupDisplacement(assignmentId);
+            const scene_rdl2::rdl2::Displacement* displacement = pRdlLayer->lookupDisplacement(assignmentId);
             if (displacement == nullptr) {
                 continue;
             }
@@ -3443,12 +3629,10 @@ OpenSubdivMesh::displaceMesh(const scene_rdl2::rdl2::Layer *pRdlLayer,
             // get primitive attribute table
             const AttributeTable* table = nullptr;
             if (displacement->hasExtension()) {
-                table = displacement->
-                        get<shading::RootShader>().getAttributeTable();
+                table = displacement->get<shading::RootShader>().getAttributeTable();
             }
 
-            const scene_rdl2::rdl2::Geometry* geometry =
-                pRdlLayer->lookupGeomAndPart(assignmentId).first;
+            const scene_rdl2::rdl2::Geometry* geometry = pRdlLayer->lookupGeomAndPart(assignmentId).first;
             Vec2f st = mSurfaceSt(v);
             for (size_t t = 0; t < motionSampleCount; ++t) {
                 Vec3f position = mTessellatedVertices(v, t);
@@ -3469,16 +3653,32 @@ OpenSubdivMesh::displaceMesh(const scene_rdl2::rdl2::Layer *pRdlLayer,
 
                 // st footprint along the control face u param
                 const Vec2f& dSt0 = displacementFootprints[v].mDst[0];
+
                 // st footprint along the control face v param
                 const Vec2f& dSt1 = displacementFootprints[v].mDst[1];
-                isect.initDisplacement(tls, table, geometry, pRdlLayer,
-                    assignmentId, position, normal, dPds, dPdt, st,
-                    dSt0[0], dSt1[0], dSt0[1], dSt1[1]);
-                fillDisplacementAttributes(vidToFaceId[v], vidToFVIndex[v],
-                    isect);
+
+                isect.initDisplacement(tls,
+                                       table,
+                                       geometry,
+                                       pRdlLayer,
+                                       assignmentId,
+                                       position,
+                                       normal,
+                                       dPds, dPdt,
+                                       st,
+                                       dSt0[0], dSt1[0],
+                                       dSt0[1], dSt1[1]);
+
+                fillDisplacementAttributes(vidToFaceId[v],
+                                           vidToFVIndex[v],
+                                           isect);
 
                 Vec3f displace;
-                shading::displace(displacement, shadingTls, shading::State(&isect), &displace);
+                shading::displace(displacement,
+                                  shadingTls,
+                                  shading::State(&isect),
+                                  &displace);
+
                 mTessellatedVertices(v, t) += Vec3fa(displace, 0.f);
                 isDisplaced[v] = true;
             }
@@ -3487,8 +3687,10 @@ OpenSubdivMesh::displaceMesh(const scene_rdl2::rdl2::Layer *pRdlLayer,
 
     // stitch uv discontinuity area after displacement to avoid crack
     std::vector<std::vector<int>> vertexClusters;
-    getOverlapVertexClusters(faceVaryingSeams, tessellatedVertexLookup,
-        vertexClusters);
+    getOverlapVertexClusters(faceVaryingSeams,
+                             tessellatedVertexLookup,
+                             vertexClusters);
+
     range = tbb::blocked_range<size_t>(0, vertexClusters.size());
     tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
         for (size_t c = r.begin(); c < r.end(); ++c) {
@@ -3524,10 +3726,11 @@ OpenSubdivMesh::displaceMesh(const scene_rdl2::rdl2::Layer *pRdlLayer,
         scene_rdl2::math::Vec3d mDpdt;
         double mAreaWeight;
     };
-    // accumulated normal/dpds/dpdt info with area weight sum that will be
-    // normalized at the end
-    TempVertexData* tempVertexData = scene_rdl2::util::alignedMallocArray<TempVertexData>(
-        motionSampleCount * tessellatedVertexCount);
+
+    // accumulated normal/dpds/dpdt info with area weight sum that will be normalized at the end
+    TempVertexData* tempVertexData =
+        scene_rdl2::util::alignedMallocArray<TempVertexData>(motionSampleCount * tessellatedVertexCount);
+
     MNRY_ASSERT_REQUIRE(tempVertexData);
     for (size_t i = 0; i < motionSampleCount * tessellatedVertexCount; ++i) {
         tempVertexData[i].mNormal = scene_rdl2::math::Vec3d(0.0);
@@ -3598,6 +3801,7 @@ OpenSubdivMesh::displaceMesh(const scene_rdl2::rdl2::Layer *pRdlLayer,
             }
         }
     };
+
     // recompute the normal and derivatives after vertices got displaced
     range = tbb::blocked_range<size_t>(0, getTessellatedMeshFaceCount());
     tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
@@ -3606,10 +3810,10 @@ OpenSubdivMesh::displaceMesh(const scene_rdl2::rdl2::Layer *pRdlLayer,
             int vid2 = mTessellatedIndices[sQuadVertexCount * f + 1];
             int vid3 = mTessellatedIndices[sQuadVertexCount * f + 2];
             int vid4 = mTessellatedIndices[sQuadVertexCount * f + 3];
-            if (!isDisplaced[vid1] && !isDisplaced[vid2] &&
-                !isDisplaced[vid3] && !isDisplaced[vid4]) {
+            if (!isDisplaced[vid1] && !isDisplaced[vid2] && !isDisplaced[vid3] && !isDisplaced[vid4]) {
                 continue;
             }
+
             if (vid1 == vid4) {
                 computeTriangleDerivatives(vid1, vid2, vid3);
             } else {
@@ -3618,6 +3822,7 @@ OpenSubdivMesh::displaceMesh(const scene_rdl2::rdl2::Layer *pRdlLayer,
             }
         }
     });
+
     // normalized recomputed normal and derivatives with area weight sum
     bool hasBadDisplacedNormal = false;
     range = tbb::blocked_range<size_t>(0, tessellatedVertexCount);
@@ -3627,16 +3832,18 @@ OpenSubdivMesh::displaceMesh(const scene_rdl2::rdl2::Layer *pRdlLayer,
                 continue;
             }
             for (size_t t = 0; t < motionSampleCount; ++t) {
-                const TempVertexData& vertexData =
-                    tempVertexData[motionSampleCount * v + t];
+                const TempVertexData& vertexData = tempVertexData[motionSampleCount * v + t];
+
                 // skip unassigned part
                 if (scene_rdl2::math::isZero(vertexData.mAreaWeight)) {
                     continue;
                 }
+
                 double invWeight = 1.0 / vertexData.mAreaWeight;
                 scene_rdl2::math::Vec3d normal = normalize(vertexData.mNormal);
                 scene_rdl2::math::Vec3d dPds = invWeight * vertexData.mDpds;
                 scene_rdl2::math::Vec3d dPdt = invWeight * vertexData.mDpdt;
+
                 if (scene_rdl2::math::isFinite(normal)) {
                     mSurfaceNormal(v, t) = Vec3f(normal[0], normal[1], normal[2]);
                     mSurfaceDpds(v, t) = Vec3f(dPds[0], dPds[1], dPds[2]);
@@ -3657,9 +3864,7 @@ OpenSubdivMesh::displaceMesh(const scene_rdl2::rdl2::Layer *pRdlLayer,
     if (hasBadDisplacedNormal) {
         const scene_rdl2::rdl2::Geometry* pRdlGeometry = getRdlGeometry();
         MNRY_ASSERT(pRdlGeometry != nullptr);
-        pRdlGeometry->info("mesh ", getName(),
-            " contains bad displaced normal that may cause incorrect"
-            " rendering result");
+        pRdlGeometry->info("mesh ", getName(), " contains bad displaced normal that may cause incorrect rendering result");
     }
 
     scene_rdl2::util::alignedFreeArray(isDisplaced);
@@ -3667,101 +3872,135 @@ OpenSubdivMesh::displaceMesh(const scene_rdl2::rdl2::Layer *pRdlLayer,
 }
 
 void
-OpenSubdivMesh::fillDisplacementAttributes(int tessFaceId, int vIndex,
-        Intersection& intersection) const
+OpenSubdivMesh::fillDisplacementAttributes(int tessFaceId,
+                                           int vIndex,
+                                           Intersection& intersection) const
 {
     const AttributeTable* table = intersection.getTable();
     if (table == nullptr) {
         return;
     }
+
     int controlFaceId = mTessellatedToControlFace[tessFaceId];
     const Attributes* attributes = getAttributes();
+
     for (const auto key : table->getRequiredAttributes()) {
         if (!attributes->isSupported(key)) {
             continue;
         }
+
         switch (key.getType()) {
         case scene_rdl2::rdl2::TYPE_FLOAT:
             {
             TypedAttributeKey<float> typedKey(key);
             intersection.setAttribute(typedKey,
-                getAttribute(typedKey, controlFaceId, tessFaceId, vIndex));
+                                      getAttribute(typedKey,
+                                                   controlFaceId,
+                                                   tessFaceId,
+                                                   vIndex));
             }
             break;
         case scene_rdl2::rdl2::TYPE_RGB:
             {
             TypedAttributeKey<scene_rdl2::math::Color> typedKey(key);
             intersection.setAttribute(typedKey,
-                getAttribute(typedKey, controlFaceId, tessFaceId, vIndex));
+                                      getAttribute(typedKey,
+                                                   controlFaceId,
+                                                   tessFaceId,
+                                                   vIndex));
             }
             break;
         case scene_rdl2::rdl2::TYPE_VEC2F:
             {
             TypedAttributeKey<Vec2f> typedKey(key);
             intersection.setAttribute(typedKey,
-                getAttribute(typedKey, controlFaceId, tessFaceId, vIndex));
+                                      getAttribute(typedKey,
+                                                   controlFaceId,
+                                                   tessFaceId,
+                                                   vIndex));
             }
             break;
         case scene_rdl2::rdl2::TYPE_VEC3F:
             {
             TypedAttributeKey<Vec3f> typedKey(key);
             intersection.setAttribute(typedKey,
-                getAttribute(typedKey, controlFaceId, tessFaceId, vIndex));
+                                      getAttribute(typedKey,
+                                                   controlFaceId,
+                                                   tessFaceId,
+                                                   vIndex));
             }
             break;
         default:
             break;
         }
     }
+
     for (const auto key : table->getOptionalAttributes()) {
         if (!attributes->isSupported(key)) {
             continue;
         }
+
         switch (key.getType()) {
         case scene_rdl2::rdl2::TYPE_FLOAT:
             {
             TypedAttributeKey<float> typedKey(key);
             intersection.setAttribute(typedKey,
-                getAttribute(typedKey, controlFaceId, tessFaceId, vIndex));
+                                      getAttribute(typedKey,
+                                                   controlFaceId,
+                                                   tessFaceId,
+                                                   vIndex));
             }
             break;
         case scene_rdl2::rdl2::TYPE_RGB:
             {
             TypedAttributeKey<scene_rdl2::math::Color> typedKey(key);
             intersection.setAttribute(typedKey,
-                getAttribute(typedKey, controlFaceId, tessFaceId, vIndex));
+                                      getAttribute(typedKey,
+                                                   controlFaceId,
+                                                   tessFaceId,
+                                                   vIndex));
             }
             break;
         case scene_rdl2::rdl2::TYPE_VEC2F:
             {
             TypedAttributeKey<Vec2f> typedKey(key);
             intersection.setAttribute(typedKey,
-                getAttribute(typedKey, controlFaceId, tessFaceId, vIndex));
+                                      getAttribute(typedKey,
+                                                   controlFaceId,
+                                                   tessFaceId,
+                                                   vIndex));
             }
             break;
         case scene_rdl2::rdl2::TYPE_VEC3F:
             {
             TypedAttributeKey<Vec3f> typedKey(key);
             intersection.setAttribute(typedKey,
-                getAttribute(typedKey, controlFaceId, tessFaceId, vIndex));
+                                      getAttribute(typedKey,
+                                                   controlFaceId,
+                                                   tessFaceId,
+                                                   vIndex));
             }
             break;
         default:
             break;
         }
     }
+
     if (mFaceVaryingAttributes) {
         // handle face varying attributes
         float w[4] = {0.0f, 0.0f, 0.0f, 0.0f};
         w[vIndex] = 1.0f;
-        mFaceVaryingAttributes->fillAttributes(intersection, tessFaceId,
-            w[0], w[1], w[2], w[3]);
+        mFaceVaryingAttributes->fillAttributes(intersection,
+                                               tessFaceId,
+                                               w[0], w[1], w[2], w[3]);
     }
 }
 
 template <typename T> T
 OpenSubdivMesh::getAttribute(const TypedAttributeKey<T>& key,
-        int controlFaceId, int tessFaceId, int vIndex) const
+                             int controlFaceId,
+                             int tessFaceId,
+                             int vIndex) const
 {
     const Attributes* attributes = getAttributes();
     MNRY_ASSERT(attributes->isSupported(key));
@@ -3772,18 +4011,19 @@ OpenSubdivMesh::getAttribute(const TypedAttributeKey<T>& key,
         result = getConstantAttribute(key);
         break;
     case RATE_UNIFORM:
-        result = getUniformAttribute(key, controlFaceId);
+        result = getUniformAttribute(key,
+                                     controlFaceId);
         break;
     case RATE_VARYING:
-        result = getVaryingAttribute(
-            key, mTessellatedIndices[sQuadVertexCount * tessFaceId + vIndex]);
+        result = getVaryingAttribute(key,
+                                     mTessellatedIndices[sQuadVertexCount * tessFaceId + vIndex]);
         break;
     case RATE_FACE_VARYING:
         // handled by FaceVaryingAttributes
         break;
     case RATE_VERTEX:
-        result = getVertexAttribute(
-            key, mTessellatedIndices[sQuadVertexCount * tessFaceId + vIndex]);
+        result = getVertexAttribute(key,
+                                    mTessellatedIndices[sQuadVertexCount * tessFaceId + vIndex]);
         break;
     default:
         MNRY_ASSERT(false, "unknown attribute rate");
@@ -3793,7 +4033,8 @@ OpenSubdivMesh::getAttribute(const TypedAttributeKey<T>& key,
 }
 
 void
-OpenSubdivMesh::setTransform(const XformSamples& xforms, float shutterOpenDelta,
+OpenSubdivMesh::setTransform(const XformSamples& xforms,
+                             float shutterOpenDelta,
                              float shutterCloseDelta)
 {
     mControlMeshData->mXforms = xforms;

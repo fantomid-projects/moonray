@@ -22,16 +22,20 @@ using namespace moonray::shading;
 
 struct Points::Impl
 {
-    explicit Impl(internal::Points* points) : mPoints(points) {}
+    explicit Impl(internal::Points* points) :
+        mPoints(points) {}
+
     std::unique_ptr<internal::Points> mPoints;
 };
 
-Points::Points(VertexBuffer&& position, RadiusBuffer&& radius,
-        LayerAssignmentId&& layerAssignmentId,
-        PrimitiveAttributeTable&& primitiveAttributeTable):
-        mImpl(fauxstd::make_unique<Impl>(new internal::Points(
-        std::move(position), std::move(radius),
-        std::move(layerAssignmentId), std::move(primitiveAttributeTable))))
+Points::Points(VertexBuffer&& position,
+               RadiusBuffer&& radius,
+               LayerAssignmentId&& layerAssignmentId,
+               PrimitiveAttributeTable&& primitiveAttributeTable):
+        mImpl(fauxstd::make_unique<Impl>(new internal::Points(std::move(position),
+                                                              std::move(radius),
+                                                              std::move(layerAssignmentId),
+                                                              std::move(primitiveAttributeTable))))
 {
 }
 
@@ -74,17 +78,21 @@ Points::setCurvedMotionBlurSampleCount(int count)
 }
 
 void
-Points::transformPrimitive(
-        const MotionBlurParams& motionBlurParams,
-        const XformSamples& prim2render)
+Points::transformPrimitive(const MotionBlurParams& motionBlurParams,
+                           const XformSamples& prim2render)
 {
     const PrimitiveAttributeTable* primAttrTab = mImpl->mPoints->getPrimitiveAttributeTable();
-    transformVertexBuffer(mImpl->mPoints->getVertexBuffer(), prim2render, motionBlurParams,
-                          mImpl->mPoints->getMotionBlurType(), mImpl->mPoints->getCurvedMotionBlurSampleCount(),
+
+    transformVertexBuffer(mImpl->mPoints->getVertexBuffer(),
+                          prim2render, motionBlurParams,
+                          mImpl->mPoints->getMotionBlurType(),
+                          mImpl->mPoints->getCurvedMotionBlurSampleCount(),
                           primAttrTab);
 
     float shutterOpenDelta, shutterCloseDelta;
-    motionBlurParams.getMotionBlurDelta(shutterOpenDelta, shutterCloseDelta);
+    motionBlurParams.getMotionBlurDelta(shutterOpenDelta,
+                                        shutterCloseDelta);
+
     mImpl->mPoints->getAttributes()->transformAttributes(prim2render,
                                                          shutterOpenDelta,
                                                          shutterCloseDelta,

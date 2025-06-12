@@ -18,6 +18,9 @@ namespace moonray {
 namespace geom {
 namespace internal {
 
+using namespace scene_rdl2::math;
+using namespace scene_rdl2::rdl2;
+
 openvdb::VectorGrid::Ptr
 Mesh::createTriMeshVelocityGrid(float interiorBandwidth,
                                 const TessellatedMesh& mesh,
@@ -36,7 +39,7 @@ Mesh::createTriMeshVelocityGrid(float interiorBandwidth,
 
     // Grab vertex buffer of this motion sample.
     const float* vertexBuffer = reinterpret_cast<const float *>(mesh.mVertexBufferDesc[motionSample].mData) +
-        mesh.mVertexBufferDesc[motionSample].mOffset / sizeof(float);
+                                mesh.mVertexBufferDesc[motionSample].mOffset / sizeof(float);
     const int* indexBuffer = (const int* )mesh.mIndexBufferDesc.mData;
 
     // Create openvdb index buffer
@@ -49,13 +52,15 @@ Mesh::createTriMeshVelocityGrid(float interiorBandwidth,
     // Create openvdb vertex buffer
     size_t vert = 0;
     for(size_t v = 0; v < mesh.mVertexCount; ++v) {
-        vertices[v] =
-            openvdb::Vec3s(vertexBuffer[vert], vertexBuffer[vert+1], vertexBuffer[vert+2]);
+        vertices[v] = openvdb::Vec3s(vertexBuffer[vert],
+                                     vertexBuffer[vert+1],
+                                     vertexBuffer[vert+2]);
         vert += mesh.mVertexBufferDesc[motionSample].mStride / sizeof(float);
     }
 
     // Set up openvdb mesh.
     openvdb::tools::QuadAndTriangleDataAdapter<openvdb::Vec3s, openvdb::Vec3I> meshAdapter(vertices, indices);
+
     // The primitiveIndexGrid stores the index of the primitive (face) that is closest to the voxel.
     openvdb::Int32Grid::Ptr primitiveIndexGrid(new openvdb::Int32Grid(0));
     openvdb::math::Transform::Ptr transform = openvdb::math::Transform::createLinearTransform();
@@ -70,7 +75,9 @@ Mesh::createTriMeshVelocityGrid(float interiorBandwidth,
     openvdb::VectorGrid::Ptr velocityGrid = openvdb::Vec3SGrid::create();
 
     // If a shared primitive, the velocity grid is baked in local space.
-    const scene_rdl2::math::Mat4f primToRender = getIsReference() ? scene_rdl2::math::Mat4f(scene_rdl2::math::one) : mPrimToRender;
+    const Mat4f primToRender = getIsReference() ?
+                               Mat4f(one) :
+                               mPrimToRender;
 
     // Fill in velocity grid
     openvdb::tools::transformValues(primitiveIndexGrid->cbeginValueOn(), *velocityGrid,
@@ -88,11 +95,11 @@ Mesh::createTriMeshVelocityGrid(float interiorBandwidth,
             openvdb::math::closestPointOnTriangleToPoint(p0, p1, p2, voxelCenter, uvw);
 
             // Assume only one velocity buffer at t = 0.
-            const scene_rdl2::math::Vec3f v0 = scene_rdl2::math::transformVector(primToRender, getVelocity(faceid, 0, float(motionSample)));
-            const scene_rdl2::math::Vec3f v1 = scene_rdl2::math::transformVector(primToRender, getVelocity(faceid, 1, float(motionSample)));
-            const scene_rdl2::math::Vec3f v2 = scene_rdl2::math::transformVector(primToRender, getVelocity(faceid, 2, float(motionSample)));
+            const Vec3f v0 = transformVector(primToRender, getVelocity(faceid, 0, float(motionSample)));
+            const Vec3f v1 = transformVector(primToRender, getVelocity(faceid, 1, float(motionSample)));
+            const Vec3f v2 = transformVector(primToRender, getVelocity(faceid, 2, float(motionSample)));
 
-            const scene_rdl2::math::Vec3f v = invFps * (v0 * float(uvw[0]) + v1 * float(uvw[1]) + v2 * float(uvw[2]));
+            const Vec3f v = invFps * (v0 * float(uvw[0]) + v1 * float(uvw[1]) + v2 * float(uvw[2]));
             accessor.setValue(coord, openvdb::Vec3d(v.x, v.y, v.z));
 
     });
@@ -133,13 +140,15 @@ Mesh::createQuadMeshVelocityGrid(float interiorBandwidth,
     // Create openvdb vertex buffer
     size_t vert = 0;
     for(size_t v = 0; v < mesh.mVertexCount; ++v) {
-        vertices[v] =
-            openvdb::Vec3s(vertexBuffer[vert], vertexBuffer[vert+1], vertexBuffer[vert+2]);
+        vertices[v] = openvdb::Vec3s(vertexBuffer[vert],
+                                     vertexBuffer[vert+1],
+                                     vertexBuffer[vert+2]);
         vert += mesh.mVertexBufferDesc[motionSample].mStride / sizeof(float);
     }
 
     // Set up openvdb mesh.
     openvdb::tools::QuadAndTriangleDataAdapter<openvdb::Vec3s, openvdb::Vec4I> meshAdapter(vertices, indices);
+
     // The primitiveIndexGrid stores the index of the primitive (face) that is closest to the voxel.
     openvdb::Int32Grid::Ptr primitiveIndexGrid(new openvdb::Int32Grid(0));
     openvdb::math::Transform::Ptr transform = openvdb::math::Transform::createLinearTransform();
@@ -156,7 +165,7 @@ Mesh::createQuadMeshVelocityGrid(float interiorBandwidth,
     // If a shared primitive, the velocity grid is baked in local space.
     // In that case mPrimToRender is the worldToRender matrix used for shading,
     // which we do not want to apply.
-    const scene_rdl2::math::Mat4f primToRender = getIsReference() ? scene_rdl2::math::Mat4f(scene_rdl2::math::one) : mPrimToRender;
+    const Mat4f primToRender = getIsReference() ? Mat4f(one) : mPrimToRender;
 
     // Fill in velocity grid
     openvdb::tools::transformValues(primitiveIndexGrid->cbeginValueOn(), *velocityGrid,
@@ -193,14 +202,25 @@ Mesh::createQuadMeshVelocityGrid(float interiorBandwidth,
             }
 
             // Assume only one velocity buffer at t = 0.
-            const scene_rdl2::math::Vec3f v0 = scene_rdl2::math::transformVector(primToRender, getVelocity(faceid, index0,
-                float(motionSample)));
-            const scene_rdl2::math::Vec3f v1 = scene_rdl2::math::transformVector(primToRender, getVelocity(faceid, index1,
-                float(motionSample)));
-            const scene_rdl2::math::Vec3f v2 = scene_rdl2::math::transformVector(primToRender, getVelocity(faceid, index2,
-                float(motionSample)));
+            const Vec3f v0 = transformVector(primToRender,
+                                             getVelocity(faceid,
+                                                         index0,
+                                                         float(motionSample)));
 
-            const scene_rdl2::math::Vec3f v = invFps * (v0 * float(uvw[0]) + v1 * float(uvw[1]) + v2 * float(uvw[2]));
+            const Vec3f v1 = transformVector(primToRender,
+                                             getVelocity(faceid,
+                                                         index1,
+                                                         float(motionSample)));
+
+            const Vec3f v2 = transformVector(primToRender,
+                                             getVelocity(faceid,
+                                                         index2,
+                                                         float(motionSample)));
+
+            const Vec3f v = invFps * (v0 * float(uvw[0]) +
+                                      v1 * float(uvw[1]) +
+                                      v2 * float(uvw[2]));
+
             accessor.setValue(coord, openvdb::Vec3d(v.x, v.y, v.z));
     });
     velocityGrid->pruneGrid();
@@ -236,47 +256,62 @@ Mesh::createVelocityGrid(const float interiorBandwidth,
     openvdb::VectorGrid::Ptr velocityGrid;
     if (mesh.mIndexBufferType == MeshIndexType::TRIANGLE) {
         // first motion sample
-        velocityGrid = createTriMeshVelocityGrid(interiorBandwidth, mesh, 0, invFps);
+        velocityGrid = createTriMeshVelocityGrid(interiorBandwidth,
+                                                 mesh,
+                                                 0,
+                                                 invFps);
         if (motionSampleCount > 1)
         {
             // For volumes, there should only be two motion samples because motion blur is created
             // by velocity.
             MNRY_ASSERT(motionSampleCount == 2);
+
             // second motion sample
-            openvdb::VectorGrid::Ptr secondVelocityGrid = createTriMeshVelocityGrid(interiorBandwidth, mesh,
-                motionSampleCount - 1, invFps);
+            openvdb::VectorGrid::Ptr secondVelocityGrid = createTriMeshVelocityGrid(interiorBandwidth,
+                                                                                    mesh,
+                                                                                    motionSampleCount - 1,
+                                                                                    invFps);
+
             // combine velocity grids by taking max value.
             openvdb::tools::compMax(*velocityGrid, *secondVelocityGrid);
         }
     } else {
         // first motion sample
         velocityGrid = createQuadMeshVelocityGrid(interiorBandwidth, mesh, 0, invFps);
+
         if (motionSampleCount > 1)
         {
             // For volumes, there should only be two motion samples because motion blur is created
             // by velocity.
             MNRY_ASSERT(motionSampleCount == 2);
+
             // second motion sample
-            openvdb::VectorGrid::Ptr secondVelocityGrid = createQuadMeshVelocityGrid(interiorBandwidth, mesh,
-                motionSampleCount - 1, invFps);
+            openvdb::VectorGrid::Ptr secondVelocityGrid = createQuadMeshVelocityGrid(interiorBandwidth,
+                                                                                     mesh,
+                                                                                     motionSampleCount - 1,
+                                                                                     invFps);
+
             // combine velocity grids by taking max value.
-            openvdb::tools::compMax(*velocityGrid, *secondVelocityGrid);
+            openvdb::tools::compMax(*velocityGrid,
+                                    *secondVelocityGrid);
         }
     }
 
     mVdbVelocity->setShutterValues(motionBlurParams.getShutterOpen(),
-        motionBlurParams.getShutterClose() - motionBlurParams.getShutterOpen());
-    mVdbVelocity->setVelocityGrid(velocityGrid, volumeIds);
+                                   motionBlurParams.getShutterClose() - motionBlurParams.getShutterOpen());
+
+    mVdbVelocity->setVelocityGrid(velocityGrid,
+                                  volumeIds);
 }
 
 bool
 Mesh::faceHasAssignment(uint faceId)
 {
     // check if the part this face belongs to has the material assigned
-    int assignmentId =
-        mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT ?
-        mLayerAssignmentId.getConstId() :
-        mLayerAssignmentId.getVaryingId()[faceId];
+    int assignmentId = mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT ?
+                       mLayerAssignmentId.getConstId() :
+                       mLayerAssignmentId.getVaryingId()[faceId];
+
     return assignmentId != -1;
 }
 
@@ -287,12 +322,12 @@ Mesh::getMemory() const
     return sizeof(Mesh) - sizeof(NamedPrimitive) + NamedPrimitive::getMemory();
 }
 
-const scene_rdl2::rdl2::Material *
-Mesh::getIntersectionMaterial(const scene_rdl2::rdl2::Layer *pRdlLayer,
-        const mcrt_common::Ray &ray) const
+const Material *
+Mesh::getIntersectionMaterial(const Layer *pRdlLayer,
+                              const mcrt_common::Ray &ray) const
 {
     int layerAssignmentId = getIntersectionAssignmentId(ray.primID);
-    const scene_rdl2::rdl2::Material *pMaterial = MNRY_VERIFY(pRdlLayer->lookupMaterial(layerAssignmentId));
+    const Material *pMaterial = MNRY_VERIFY(pRdlLayer->lookupMaterial(layerAssignmentId));
     return pMaterial;
 }
 
@@ -305,7 +340,7 @@ Mesh::reverseOrientation(const size_t faceVertexCount,
     size_t indexOffset = 0;
     for (size_t i = 0; i < faceCount; i++) {
         std::reverse(indices.begin() + indexOffset,
-            indices.begin() + indexOffset + faceVertexCount);
+                     indices.begin() + indexOffset + faceVertexCount);
         indexOffset += faceVertexCount;
     }
 
@@ -314,14 +349,16 @@ Mesh::reverseOrientation(const size_t faceVertexCount,
 
 void
 Mesh::reverseOrientation(const std::vector<uint32_t>& faceVertexCount,
-                     std::vector<uint32_t>& indices,
-                     std::unique_ptr<shading::Attributes>& attributes)
+                         std::vector<uint32_t>& indices,
+                         std::unique_ptr<shading::Attributes>& attributes)
 {
     size_t faceCount = faceVertexCount.size();
     size_t indexOffset = 0;
+
     for (size_t i = 0; i < faceCount; i++) {
         MNRY_ASSERT(faceVertexCount[i] == 3 || faceVertexCount[i] == 4);
-        std::reverse(indices.begin() + indexOffset, indices.begin() + indexOffset + faceVertexCount[i]);
+        std::reverse(indices.begin() + indexOffset,
+                     indices.begin() + indexOffset + faceVertexCount[i]);
         indexOffset += faceVertexCount[i];
     }
 
@@ -331,8 +368,12 @@ Mesh::reverseOrientation(const std::vector<uint32_t>& faceVertexCount,
 
 Vec3f
 Mesh::computeMotion(const VertexBuffer<Vec3fa, InterleavedTraits> &vertBuf,
-                    uint32_t id1, uint32_t id2, uint32_t id3,
-                    float vertexW1, float vertexW2, float vertexW3,
+                    uint32_t id1,
+                    uint32_t id2,
+                    uint32_t id3,
+                    float vertexW1,
+                    float vertexW2,
+                    float vertexW3,
                     const mcrt_common::Ray &ray) const
 {
     Vec3f pos0, pos1;
@@ -352,18 +393,31 @@ Mesh::computeMotion(const VertexBuffer<Vec3fa, InterleavedTraits> &vertBuf,
 
     // Motion vectors only support a single instance level, hence we only care
     // about ray.instance0.
-    const Instance *instance = (ray.isInstanceHit())?
-        static_cast<const Instance *>(ray.ext.instance0OrLight) : nullptr;
-    return computePrimitiveMotion(pos0, pos1Ptr, ray.getTime(), instance);
+    const Instance *instance = ray.isInstanceHit() ?
+                               static_cast<const Instance *>(ray.ext.instance0OrLight) :
+                               nullptr;
+
+    return computePrimitiveMotion(pos0,
+                                  pos1Ptr,
+                                  ray.getTime(),
+                                  instance);
 }
 
 //----------------------------------------------------------------------------
 
 static void
-interpolatePosInTri(const Vec2f &p, const Vec2f &a, const Vec2f &b, const Vec2f &c,
-                    const Vec3f &posA, const Vec3f &posB, const Vec3f &posC,
-                    const Vec3f *nrmA, const Vec3f *nrmB, const Vec3f *nrmC,
-                    Vec3fa *posResult, Vec3f *nrmResult)
+interpolatePosInTri(const Vec2f &p,
+                    const Vec2f &a,
+                    const Vec2f &b,
+                    const Vec2f &c,
+                    const Vec3f &posA,
+                    const Vec3f &posB,
+                    const Vec3f &posC,
+                    const Vec3f *nrmA,
+                    const Vec3f *nrmB,
+                    const Vec3f *nrmC,
+                    Vec3fa *posResult,
+                    Vec3f *nrmResult)
 {
     // p is a pos in st space, a, b, and c are st coordinates of a triangle,
     // which are probably in ccw order, but this code does not assume that.
@@ -397,18 +451,19 @@ interpolatePosInTri(const Vec2f &p, const Vec2f &a, const Vec2f &b, const Vec2f 
             float u = areaPBC * invAreaABC; // weight of a
             float v = areaAPC * invAreaABC; // weight of b
             float w = 1.f - u - v; // weight of c
-            MNRY_ASSERT(
-                u >= -1e-5f && u <= 1.0f + 1e-5f &&
-                v >= -1e-5f && v <= 1.0f + 1e-5f &&
-                w >= -1e-5f && w <= 1.0f + 1e-5f);
+            MNRY_ASSERT(u >= -1e-5f && u <= 1.0f + 1e-5f &&
+                        v >= -1e-5f && v <= 1.0f + 1e-5f &&
+                        w >= -1e-5f && w <= 1.0f + 1e-5f);
+
             // clamp to avoid float point precision error, the uvw coordinate
             // should be all within [0, 1] range mathematically
-            u = scene_rdl2::math::clamp(u);
-            v = scene_rdl2::math::clamp(v);
-            w = scene_rdl2::math::clamp(w);
+            u = clamp(u);
+            v = clamp(v);
+            w = clamp(w);
             // now compute the interpolated position result
             MNRY_ASSERT(posResult);
             *posResult = Vec3fa(posA * u + posB * v + posC * w, 0.f);
+
             // set alpha to 1.f to indicate that this pixel has
             // valid position data
             posResult->w = 1.f;
@@ -423,16 +478,25 @@ interpolatePosInTri(const Vec2f &p, const Vec2f &a, const Vec2f &b, const Vec2f 
 }
 
 void
-Mesh::rasterizeTrianglePos(const scene_rdl2::math::BBox2f &roiST, int width, int height,
-                           const Vec2f &a, const Vec2f &b, const Vec2f &c,
-                           const Vec3f &posA, const Vec3f &posB, const Vec3f &posC,
-                           const Vec3f *nrmA, const Vec3f *nrmB, const Vec3f *nrmC,
-                           Vec3fa *posResult, Vec3f *nrmResult)
+Mesh::rasterizeTrianglePos(const BBox2f &roiST,
+                           int width, int height,
+                           const Vec2f &a,
+                           const Vec2f &b,
+                           const Vec2f &c,
+                           const Vec3f &posA,
+                           const Vec3f &posB,
+                           const Vec3f &posC,
+                           const Vec3f *nrmA,
+                           const Vec3f *nrmB,
+                           const Vec3f *nrmC,
+                           Vec3fa *posResult,
+                           Vec3f *nrmResult)
 {
-    const scene_rdl2::math::BBox2i roiXY(scene_rdl2::math::Vec2i(floor(roiST.lower.x * (width - 1)),
-                                         floor(roiST.lower.y * (height - 1))),
-                             scene_rdl2::math::Vec2i(ceil(roiST.upper.x * (width - 1)),
-                                         ceil(roiST.upper.y * (height - 1))));
+    const BBox2i roiXY(Vec2i(scene_rdl2::math::floor(roiST.lower.x * (width - 1)),
+                             scene_rdl2::math::floor(roiST.lower.y * (height - 1))),
+                       Vec2i(scene_rdl2::math::ceil(roiST.upper.x * (width - 1)),
+                             scene_rdl2::math::ceil(roiST.upper.y * (height - 1))));
+
     for (int y = roiXY.lower.y; y <= roiXY.upper.y; ++y) {
         const float t = float(y) / (height - 1);
         for (int x = roiXY.lower.x; x <= roiXY.upper.x; ++x) {
@@ -440,7 +504,11 @@ Mesh::rasterizeTrianglePos(const scene_rdl2::math::BBox2f &roiST, int width, int
             MNRY_ASSERT(posResult);
             Vec3fa *pos = posResult + y * width + x;
             Vec3f *nrm = nrmResult? nrmResult + y * width + x : nullptr;
-            interpolatePosInTri(st, a, b, c, posA, posB, posC, nrmA, nrmB, nrmC, pos, nrm);
+            interpolatePosInTri(st,
+                                a, b, c,
+                                posA, posB, posC,
+                                nrmA, nrmB, nrmC,
+                                pos, nrm);
         }
     }
 }
@@ -455,8 +523,8 @@ Mesh::udimxform(int udim, Vec2f &st)
         // accept it
         st.x -= minS;
         st.y -= minT;
-        st.x = scene_rdl2::math::clamp(st.x);
-        st.y = scene_rdl2::math::clamp(st.y);
+        st.x = clamp(st.x);
+        st.y = clamp(st.y);
         return true;
     }
     return false;

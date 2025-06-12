@@ -38,7 +38,8 @@ public:
 };
 
 ProceduralNode::ProceduralNode(const State &state) :
-        Procedural(state), mImpl(new Impl())
+    Procedural(state),
+    mImpl(new Impl())
 {
 }
 
@@ -61,66 +62,74 @@ ProceduralNode::forEachPrimitive(PrimitiveVisitor& visitor,
         tbb::blocked_range<size_t> range(0, mImpl->mChildren.size());
         tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
             for (size_t i = r.begin(); i < r.end(); ++i) {
-                mImpl->mChildren[i]->forEachPrimitive(visitor, parallel);
+                mImpl->mChildren[i]->forEachPrimitive(visitor,
+                                                      parallel);
             }
         });
     } else {
         for (auto& child : mImpl->mChildren) {
-            child->forEachPrimitive(visitor, parallel);
+            child->forEachPrimitive(visitor,
+                                    parallel);
         }
     }
 }
 
 void
 ProceduralNode::forEachStatic(PrimitiveVisitor& visitor,
-        bool parallel)
+                              bool parallel)
 {
     if (parallel) {
         tbb::blocked_range<size_t> range(0, mImpl->mChildren.size());
         tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
             for (size_t i = r.begin(); i < r.end(); ++i) {
-                mImpl->mChildren[i]->forEachStatic(visitor, parallel);
+                mImpl->mChildren[i]->forEachStatic(visitor,
+                                                   parallel);
             }
         });
     } else {
         for (auto& child : mImpl->mChildren) {
-            child->forEachStatic(visitor, parallel);
+            child->forEachStatic(visitor,
+                                 parallel);
         }
     }
 }
 
 void
 ProceduralNode::forEachDynamic(PrimitiveVisitor& visitor,
-        bool parallel)
+                               bool parallel)
 {
     if (parallel) {
         tbb::blocked_range<size_t> range(0, mImpl->mChildren.size());
         tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
             for (size_t i = r.begin(); i < r.end(); ++i) {
-                mImpl->mChildren[i]->forEachDynamic(visitor, parallel);
+                mImpl->mChildren[i]->forEachDynamic(visitor,
+                                                    parallel);
             }
         });
     } else {
         for (auto& child : mImpl->mChildren) {
-            child->forEachDynamic(visitor, parallel);
+            child->forEachDynamic(visitor,
+                                  parallel);
         }
     }
 }
 
 void
 ProceduralNode::forEachDeformable(PrimitiveVisitor& visitor,
-        bool parallel)
+                                  bool parallel)
 {
     if (parallel) {
         tbb::blocked_range<size_t> range(0, mImpl->mChildren.size());
         tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
             for (size_t i = r.begin(); i < r.end(); ++i) {
-                mImpl->mChildren[i]->forEachDeformable(visitor, parallel);
+                mImpl->mChildren[i]->forEachDeformable(visitor,
+                                                       parallel);
             }
         });
     } else {
         for (auto& child : mImpl->mChildren) {
-            child->forEachDeformable(visitor, parallel);
+            child->forEachDeformable(visitor,
+                                     parallel);
         }
     }
 }

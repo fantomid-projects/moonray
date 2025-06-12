@@ -31,7 +31,8 @@ public:
     class Transform
     {
     public:
-        Transform(const scene_rdl2::math::Mat4f distToRender[2], float invUnitVolume):
+        Transform(const scene_rdl2::math::Mat4f distToRender[2],
+                  float invUnitVolume) :
             mInvUnitVolume(invUnitVolume)
         {
             mDistToRender[0] = distToRender[0];
@@ -44,6 +45,7 @@ public:
         const scene_rdl2::math::Mat4f getDistToRender(float time) const { return lerp(mDistToRender[0], mDistToRender[1], time); }
         const scene_rdl2::math::Mat4f getRenderToDist(float time) const { return lerp(mRenderToDist[0], mRenderToDist[1], time); }
         float getInvUnitVolume() const { return mInvUnitVolume; }
+
     private:
         scene_rdl2::math::Mat4f mDistToRender[2];
         scene_rdl2::math::Mat4f mRenderToDist[2];
@@ -51,9 +53,10 @@ public:
     };
 
     EmissionDistribution(const scene_rdl2::math::Vec3i& res,
-            const scene_rdl2::math::Mat4f distToRender[2],
-            float invUnitVolume):
-        mTransform(distToRender, invUnitVolume),
+                         const scene_rdl2::math::Mat4f distToRender[2],
+                         float invUnitVolume) :
+        mTransform(distToRender,
+                   invUnitVolume),
         mRes(res)
     {
         mIsMotionBlurOn = (distToRender[0] != distToRender[1]);
@@ -68,18 +71,31 @@ public:
     // given a shading point p, draw a direction wi based on the emission energy
     // distribution represented here and return corresponding solid angle pdf
     // in pdfWi, t interval exiting this emission region in tEnd
-    virtual void sample(const Transform &xform, const scene_rdl2::math::Vec3f& p, float u1, float u2, float u3,
-                        scene_rdl2::math::Vec3f& wi, float& pdfWi, float& tEnd, float time) const = 0;
+    virtual void sample(const Transform &xform,
+                        const scene_rdl2::math::Vec3f& p,
+                        float u1,
+                        float u2,
+                        float u3,
+                        scene_rdl2::math::Vec3f& wi,
+                        float& pdfWi,
+                        float& tEnd,
+                        float time) const = 0;
 
     // sample a position based on emission energy distribution represented here
-    virtual scene_rdl2::math::Vec3f sample(const Transform &xform, float u1, 
-                                           float u2, float u3, float time) const = 0;
+    virtual scene_rdl2::math::Vec3f sample(const Transform &xform,
+                                           float u1,
+                                           float u2,
+                                           float u3,
+                                           float time) const = 0;
 
     // given a shading point pRender, evaluate the accumulated pdf along
     // direction wiRender extended from pRender and the t interval
     // exiting this emission region (tEnd)
-    float pdf(const Transform &xform, const scene_rdl2::math::Vec3f& pRender, 
-              const scene_rdl2::math::Vec3f& wiRender, float& tEnd, float time) const;
+    float pdf(const Transform &xform,
+              const scene_rdl2::math::Vec3f& pRender, 
+              const scene_rdl2::math::Vec3f& wiRender,
+              float& tEnd,
+              float time) const;
 
     // Get the transform between distribution space and render space.
     // If this distribution is a shared reference (i.e. an instancing ref) then
@@ -104,14 +120,18 @@ class DenseEmissionDistribution : public EmissionDistribution
 {
 public:
     DenseEmissionDistribution(const scene_rdl2::math::Vec3i& res,
-            const scene_rdl2::math::Mat4f distToRender[2],
-            float invUnitVolume,
-            const std::vector<float>& histogram):
-        EmissionDistribution(res, distToRender, invUnitVolume)
+                              const scene_rdl2::math::Mat4f distToRender[2],
+                              float invUnitVolume,
+                              const std::vector<float>& histogram) :
+        EmissionDistribution(res,
+                             distToRender,
+                             invUnitVolume)
 
     {
         mDistribution.reset(new Distribution3D(histogram.data(),
-            mRes[0], mRes[1], mRes[2]));
+                                               mRes[0],
+                                               mRes[1],
+                                               mRes[2]));
     }
 
     virtual ~DenseEmissionDistribution() = default;
@@ -124,11 +144,22 @@ public:
     // given a shading point p, draw a direction wi based on the emission energy
     // distribution represented here and return corresponding solid angle pdf
     // in pdfWi, t interval exiting this emission region in tEnd
-    void sample(const Transform &xform, const scene_rdl2::math::Vec3f& p, float u1, float u2, float u3,
-            Vec3f& wi, float& pdfWi, float& tEnd, float time) const override;
+    void sample(const Transform &xform,
+                const scene_rdl2::math::Vec3f& p,
+                float u1,
+                float u2,
+                float u3,
+                Vec3f& wi,
+                float& pdfWi,
+                float& tEnd,
+                float time) const override;
 
     // sample a position based on emission energy distribution represented here
-    scene_rdl2::math::Vec3f sample(const Transform &xform, float u1, float u2, float u3, float time) const override;
+    scene_rdl2::math::Vec3f sample(const Transform &xform,
+                                   float u1,
+                                   float u2,
+                                   float u3,
+                                   float time) const override;
 
 private:
     // Evaluate the discrete pdf at a point pos

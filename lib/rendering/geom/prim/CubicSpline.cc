@@ -23,35 +23,38 @@ namespace internal {
 using namespace scene_rdl2::math;
 using namespace moonray::shading;
 
-CubicSpline::CubicSpline(
-        Curves::Type type,
-        geom::Curves::SubType subtype,
-        geom::Curves::CurvesVertexCount&& curvesVertexCount,
-        geom::Curves::VertexBuffer&& vertices,
-        LayerAssignmentId&& layerAssignmentId,
-        shading::PrimitiveAttributeTable&& primitiveAttributeTable):
-        Curves(type,
-               static_cast<Curves::SubType>(subtype),
-               std::move(curvesVertexCount),
-               std::move(vertices),
-               std::move(layerAssignmentId),
-               std::move(primitiveAttributeTable))
-{
-
-}
+CubicSpline::CubicSpline(Curves::Type type,
+                         geom::Curves::SubType subtype,
+                         geom::Curves::CurvesVertexCount&& curvesVertexCount,
+                         geom::Curves::VertexBuffer&& vertices,
+                         LayerAssignmentId&& layerAssignmentId,
+                         shading::PrimitiveAttributeTable&& primitiveAttributeTable) :
+                         Curves(type,
+                                static_cast<Curves::SubType>(subtype),
+                                std::move(curvesVertexCount),
+                                std::move(vertices),
+                                std::move(layerAssignmentId),
+                                std::move(primitiveAttributeTable))
+{ }
 
 template <typename CvType>
-static __forceinline CvType evalCubicFromWeights(
-        const float& w0, const float& w1, const float& w2, const float& w3,
-        const CvType& cv0, const CvType& cv1, const CvType& cv2, const CvType& cv3)
+static __forceinline CvType evalCubicFromWeights(const float& w0,
+                                                 const float& w1,
+                                                 const float& w2,
+                                                 const float& w3,
+                                                 const CvType& cv0,
+                                                 const CvType& cv1,
+                                                 const CvType& cv2,
+                                                 const CvType& cv3)
 {
     return w0 * cv0 + w1 * cv1 + w2 * cv2 + w3 * cv3;
 }
 
 void
 CubicSpline::postIntersect(mcrt_common::ThreadLocalState &tls,
-        const scene_rdl2::rdl2::Layer* layer, const mcrt_common::Ray& ray,
-        shading::Intersection& intersection) const
+                           const scene_rdl2::rdl2::Layer* layer,
+                           const mcrt_common::Ray& ray,
+                           shading::Intersection& intersection) const
 {
     const int spanId = ray.primID;
     const IndexData& index = mIndexBuffer[spanId];
@@ -72,24 +75,28 @@ CubicSpline::postIntersect(mcrt_common::ThreadLocalState &tls,
         MNRY_ASSERT(getMotionSamplesCount() == 2);
         float wt = ray.time;
         cv[0] = lerp(mVertexBuffer(vertexOffset + 0, 0),
-                     mVertexBuffer(vertexOffset + 0, 1), ray.time);
+                     mVertexBuffer(vertexOffset + 0, 1),
+                     ray.time);
         cv[1] = lerp(mVertexBuffer(vertexOffset + 1, 0),
-                     mVertexBuffer(vertexOffset + 1, 1), ray.time);
+                     mVertexBuffer(vertexOffset + 1, 1),
+                     ray.time);
         cv[2] = lerp(mVertexBuffer(vertexOffset + 2, 0),
-                     mVertexBuffer(vertexOffset + 2, 1), ray.time);
+                     mVertexBuffer(vertexOffset + 2, 1),
+                     ray.time);
         cv[3] = lerp(mVertexBuffer(vertexOffset + 3, 0),
-                     mVertexBuffer(vertexOffset + 3, 1), ray.time);
+                     mVertexBuffer(vertexOffset + 3, 1),
+                     ray.time);
     }
 
-    const int assignmentId =
-        mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT ?
-        mLayerAssignmentId.getConstId() :
-        mLayerAssignmentId.getVaryingId()[chain];
+    const int assignmentId = mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT ?
+                             mLayerAssignmentId.getConstId() :
+                             mLayerAssignmentId.getVaryingId()[chain];
+
     intersection.setLayerAssignments(assignmentId, layer);
 
-    const AttributeTable *table =
-        intersection.getMaterial()->get<shading::RootShader>().getAttributeTable();
-    intersection.setTable(&tls.mArena, table);
+    const AttributeTable *table = intersection.getMaterial()->get<shading::RootShader>().getAttributeTable();
+    intersection.setTable(&tls.mArena,
+                          table);
     intersection.setIds(vertexOffset, 0, 0);
     const Attributes* primitiveAttributes = getAttributes();
 
@@ -121,10 +128,10 @@ CubicSpline::postIntersect(mcrt_common::ThreadLocalState &tls,
     Vec2f St;
     if (primitiveAttributes->isSupported(shading::StandardAttributes::sSt)) {
         interpolator.interpolate(shading::StandardAttributes::sSt,
-            reinterpret_cast<char*>(&St));
+                                 reinterpret_cast<char*>(&St));
     } else if (primitiveAttributes->isSupported(shading::StandardAttributes::sUv)) {
         interpolator.interpolate(shading::StandardAttributes::sUv,
-            reinterpret_cast<char*>(&St));
+                                 reinterpret_cast<char*>(&St));
     } else {
         const float stSpanRange = 1.0f / spansInChain;
         const float ststart = stSpanRange * indexInChain;
@@ -229,10 +236,12 @@ CubicSpline::postIntersect(mcrt_common::ThreadLocalState &tls,
     if (table->requests(StandardAttributes::sNumPolyVertices)) {
         intersection.setAttribute(StandardAttributes::sNumPolyVertices, 4);
     }
+
     if (table->requests(StandardAttributes::sPolyVertexType)) {
         intersection.setAttribute(StandardAttributes::sPolyVertexType,
-            static_cast<int>(StandardAttributes::POLYVERTEX_TYPE_CUBIC_SPLINE));
+                                  static_cast<int>(StandardAttributes::POLYVERTEX_TYPE_CUBIC_SPLINE));
     }
+
     for (int iVert = 0; iVert < 4; iVert++) {
         if (table->requests(StandardAttributes::sPolyVertices[iVert])) {
             // may need to move the vertices to render space
@@ -240,7 +249,9 @@ CubicSpline::postIntersect(mcrt_common::ThreadLocalState &tls,
             const Vec3f v = ray.isInstanceHit() ?
                             transformPoint(ray.ext.l2r, cv[iVert].asVec3f()) :
                             cv[iVert].asVec3f();
-            intersection.setAttribute(StandardAttributes::sPolyVertices[iVert], v);
+
+            intersection.setAttribute(StandardAttributes::sPolyVertices[iVert],
+                                      v);
         }
     }
 
@@ -250,23 +261,23 @@ CubicSpline::postIntersect(mcrt_common::ThreadLocalState &tls,
         const Vec3f *pos1Ptr = nullptr;
         if (!isMotionBlurOn()) {
             const Vec3fa v0 = evalCubic(ray.u,
-                mVertexBuffer(vertexOffset + 0, 0), mVertexBuffer(vertexOffset + 1, 0),
-                mVertexBuffer(vertexOffset + 2, 0), mVertexBuffer(vertexOffset + 3, 0));
+                                        mVertexBuffer(vertexOffset + 0, 0), mVertexBuffer(vertexOffset + 1, 0),
+                                        mVertexBuffer(vertexOffset + 2, 0), mVertexBuffer(vertexOffset + 3, 0));
             pos0 = v0.asVec3f();
             pos1Ptr = nullptr;
         } else {
             float wc = ray.getTime() - sHalfDt;
             const Vec3fa v0 = evalCubic(ray.u,
-                lerp(mVertexBuffer(vertexOffset + 0, 0), mVertexBuffer(vertexOffset + 0, 1), wc),
-                lerp(mVertexBuffer(vertexOffset + 1, 0), mVertexBuffer(vertexOffset + 1, 1), wc),
-                lerp(mVertexBuffer(vertexOffset + 2, 0), mVertexBuffer(vertexOffset + 2, 1), wc),
-                lerp(mVertexBuffer(vertexOffset + 3, 0), mVertexBuffer(vertexOffset + 3, 1), wc));
+                                        lerp(mVertexBuffer(vertexOffset + 0, 0), mVertexBuffer(vertexOffset + 0, 1), wc),
+                                        lerp(mVertexBuffer(vertexOffset + 1, 0), mVertexBuffer(vertexOffset + 1, 1), wc),
+                                        lerp(mVertexBuffer(vertexOffset + 2, 0), mVertexBuffer(vertexOffset + 2, 1), wc),
+                                        lerp(mVertexBuffer(vertexOffset + 3, 0), mVertexBuffer(vertexOffset + 3, 1), wc));
             wc = ray.getTime() + sHalfDt;
             const Vec3fa v1 = evalCubic(ray.u,
-                lerp(mVertexBuffer(vertexOffset + 0, 0), mVertexBuffer(vertexOffset + 0, 1), wc),
-                lerp(mVertexBuffer(vertexOffset + 1, 0), mVertexBuffer(vertexOffset + 1, 1), wc),
-                lerp(mVertexBuffer(vertexOffset + 2, 0), mVertexBuffer(vertexOffset + 2, 1), wc),
-                lerp(mVertexBuffer(vertexOffset + 3, 0), mVertexBuffer(vertexOffset + 3, 1), wc));
+                                        lerp(mVertexBuffer(vertexOffset + 0, 0), mVertexBuffer(vertexOffset + 0, 1), wc),
+                                        lerp(mVertexBuffer(vertexOffset + 1, 0), mVertexBuffer(vertexOffset + 1, 1), wc),
+                                        lerp(mVertexBuffer(vertexOffset + 2, 0), mVertexBuffer(vertexOffset + 2, 1), wc),
+                                        lerp(mVertexBuffer(vertexOffset + 3, 0), mVertexBuffer(vertexOffset + 3, 1), wc));
             pos0 = v0.asVec3f();
             pos1 = v1.asVec3f();
             pos1Ptr = &pos1;
@@ -274,19 +285,28 @@ CubicSpline::postIntersect(mcrt_common::ThreadLocalState &tls,
 
         // Motion vectors only support a single instance level, hence we only care
         // about ray.instance0.
-        const Instance *instance = (ray.isInstanceHit())?
-            static_cast<const Instance *>(ray.ext.instance0OrLight) : nullptr;
-        const Vec3f motion = computePrimitiveMotion(pos0, pos1Ptr, ray.getTime(), instance);
-        intersection.setAttribute(StandardAttributes::sMotion, motion);
+        const Instance *instance = ray.isInstanceHit() ?
+                                   static_cast<const Instance *>(ray.ext.instance0OrLight) :
+                                   nullptr;
+
+        const Vec3f motion = computePrimitiveMotion(pos0,
+                                                    pos1Ptr,
+                                                    ray.getTime(),
+                                                    instance);
+
+        intersection.setAttribute(StandardAttributes::sMotion,
+                                  motion);
     }
 }
 
 
 bool
 CubicSpline::computeIntersectCurvature(const mcrt_common::Ray& ray,
-        const shading::Intersection& intersection, Vec3f& dNds, Vec3f& dNdt) const
+                                       const shading::Intersection& intersection,
+                                       Vec3f& dNds,
+                                       Vec3f& dNdt) const
 {
-    // dNds and dNdt are not geometrically useful because the cuve is a flat
+    // dNds and dNdt are not geometrically useful because the curve is a flat
     // ribbon whose normal faces the ray. This means N is dependent on
     // ray direction rather than on the geometry of the curve alone.
     dNds = Vec3f(0.0f, 0.0f, 0.0f);
@@ -296,9 +316,14 @@ CubicSpline::computeIntersectCurvature(const mcrt_common::Ray& ray,
 
 void
 CubicSpline::computeAttributesDerivatives(const AttributeTable* table,
-        float u, float invDs, int chain,
-        int varyingOffset, int faceVaryingOffset, int vertexOffset,
-        float time, shading::Intersection& intersection) const
+                                          float u,
+                                          float invDs,
+                                          int chain,
+                                          int varyingOffset,
+                                          int faceVaryingOffset,
+                                          int vertexOffset,
+                                          float time,
+                                          shading::Intersection& intersection) const
 {
     Attributes* attrs = getAttributes();
     for (auto key: table->getDifferentialAttributes()) {
@@ -308,8 +333,14 @@ CubicSpline::computeAttributesDerivatives(const AttributeTable* table,
         switch (key.getType()) {
         case scene_rdl2::rdl2::TYPE_FLOAT:
             computeAttributeDerivatives(TypedAttributeKey<float>(key),
-                u, invDs, chain, varyingOffset, faceVaryingOffset, vertexOffset,
-                time, intersection);
+                                        u,
+                                        invDs,
+                                        chain,
+                                        varyingOffset,
+                                        faceVaryingOffset,
+                                        vertexOffset,
+                                        time,
+                                        intersection);
             break;
         case scene_rdl2::rdl2::TYPE_RGB:
             computeAttributeDerivatives(TypedAttributeKey<scene_rdl2::math::Color>(key),
@@ -318,23 +349,47 @@ CubicSpline::computeAttributesDerivatives(const AttributeTable* table,
             break;
         case scene_rdl2::rdl2::TYPE_RGBA:
             computeAttributeDerivatives(TypedAttributeKey<scene_rdl2::math::Color4>(key),
-                u, invDs, chain, varyingOffset, faceVaryingOffset, vertexOffset,
-                time, intersection);
+                                        u,
+                                        invDs,
+                                        chain,
+                                        varyingOffset,
+                                        faceVaryingOffset,
+                                        vertexOffset,
+                                        time,
+                                        intersection);
             break;
         case scene_rdl2::rdl2::TYPE_VEC2F:
             computeAttributeDerivatives(TypedAttributeKey<scene_rdl2::math::Vec2f>(key),
-                u, invDs, chain, varyingOffset, faceVaryingOffset, vertexOffset,
-                time, intersection);
+                                        u,
+                                        invDs,
+                                        chain,
+                                        varyingOffset,
+                                        faceVaryingOffset,
+                                        vertexOffset,
+                                        time,
+                                        intersection);
             break;
         case scene_rdl2::rdl2::TYPE_VEC3F:
             computeAttributeDerivatives(TypedAttributeKey<scene_rdl2::math::Vec3f>(key),
-                u, invDs, chain, varyingOffset, faceVaryingOffset, vertexOffset,
-                time, intersection);
+                                        u,
+                                        invDs,
+                                        chain,
+                                        varyingOffset,
+                                        faceVaryingOffset,
+                                        vertexOffset,
+                                        time,
+                                        intersection);
             break;
         case scene_rdl2::rdl2::TYPE_MAT4F:
             computeAttributeDerivatives(TypedAttributeKey<scene_rdl2::math::Mat4f>(key),
-                u, invDs, chain, varyingOffset, faceVaryingOffset, vertexOffset,
-                time, intersection);
+                                        u,
+                                        invDs,
+                                        chain,
+                                        varyingOffset,
+                                        faceVaryingOffset,
+                                        vertexOffset,
+                                        time,
+                                        intersection);
             break;
         default:
             break;

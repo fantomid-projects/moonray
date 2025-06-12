@@ -196,21 +196,19 @@ public:
     virtual int
     getIntersectionAssignmentId(int primID) const override
     {
-        int assignmentId =
-            mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT ?
-            mLayerAssignmentId.getConstId() :
-            mLayerAssignmentId.getVaryingId()[mIndexBuffer[primID].mChain];
+        int assignmentId = mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT ?
+                           mLayerAssignmentId.getConstId() :
+                           mLayerAssignmentId.getVaryingId()[mIndexBuffer[primID].mChain];
         return assignmentId;
     }
 
     virtual const scene_rdl2::rdl2::Material *
     getIntersectionMaterial(const scene_rdl2::rdl2::Layer *pRdlLayer,
-            const mcrt_common::Ray &ray) const override
+                            const mcrt_common::Ray &ray) const override
     {
-        int assignmentId =
-            mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT ?
-            mLayerAssignmentId.getConstId() :
-            mLayerAssignmentId.getVaryingId()[mIndexBuffer[ray.primID].mChain];
+        int assignmentId = mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT ?
+                           mLayerAssignmentId.getConstId() :
+                           mLayerAssignmentId.getVaryingId()[mIndexBuffer[ray.primID].mChain];
 
         MNRY_ASSERT(assignmentId > -1);
         const scene_rdl2::rdl2::Material *pMaterial = MNRY_VERIFY(pRdlLayer->lookupMaterial(assignmentId));
@@ -238,6 +236,7 @@ public:
         if (mVertexBuffer.empty()) {
             return BBox3f(scene_rdl2::math::zero);
         }
+
         float maxRadius = 0.0f;
         size_t motionSampleCount = getMotionSamplesCount();
         BBox3f result(mVertexBuffer(0));
@@ -247,6 +246,7 @@ public:
                 maxRadius = std::max(maxRadius, mVertexBuffer(v, t).w);
             }
         }
+
         // padding the bounding box with curves radius
         result.lower -= Vec3f(maxRadius);
         result.upper += Vec3f(maxRadius);
@@ -258,6 +258,7 @@ public:
         if (mVertexBuffer.empty()) {
             return BBox3f(scene_rdl2::math::zero);
         }
+
         float maxRadius = 0.0f;
         MNRY_ASSERT(timeStep >= 0 && timeStep < static_cast<int>(getMotionSamplesCount()), "timeStep out of range");
         BBox3f result(scene_rdl2::util::empty);
@@ -265,6 +266,7 @@ public:
             result.extend(mVertexBuffer(v, timeStep));
             maxRadius = std::max(maxRadius, mVertexBuffer(v, timeStep).w);
         }
+
         // padding the bounding box with curves radius
         result.lower -= Vec3f(maxRadius);
         result.upper += Vec3f(maxRadius);
@@ -274,8 +276,12 @@ public:
 protected:
 
     struct IndexData {
-        IndexData(uint32_t vertex, uint32_t chain, uint32_t span):
-            mVertex(vertex), mChain(chain), mSpan(span)
+        IndexData(uint32_t vertex,
+                  uint32_t chain,
+                  uint32_t span):
+            mVertex(vertex),
+            mChain(chain),
+            mSpan(span)
         {}
         uint32_t mVertex;
         uint32_t mChain;

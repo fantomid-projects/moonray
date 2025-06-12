@@ -63,7 +63,8 @@ protected:
     {
     }
 
-    InterleavedTraits(size_type n, size_type timeSteps,
+    InterleavedTraits(size_type n,
+                      size_type timeSteps,
                       allocator_type alloc = allocator_type()) :
         allocator_type(alloc),
         mCapacity(n),
@@ -73,7 +74,9 @@ protected:
     {
     }
 
-    InterleavedTraits(size_type n, const_reference value, size_type timeSteps,
+    InterleavedTraits(size_type n,
+                      const_reference value,
+                      size_type timeSteps,
                       allocator_type alloc = allocator_type()) :
         allocator_type(alloc),
         mCapacity(n),
@@ -88,7 +91,10 @@ protected:
         mCapacity(other.mSize),
         mSize(other.mSize),
         mTimeSteps(other.mTimeSteps),
-        mData(copyValue(getAllocatorInternal(), other.mData, other.mSize, other.mTimeSteps))
+        mData(copyValue(getAllocatorInternal(),
+                        other.mData,
+                        other.mSize,
+                        other.mTimeSteps))
     {
     }
 
@@ -113,6 +119,7 @@ protected:
     {
         if (traits::propagate_on_container_move_assignment::value &&
             this->getAllocatorInternal() != other.getAllocatorInternal()) {
+
             // We get to move the allocator. This is good.
             allocator_type::operator=(std::move(other));
             mCapacity = other.mCapacity;
@@ -125,8 +132,8 @@ protected:
             other.mSize = 0;
             other.mData = nullptr;
         } else if (fauxstd::is_always_equal<allocator_type>::value ||
-                   this->getAllocatorInternal() ==
-                   other.getAllocatorInternal()) {
+                   this->getAllocatorInternal() == other.getAllocatorInternal()) {
+
             // We don't have to move the allocator. This is good.
             mCapacity = other.mCapacity;
             mSize = other.mSize;
@@ -140,8 +147,10 @@ protected:
         } else {
             // Our only option is to copy all of the elements, because we can't
             // do anything smart with the allocators. This is bad.
-            auto newData = copyMove(getAllocatorInternal(), other.mData,
-                                    other.mSize, other.mTimeSteps);
+            auto newData = copyMove(getAllocatorInternal(),
+                                    other.mData,
+                                    other.mSize,
+                                    other.mTimeSteps);
             destroy();
             mCapacity = other.mSize;
             mSize = other.mSize;
@@ -160,7 +169,8 @@ protected:
     void clear() noexcept
     {
         if (mData) {
-            destroyArraySamples(getAllocatorInternal(), mData,
+            destroyArraySamples(getAllocatorInternal(),
+                                mData,
                                 mSize * mTimeSteps);
         }
         mSize = 0;
@@ -173,7 +183,8 @@ protected:
         using std::swap; // Allow ADL
         if (traits::propagate_on_container_swap::value) {
             // We get to swap the allocators. This is good.
-            swap(getAllocatorInternal(), other.getAllocatorInternal());
+            swap(getAllocatorInternal(),
+                 other.getAllocatorInternal());
         } else {
             // If we're not swapping the allocators, they had better be equal!
             assert(fauxstd::is_always_equal<allocator_type>::value ||
@@ -189,7 +200,7 @@ protected:
     float* data()
     {
         static_assert(std::is_standard_layout<T>::value, "Assume standard layout"
-            " for conversion to float pointer.");
+                      " for conversion to float pointer.");
         assert(mData);
         return reinterpret_cast<float*>(mData);
     }
@@ -197,7 +208,7 @@ protected:
     const float* data() const
     {
         static_assert(std::is_standard_layout<T>::value, "Assume standard layout"
-            " for conversion to float pointer.");
+                      " for conversion to float pointer.");
         assert(mData);
         return reinterpret_cast<const float*>(mData);
     }
@@ -239,7 +250,9 @@ protected:
         assert(mTimeSteps == 1);
         assert(mCapacity > mSize);
         pointer p = getAddress(0, mSize);
-        traits::construct(getAllocatorInternal(), p, u);
+        traits::construct(getAllocatorInternal(),
+                          p,
+                          u);
         ++mSize;
     }
 
@@ -248,7 +261,9 @@ protected:
         assert(mTimeSteps == 1);
         assert(mCapacity > mSize);
         pointer p = getAddress(0, mSize);
-        traits::construct(getAllocatorInternal(), p, std::move(u));
+        traits::construct(getAllocatorInternal(),
+                          p,
+                          std::move(u));
         ++mSize;
     }
 
@@ -258,7 +273,9 @@ protected:
         assert(mCapacity > mSize);
         for (size_type t = 0; t < mTimeSteps; ++t) {
             pointer p = getAddress(t, mSize);
-            traits::construct(getAllocatorInternal(), p, u[t]);
+            traits::construct(getAllocatorInternal(),
+                              p,
+                              u[t]);
         }
         ++mSize;
     }
@@ -289,7 +306,8 @@ protected:
         other.mData = nullptr;
     }
 
-    void append(size_type n, const_reference value)
+    void append(size_type n,
+                const_reference value)
     {
         assert(mCapacity >= mSize + n);
 
@@ -324,7 +342,8 @@ protected:
         }
     }
 
-    const_pointer getAddress(size_type time, size_type idx) const noexcept
+    const_pointer getAddress(size_type time,
+                             size_type idx) const noexcept
     {
         assert(time < mTimeSteps);
         assert(mData);
@@ -332,7 +351,8 @@ protected:
         return base + idx * mTimeSteps + time;
     }
 
-    pointer getAddress(size_type time, size_type idx) noexcept
+    pointer getAddress(size_type time,
+                       size_type idx) noexcept
     {
         assert(time < mTimeSteps);
         assert(mData);
@@ -352,50 +372,75 @@ private:
     }
 
     template <typename... Args>
-    static pointer create(allocator_type& alloc, size_type size,
-                          size_type timeSteps, Args&&... args)
+    static pointer create(allocator_type& alloc,
+                          size_type size,
+                          size_type timeSteps,
+                          Args&&... args)
     {
         pointer p = traits::allocate(alloc, size * timeSteps);
         try {
-            constructArraySamples(alloc, p, size * timeSteps,
+            constructArraySamples(alloc,
+                                  p,
+                                  size * timeSteps,
                                   std::forward<Args>(args)...);
         } catch (...) {
             // Any constructed elements will be destroyed in
             // constructArraySamples, but we're in charge of the memory.
-            traits::deallocate(alloc, p, size * timeSteps);
+            traits::deallocate(alloc,
+                               p,
+                               size * timeSteps);
             throw;
         }
         return p;
     }
 
-    static pointer copyValue(allocator_type& alloc, pointer oldData,
-                             size_type size, size_type timeSteps)
+    static pointer copyValue(allocator_type& alloc,
+                             pointer oldData,
+                             size_type size,
+                             size_type timeSteps)
     {
-        pointer p = traits::allocate(alloc, size * timeSteps);
+        pointer p = traits::allocate(alloc,
+                                     size * timeSteps);
         try {
-            copyArraySamples(alloc, p, oldData, size * timeSteps);
+            copyArraySamples(alloc,
+                             p,
+                             oldData,
+                             size * timeSteps);
         } catch (...) {
-            traits::deallocate(alloc, p, size * timeSteps);
+            traits::deallocate(alloc,
+                               p,
+                               size * timeSteps);
             throw;
         }
         return p;
     }
 
-    static pointer copyMove(allocator_type& alloc, pointer oldData,
-                            size_type size, size_type timeSteps)
+    static pointer copyMove(allocator_type& alloc,
+                            pointer oldData,
+                            size_type size,
+                            size_type timeSteps)
     {
-        pointer p = traits::allocate(alloc, size * timeSteps);
+        pointer p = traits::allocate(alloc,
+                                     size * timeSteps);
+
         if (!std::is_nothrow_move_constructible<value_type>::value) {
             try {
                 // If a move fails, we can't unwind, so we copy if move can throw.
-                copyArraySamples(alloc, p, oldData, size * timeSteps);
+                copyArraySamples(alloc,
+                                 p,
+                                 oldData,
+                                 size * timeSteps);
             } catch (...) {
-                traits::deallocate(alloc, p, size * timeSteps);
+                traits::deallocate(alloc,
+                                   p,
+                                   size * timeSteps);
                 throw;
             }
         } else {
             for (size_type i = 0; i < size; ++i) {
-                traits::construct(alloc, p + i, std::move(oldData[i]));
+                traits::construct(alloc,
+                                  p + i,
+                                  std::move(oldData[i]));
             }
         }
         return p;
@@ -404,32 +449,46 @@ private:
     void change_memory_size(size_type size)
     {
         using std::swap; // Allow ADL
-        pointer p = traits::allocate(getAllocatorInternal(), size * mTimeSteps);
+        pointer p = traits::allocate(getAllocatorInternal(),
+                                     size * mTimeSteps);
         try {
-            moveArraySamples(getAllocatorInternal(), p, mData,
+            moveArraySamples(getAllocatorInternal(),
+                             p,
+                             mData,
                              mSize * mTimeSteps);
         } catch (...) {
             // moveArraySamples may throw, in that case, we have to
             // deallocate the memory we've already allocated.
-            traits::deallocate(getAllocatorInternal(), p, size * mTimeSteps);
+            traits::deallocate(getAllocatorInternal(),
+                               p,
+                               size * mTimeSteps);
             throw;
         }
+
         // Destroy the old values. We (justifiably) assume that
         // destruction does not throw.
-        destroyArraySamples(getAllocatorInternal(), mData, mSize * mTimeSteps);
+        destroyArraySamples(getAllocatorInternal(),
+                            mData,
+                            mSize * mTimeSteps);
+
         // Now that all of the throwing operations are done, we can modify
         // the state of our object with non-throwing operations.
         swap(p, mData);
-        traits::deallocate(getAllocatorInternal(), p, mCapacity * mTimeSteps);
+        traits::deallocate(getAllocatorInternal(),
+                           p,
+                           mCapacity * mTimeSteps);
         mCapacity = size;
     }
 
     void destroy() noexcept
     {
         if (mData) {
-            destroyArraySamples(getAllocatorInternal(), mData,
+            destroyArraySamples(getAllocatorInternal(),
+                                mData,
                                 mSize * mTimeSteps);
-            traits::deallocate(getAllocatorInternal(), mData,
+
+            traits::deallocate(getAllocatorInternal(),
+                               mData,
                                mCapacity * mTimeSteps);
         }
     }

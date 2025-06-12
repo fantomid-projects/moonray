@@ -30,8 +30,8 @@ validateXformAttrs(const moonray::geom::InstanceMethod instanceMethod,
             applyOrientation = false;
         } else {
             rdlGeometry.warn("orientations count(", orientations.size(),
-                    ") is not equal to positions count(", xformsCount,
-                    " ). Skip applying orientations");
+                             ") is not equal to positions count(", xformsCount,
+                             " ). Skip applying orientations");
             applyOrientation = false;
         }
 
@@ -42,8 +42,8 @@ validateXformAttrs(const moonray::geom::InstanceMethod instanceMethod,
             applyScale = false;
         } else {
             rdlGeometry.warn("scales count(", scales.size(),
-                    ") is not equal to positions count(", xformsCount,
-                    "). Skip applying scales");
+                             ") is not equal to positions count(", xformsCount,
+                             "). Skip applying scales");
             applyScale = false;
         }
     } else { // InstanceMethod::XFORMS
@@ -81,8 +81,8 @@ getReferenceData(const scene_rdl2::rdl2::Geometry& rdlGeometry,
 {
     if (references.empty()) {
         rdlGeometry.error("Did not find any references geometry. "
-            "Please make sure the \"referencess\" field contains "
-            "at least one source references geometry");
+                          "Please make sure the \"referencess\" field contains "
+                          "at least one source references geometry");
         return false;
     }
 
@@ -95,6 +95,7 @@ getReferenceData(const scene_rdl2::rdl2::Geometry& rdlGeometry,
             scene_rdl2::math::Mat4f l2r0 =
                 scene_rdl2::math::toFloat(g->get(scene_rdl2::rdl2::Node::sNodeXformKey,
                                                  scene_rdl2::rdl2::TIMESTEP_BEGIN));
+
             refXforms[i].push_back(scene_rdl2::math::Xform3f(l2r0[0][0], l2r0[0][1], l2r0[0][2],
                                                              l2r0[1][0], l2r0[1][1], l2r0[1][2],
                                                              l2r0[2][0], l2r0[2][1], l2r0[2][2],
@@ -103,6 +104,7 @@ getReferenceData(const scene_rdl2::rdl2::Geometry& rdlGeometry,
             scene_rdl2::math::Mat4f l2r1 =
                 scene_rdl2::math::toFloat(g->get(scene_rdl2::rdl2::Node::sNodeXformKey,
                                                  scene_rdl2::rdl2::TIMESTEP_END));
+
             refXforms[i].push_back(scene_rdl2::math::Xform3f(l2r1[0][0], l2r1[0][1], l2r1[0][2],
                                                              l2r1[1][0], l2r1[1][1], l2r1[1][2],
                                                              l2r1[2][0], l2r1[2][1], l2r1[2][2],
@@ -161,8 +163,8 @@ InstanceProceduralLeaf::instanceWithXforms(const GenerateContext& generateContex
         if (generateContext.isMotionBlurOn() && !velocities.empty()) {
             if (!hasValidVelocity) {
                 rdlGeometry->warn("velocities count(", velocities.size(),
-                    ") is not equal to positions count(", xformsCount,
-                    " ). Skip applying velocities");
+                                  ") is not equal to positions count(", xformsCount,
+                                  " ). Skip applying velocities");
                 applyVelocity = false;
             } else {
                 applyVelocity = true;
@@ -170,13 +172,14 @@ InstanceProceduralLeaf::instanceWithXforms(const GenerateContext& generateContex
         } else {
             applyVelocity = false;
         }
+
         float dt0 = 0.0f;
         float dt1 = 0.0f;
         if (applyVelocity) {
-            const scene_rdl2::rdl2::SceneVariables& vars =
-                rdlGeometry->getSceneClass().getSceneContext()->getSceneVariables();
+            const scene_rdl2::rdl2::SceneVariables& vars = rdlGeometry->getSceneClass().getSceneContext()->getSceneVariables();
             float fps = std::max(vars.get(scene_rdl2::rdl2::SceneVariables::sFpsKey), 1.0f);
             const auto& motionSteps = generateContext.getMotionSteps();
+
             // TODO only support at most two time samples now for motion blur
             MNRY_ASSERT(motionSteps.size() == 2);
 
@@ -201,8 +204,8 @@ InstanceProceduralLeaf::instanceWithXforms(const GenerateContext& generateContex
             xformsCount = indices.size();
         } else {
             rdlGeometry->warn("refIndices count(", indices.size(),
-                ") is not equal to xforms/positions count(", xformsCount,
-                "). Skip applying refIndices");
+                              ") is not equal to xforms/positions count(", xformsCount,
+                              "). Skip applying refIndices");
             applyIndex = false;
         }
 
@@ -225,8 +228,7 @@ InstanceProceduralLeaf::instanceWithXforms(const GenerateContext& generateContex
 
 
         bool addInstanceTransformAttribute = false;
-        shading::TypedAttributeKey<scene_rdl2::math::Mat4f> instanceLevelKey =
-            instanceLevelKeys[instanceLevel];
+        shading::TypedAttributeKey<scene_rdl2::math::Mat4f> instanceLevelKey = instanceLevelKeys[instanceLevel];
 
         bool addInstanceObjectTransformAttribute = false;
 
@@ -243,49 +245,43 @@ InstanceProceduralLeaf::instanceWithXforms(const GenerateContext& generateContex
                 if (!attr->isA<scene_rdl2::rdl2::UserData>()) {
                     continue;
                 }
+
                 if (attrMap.find(key) != attrMap.end()) {
                     continue;
                 }
+
                 const scene_rdl2::rdl2::UserData* data = attr->asA<scene_rdl2::rdl2::UserData>();
                 scene_rdl2::rdl2::AttributeType type = key.getType();
                 const std::string& name = key.getName();
-                if (type == scene_rdl2::rdl2::TYPE_BOOL && data->hasBoolData() &&
-                    name == data->getBoolKey()) {
+                if (type == scene_rdl2::rdl2::TYPE_BOOL && data->hasBoolData() && name == data->getBoolKey()) {
                     if (data->getBoolValues().size() == xformsCount) {
                         attrMap[key] = (const void*)(&data->getBoolValues());
                     }
-                } else if (type == scene_rdl2::rdl2::TYPE_INT && data->hasIntData() &&
-                    name == data->getIntKey()) {
+                } else if (type == scene_rdl2::rdl2::TYPE_INT && data->hasIntData() && name == data->getIntKey()) {
                     if (data->getIntValues().size() == xformsCount) {
                         attrMap[key] = (const void*)(&data->getIntValues());
                     }
-                } else if (type == scene_rdl2::rdl2::TYPE_FLOAT && data->hasFloatData() &&
-                    name == data->getFloatKey()) {
+                } else if (type == scene_rdl2::rdl2::TYPE_FLOAT && data->hasFloatData() && name == data->getFloatKey()) {
                     if (data->getFloatValues().size() == xformsCount) {
                         attrMap[key] = (const void*)(&data->getFloatValues());
                     }
-                } else if (type == scene_rdl2::rdl2::TYPE_STRING && data->hasStringData() &&
-                    name == data->getStringKey()) {
+                } else if (type == scene_rdl2::rdl2::TYPE_STRING && data->hasStringData() && name == data->getStringKey()) {
                     if (data->getStringValues().size() == xformsCount) {
                         attrMap[key] = (const void*)(&data->getStringValues());
                     }
-                } else if (type == scene_rdl2::rdl2::TYPE_RGB && data->hasColorData() &&
-                    name == data->getColorKey()) {
+                } else if (type == scene_rdl2::rdl2::TYPE_RGB && data->hasColorData() && name == data->getColorKey()) {
                     if (data->getColorValues().size() == xformsCount) {
                         attrMap[key] = (const void*)(&data->getColorValues());
                     }
-                } else if (type == scene_rdl2::rdl2::TYPE_VEC2F && data->hasVec2fData() &&
-                    name == data->getVec2fKey()) {
+                } else if (type == scene_rdl2::rdl2::TYPE_VEC2F && data->hasVec2fData() && name == data->getVec2fKey()) {
                     if (data->getVec2fValues().size() == xformsCount) {
                         attrMap[key] = (const void*)(&data->getVec2fValues());
                     }
-                } else if (type == scene_rdl2::rdl2::TYPE_VEC3F && data->hasVec3fData() &&
-                    name == data->getVec3fKey()) {
+                } else if (type == scene_rdl2::rdl2::TYPE_VEC3F && data->hasVec3fData() && name == data->getVec3fKey()) {
                     if (data->getVec3fValues().size() == xformsCount) {
                         attrMap[key] = (const void*)(&data->getVec3fValues());
                     }
-                } else if (type == scene_rdl2::rdl2::TYPE_MAT4F && data->hasMat4fData() &&
-                    name == data->getMat4fKey()) {
+                } else if (type == scene_rdl2::rdl2::TYPE_MAT4F && data->hasMat4fData() && name == data->getMat4fKey()) {
                     if (data->getMat4fValues().size() == xformsCount) {
                         attrMap[key] = (const void*)(&data->getMat4fValues());
                     }
@@ -295,8 +291,7 @@ InstanceProceduralLeaf::instanceWithXforms(const GenerateContext& generateContex
         }
 
         bool addVelocityAttribute = false;
-        if (generateContext.requestAttribute(shading::StandardAttributes::sVelocity) &&
-            hasValidVelocity) {
+        if (generateContext.requestAttribute(shading::StandardAttributes::sVelocity) && hasValidVelocity) {
             addVelocityAttribute = true;
         }
 
@@ -316,6 +311,7 @@ InstanceProceduralLeaf::instanceWithXforms(const GenerateContext& generateContex
 
         // disableIndicesSet contains no duplicates or elements >= xformsCount
         reservePrimitive(xformsCount - disableIndicesSet.size());
+
         // combine above info to XformSamples
         for (size_t i = 0; i < xformsCount; ++i) {
             if (!disableIndicesSet.empty() && disableIndicesSet.find(i) != disableIndicesSet.end()) {
@@ -325,11 +321,16 @@ InstanceProceduralLeaf::instanceWithXforms(const GenerateContext& generateContex
             shading::XformSamples xform;
 
             if (groupOnly) {
-                xform.emplace_back(scene_rdl2::math::Mat3f(scene_rdl2::math::one), scene_rdl2::math::Vec3f(scene_rdl2::math::zero));
+                xform.emplace_back(scene_rdl2::math::Mat3f(scene_rdl2::math::one),
+                                   scene_rdl2::math::Vec3f(scene_rdl2::math::zero));
             } else {
                 if (instanceMethod == InstanceMethod::XFORM_ATTRIBUTES) {
-                    Vec3f scale = applyScale ? scales[i] : Vec3f(scene_rdl2::math::one);
+                    Vec3f scale = applyScale ?
+                                  scales[i] :
+                                  Vec3f(scene_rdl2::math::one);
+
                     scene_rdl2::math::Quaternion3f orient(scene_rdl2::math::one);
+
                     if (applyOrientation && orientations[i].lengthSqr() > 0.0f) {
                         orient.i = orientations[i][0];
                         orient.j = orientations[i][1];
@@ -337,15 +338,15 @@ InstanceProceduralLeaf::instanceWithXforms(const GenerateContext& generateContex
                         orient.r = orientations[i][3];
                         orient = normalize(orient);
                     }
-                    scene_rdl2::math::Mat3f scaleRotate(
-                            scene_rdl2::math::Mat3f::scale(scale) * scene_rdl2::math::Mat3f(orient));
+                    scene_rdl2::math::Mat3f scaleRotate(scene_rdl2::math::Mat3f::scale(scale) * scene_rdl2::math::Mat3f(orient));
                     if (applyVelocity) {
-                        xform.emplace_back(
-                                scaleRotate, positions[i] + velocities[i] * dt0);
-                        xform.emplace_back(
-                                scaleRotate, positions[i] + velocities[i] * dt1);
+                        xform.emplace_back(scaleRotate,
+                                           positions[i] + velocities[i] * dt0);
+                        xform.emplace_back(scaleRotate,
+                                           positions[i] + velocities[i] * dt1);
                     } else {
-                        xform.emplace_back(scaleRotate, positions[i]);
+                        xform.emplace_back(scaleRotate,
+                                           positions[i]);
                     }
                 } else if (instanceMethod == InstanceMethod::XFORMS) {
                     if (applyVelocity) {
@@ -373,6 +374,7 @@ InstanceProceduralLeaf::instanceWithXforms(const GenerateContext& generateContex
             if (index > maxIndex) {
                 index = 0;
             }
+
             if (!ref[index]) {
                 continue;
             }
@@ -387,36 +389,36 @@ InstanceProceduralLeaf::instanceWithXforms(const GenerateContext& generateContex
                     shading::StandardAttributes::sVelocity, shading::RATE_CONSTANT,
                     {velocities[i]});
             }
+
             if (addInstanceTransformAttribute) {
                 scene_rdl2::math::Mat4f instanceTransform(xform[0]);
                 if (useRefXforms) {
                     instanceTransform = static_cast<scene_rdl2::math::Mat4f>(refXforms[index][0]) * instanceTransform;
                 }
 
-                primitiveAttributeTable.addAttribute(
-                    instanceLevelKey,
-                    shading::RATE_CONSTANT,
-                    { instanceTransform });
+                primitiveAttributeTable.addAttribute(instanceLevelKey,
+                                                     shading::RATE_CONSTANT,
+                                                     { instanceTransform });
             }
+
             if (addInstanceObjectTransformAttribute) {
-                primitiveAttributeTable.addAttribute(
-                    shading::StandardAttributes::sInstanceObjectTransform,
-                    shading::RATE_CONSTANT,
-                    { nodeXform });
+                primitiveAttributeTable.addAttribute(shading::StandardAttributes::sInstanceObjectTransform,
+                                                     shading::RATE_CONSTANT,
+                                                     { nodeXform });
             }
+
             if (useRefAttrs) {
                 // Only adding shadow_ray_epsilon for now
                 // MOONRAY-4313 - Propagate common geometry attributes to instanced primitives
                 std::vector<float> shadowRayEpsilon = { shadowRayEpsilons[index] };
-                primitiveAttributeTable.addAttribute(
-                    shading::StandardAttributes::sShadowRayEpsilon,
-                    shading::RATE_CONSTANT,
-                    std::move(shadowRayEpsilon));
+                primitiveAttributeTable.addAttribute(shading::StandardAttributes::sShadowRayEpsilon,
+                                                     shading::RATE_CONSTANT,
+                                                     std::move(shadowRayEpsilon));
             }
 
             // Add explicit shading primitive attribute if explicit shading is enabled
-            if (explicitShading &&
-                !addExplicitShading(rdlGeometry, primitiveAttributeTable)) {
+            if (explicitShading && !addExplicitShading(rdlGeometry,
+                                                       primitiveAttributeTable)) {
                 return;
             }
 
@@ -426,6 +428,7 @@ InstanceProceduralLeaf::instanceWithXforms(const GenerateContext& generateContex
                 if (values == nullptr) {
                     continue;
                 }
+
                 switch (key.getType()) {
                 case scene_rdl2::rdl2::TYPE_BOOL:
                     primitiveAttributeTable.addAttribute(
@@ -471,15 +474,18 @@ InstanceProceduralLeaf::instanceWithXforms(const GenerateContext& generateContex
                     break;
                 }
             }
+
             if (useRefXforms) {
                 for (size_t j = 0; j < xform.size(); ++j) {
                     xform[j] = refXforms[index][j] * xform[j];
                 }
             }
+
             if (isValidXform(xform)) {
                 auto instance = createInstance(xform,
                                                ref[index],
                                                std::move(primitiveAttributeTable));
+
                 addPrimitive(std::move(instance),
                              generateContext.getMotionBlurParams(),
                              parent2render);
@@ -487,13 +493,12 @@ InstanceProceduralLeaf::instanceWithXforms(const GenerateContext& generateContex
                 badXformCount++;
             }
         }
+
         if (badXformCount > 0) {
             rdlGeometry->warn("Skipped ", badXformCount,
                 " instances which contained invalid transform matrices");
         }
     }
-
-
 
 } // namespace geom
 } // namespace moonray

@@ -34,14 +34,15 @@ public:
     // PathIntegrator::estimateInScatteringSourceTerm(). (i.e. light transmittance
     // computation for volume)
     // estimateInScatter=false : All other situations.
-    finline void resetVolumeRayState(float tMax, bool estimateInScatter) {
+    finline void resetVolumeRayState(float tMax,
+                                     bool estimateInScatter) {
         mVolumeRayState.resetState(tMax, estimateInScatter);
     }
 
     // Used as a callback which is registered with TLSInitParams.
     static std::shared_ptr<TLState> allocTls(mcrt_common::ThreadLocalState *tls,
-            const mcrt_common::TLSInitParams &initParams,
-            bool okToAllocBundledResources);
+                                             const mcrt_common::TLSInitParams &initParams,
+                                             bool okToAllocBundledResources);
 
     VolumeRayState mVolumeRayState;
     const scene_rdl2::rdl2::SceneObject * mSubsurfaceTraceSet;

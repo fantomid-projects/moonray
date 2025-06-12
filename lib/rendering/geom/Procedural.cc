@@ -24,11 +24,11 @@ namespace geom {
 class PrimitiveMemoryAccumulator : public PrimitiveVisitor
 {
 public:
-    PrimitiveMemoryAccumulator(
-            std::atomic<Primitive::size_type>& usage,
-            SharedPrimitiveSet& sharedPrimitives,
-            bool inPrimitiveGroup = false) :
-        mUsage(usage), mSharedPrimitives(sharedPrimitives),
+    PrimitiveMemoryAccumulator(std::atomic<Primitive::size_type>& usage,
+                               SharedPrimitiveSet& sharedPrimitives,
+                               bool inPrimitiveGroup = false) :
+        mUsage(usage),
+        mSharedPrimitives(sharedPrimitives),
         mInPrimitiveGroup(inPrimitiveGroup) {}
 
     virtual void visitPrimitive(Primitive& p) override {
@@ -46,7 +46,9 @@ public:
         // make sure the primitives in this PrimitiveGroup doesn't get added
         // twice. The reason we recursively travel down is that we need to
         // collect all SharedPrimitive that get instanced around
-        PrimitiveMemoryAccumulator accumulator(mUsage, mSharedPrimitives, true);
+        PrimitiveMemoryAccumulator accumulator(mUsage,
+                                               mSharedPrimitives,
+                                               true);
         pg.forEachPrimitive(accumulator);
     }
 
@@ -54,10 +56,13 @@ public:
         if (!mInPrimitiveGroup) {
             mUsage += i.getMemory();
         }
+
         const auto& ref = i.getReference();
+
         // visit the referenced Primitive if it's not visited yet
         if (mSharedPrimitives.insert(ref).second) {
-            PrimitiveMemoryAccumulator accumulator(mUsage, mSharedPrimitives);
+            PrimitiveMemoryAccumulator accumulator(mUsage,
+                                                   mSharedPrimitives);
             ref->getPrimitive()->accept(accumulator);
         }
     }
@@ -71,9 +76,8 @@ private:
 class StatisticsAccumulator : public PrimitiveVisitor
 {
 public:
-    StatisticsAccumulator(
-            GeometryStatistics& geometryStatistics,
-            SharedPrimitiveSet& sharedPrimitives) :
+    StatisticsAccumulator(GeometryStatistics& geometryStatistics,
+                          SharedPrimitiveSet& sharedPrimitives) :
         mGeometryStatistics(geometryStatistics),
         mSharedPrimitives(sharedPrimitives) {}
 
@@ -94,7 +98,8 @@ public:
         mGeometryStatistics.mCurvesCount += c.getCurvesCount();
         const auto& curvesVertexCount = c.getCurvesVertexCount();
         mGeometryStatistics.mCVCount += std::accumulate(curvesVertexCount.begin(),
-            curvesVertexCount.end(), 0);
+                                                        curvesVertexCount.end(),
+                                                        0);
     }
 
     virtual void visitTransformedPrimitive(geom::TransformedPrimitive& t) override {
@@ -108,6 +113,7 @@ public:
     virtual void visitInstance(Instance& i) override {
         ++mGeometryStatistics.mInstanceCount;
         const auto& ref = i.getReference();
+
         // visit the referenced Primitive if it's not visited yet
         if (mSharedPrimitives.insert(ref).second) {
             ref->getPrimitive()->accept(*this);
@@ -136,7 +142,8 @@ Procedural::getStatistics() const
     GeometryStatistics geometryStatistics;
 
     SharedPrimitiveSet sharedPrimitives;
-    StatisticsAccumulator accumulator(geometryStatistics, sharedPrimitives);
+    StatisticsAccumulator accumulator(geometryStatistics,
+                                      sharedPrimitives);
     const_cast<Procedural *>(this)->forEachPrimitive(accumulator);
 
     return geometryStatistics;

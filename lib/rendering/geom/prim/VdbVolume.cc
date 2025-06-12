@@ -73,10 +73,11 @@ getGridLuminance(const VDBSampler<openvdb::VectorGrid>& emissionSampler,
 class DDAIntersector
 {
 public:
-    DDAIntersector(const scene_rdl2::math::Mat4f primToRender[2], const scene_rdl2::math::Mat4f renderToPrim[2],
-            const openvdb::FloatGrid::Ptr& grid,
-            const std::vector<openvdb::FloatGrid::ConstAccessor>& topologyAccessors,
-            bool isMotionBlurOn):
+    DDAIntersector(const scene_rdl2::math::Mat4f primToRender[2],
+                   const scene_rdl2::math::Mat4f renderToPrim[2],
+                   const openvdb::FloatGrid::Ptr& grid,
+                   const std::vector<openvdb::FloatGrid::ConstAccessor>& topologyAccessors,
+                   bool isMotionBlurOn) :
         mHasActiveVoxel(nullptr),
         mIsMotionBlurOn(isMotionBlurOn)
     {
@@ -98,34 +99,39 @@ public:
         bbox.expand(1);
 
         const auto& gridXform = grid->transform();
+
         // primitive space bbox
         auto aabb = gridXform.indexToWorld(bbox);
         mAABB = BBox3f(Vec3f(aabb.min().x(), aabb.min().y(), aabb.min().z()),
                        Vec3f(aabb.max().x(), aabb.max().y(), aabb.max().z()));
+
         Vec3f dim = mAABB.size();
+
         // TODO may worth experimenting other heuristic to figure out
         // coarse grid resolution
-        float unitWidth = scene_rdl2::math::max(dim.x, scene_rdl2::math::max(dim.y, dim.z)) /
-            sMaxResolution;
+        float unitWidth = scene_rdl2::math::max(dim.x, scene_rdl2::math::max(dim.y, dim.z)) / sMaxResolution;
+
         for (int axis = 0; axis < 3; ++axis) {
             mRes[axis] = static_cast<int>(round(dim[axis] / unitWidth));
             mRes[axis] = scene_rdl2::math::clamp(mRes[axis], 1, sMaxResolution);
             mUnitWidth[axis] = dim[axis] / mRes[axis];
             mInvUnitWIdth[axis] = (mUnitWidth[axis] == 0.0f) ?
-                0.0f : 1.0f / mUnitWidth[axis];
+                                  0.0f :
+                                  1.0f / mUnitWidth[axis];
         }
+
         int nTotal = mRes[0] * mRes[1] * mRes[2];
         mHasActiveVoxel.reset(new bool[nTotal]);
         mMemory = nTotal * sizeof(bool);
 
-        tbb::blocked_range<size_t> range =
-            tbb::blocked_range<size_t>(0, nTotal);
+        tbb::blocked_range<size_t> range = tbb::blocked_range<size_t>(0, nTotal);
         tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
             for (size_t offset = r.begin(); offset < r.end(); ++offset) {
                 int w = offset / mRes[0];
                 int x = offset - w * mRes[0];
                 int z = w / mRes[1];
                 int y = w - z * mRes[1];
+
                 // Compute the bounding box of this mHasActiveVoxel cell and
                 // transform to vdb index space.
                 Vec3f bMin = mAABB.lower + Vec3f(x,y,z) * mUnitWidth;
@@ -133,6 +139,7 @@ public:
                 openvdb::CoordBBox subBBox = gridXform.worldToIndexCellCentered(openvdb::BBoxd(
                     openvdb::Vec3d(bMin.x, bMin.y, bMin.z),
                     openvdb::Vec3d(bMax.x, bMax.y, bMax.z)));
+
                 // The above tests that the transformed bounding box encloses the cell
                 // CENTERS in index space.  (I checked the OpenVDB source code.)
                 // This can miss cells that have their centers outside the bbox but
@@ -146,6 +153,7 @@ public:
                 if (!bbox.hasOverlap(subBBox)) {
                     continue;
                 }
+
                 int threadIdx = mcrt_common::getFrameUpdateTLS()->mThreadIdx;
                 for (openvdb::CoordBBox::Iterator<true> ijk(subBBox); ijk; ++ijk) {
                     if (topologyAccessors[threadIdx].isValueOn(*ijk)) {
@@ -155,22 +163,35 @@ public:
                 }
             }
         }); // end of parallel_for
-
     }
 
-    bool intersect(const Primitive* primitive, const Vec3f& rayOrg, const Vec3f& rayDir, float tNear,
-            int volumeId, VolumeRayState& volumeRayState, float time) const
+    bool intersect(const Primitive* primitive,
+                   const Vec3f& rayOrg,
+                   const Vec3f& rayDir,
+                   float tNear,
+                   int volumeId,
+                   VolumeRayState& volumeRayState,
+                   float time) const
     {
-        Vec3f org = transformPoint( mRenderToPrim, rayOrg, time, mIsMotionBlurOn);
-        Vec3f dir = transformVector(mRenderToPrim, rayDir, time, mIsMotionBlurOn);
+        Vec3f org = transformPoint(mRenderToPrim,
+                                   rayOrg,
+                                   time,
+                                   mIsMotionBlurOn);
+
+        Vec3f dir = transformVector(mRenderToPrim,
+                                    rayDir,
+                                    time,
+                                    mIsMotionBlurOn);
 
         float tStart;
         float tEnd = volumeRayState.getTEnd();
+
         // figure out the starting point of DDA traversal
         Vec3f pStart = org + tNear * dir;
         if (pStart[0] >= mAABB.lower[0] && pStart[0] <= mAABB.upper[0] &&
             pStart[1] >= mAABB.lower[1] && pStart[1] <= mAABB.upper[1] &&
             pStart[2] >= mAABB.lower[2] && pStart[2] <= mAABB.upper[2]) {
+
             // the ray starts inside bounding box
             tStart = tNear;
         } else {
@@ -188,11 +209,13 @@ public:
                 float invDir = 1.0f / dir[axis];
                 float tNear = (mAABB.lower[axis] - org[axis]) * invDir;
                 float tFar  = (mAABB.upper[axis] - org[axis]) * invDir;
+
                 if (tNear > tFar) {
                     std::swap(tNear, tFar);
                 }
                 t0 = tNear > t0 ? tNear : t0;
                 t1 = tFar < t1 ? tFar : t1;
+
                 // the ray doesn't hit bounding box
                 if (t0 > t1) {
                     return false;
@@ -201,6 +224,7 @@ public:
             tStart = t0;
             pStart = org + tStart * dir;
         }
+
         // For detail reference see
         // "A Fast Voxel Traversal Algorithm for Ray Tracing"
         // John Amanatides and Andrew Woo
@@ -212,25 +236,23 @@ public:
         for (int axis = 0; axis < 3; ++axis) {
             pos[axis] = gridIndex(pStart, axis);
             if (dir[axis] >= 0) {
-                nextT[axis] = tStart +
-                    (gridPosition(pos[axis] + 1, axis) - pStart[axis]) /
-                    dir[axis];
+                nextT[axis] = tStart + (gridPosition(pos[axis] + 1, axis) - pStart[axis]) / dir[axis];
                 deltaT[axis] = mUnitWidth[axis] / dir[axis];
                 step[axis] = 1;
                 out[axis] = mRes[axis];
             } else {
-                nextT[axis] = tStart +
-                    (gridPosition(pos[axis], axis) - pStart[axis]) /
-                    dir[axis];
+                nextT[axis] = tStart + (gridPosition(pos[axis], axis) - pStart[axis]) / dir[axis];
                 deltaT[axis] = -mUnitWidth[axis] / dir[axis];
                 step[axis] = -1;
                 out[axis] = -1;
             }
         }
+
         // before we start the DDA, the ray is outside of this volume
         bool prevState = false;
         float tCurrent = tStart;
         int intervalCount = 0;
+
         // this should be sufficient to hold the worst traversal scenario
         // (ray passes the bounding box in diagonal and every neighbor voxel
         // in grid has different state)
@@ -244,15 +266,15 @@ public:
                 intervalCount++;
             }
             prevState = currentState;
+
             // figure out which axis we are stepping forward
             // use bit shifting tricks to avoid branching and lookup
             // the idea is finding the axis with smallest nextT
             // careful that this may not work if we are goint to port
             // this to ISPC because of the 0x00000001 vs 0xFFFFFFFF
             // truth value thing in ISPC land
-            int stepAxis =
-                ((nextT[1] < nextT[0]) | (nextT[2] < nextT[0])) <<
-                (nextT[2] < nextT[1]);
+            int stepAxis = ((nextT[1] < nextT[0]) | (nextT[2] < nextT[0])) << (nextT[2] < nextT[1]);
+
             tCurrent = nextT[stepAxis];
             if (tEnd < tCurrent) {
                 intervals[intervalCount] = tEnd;
@@ -260,7 +282,9 @@ public:
                 intervalCount++;
                 break;
             }
+
             pos[stepAxis] += step[stepAxis];
+
             // Ray is exiting the bounding box. Note that we should only add this intersection point to the list
             // if the final voxel is occupied (indicated by currentState), since otherwise we're just going from
             // empty space to empty space. This fixes a bug which was exposed by MOONRAY-4292.
@@ -274,6 +298,7 @@ public:
             }
             nextT[stepAxis] += deltaT[stepAxis];
         }
+
         // a single exit event means we doesn't hit any active voxel
         // a single enter event should not happen in theory but may be
         // introduced by float point precision issue
@@ -291,17 +316,23 @@ public:
                 transitions[counter] != transitions[counter + 1]) {
                 counter += 2;
             } else {
-                volumeRayState.addInterval(primitive, intervals[counter], volumeId,
-                    transitions[counter]);
+                volumeRayState.addInterval(primitive,
+                                           intervals[counter],
+                                           volumeId,
+                                           transitions[counter]);
                 hitValidInterval = true;
                 counter++;
             }
         }
+
         if (counter == (intervalCount - 1)) {
-            volumeRayState.addInterval(primitive, intervals[counter], volumeId,
-                transitions[counter]);
+            volumeRayState.addInterval(primitive,
+                                       intervals[counter],
+                                       volumeId,
+                                       transitions[counter]);
             hitValidInterval = true;
         }
+
         return hitValidInterval;
     }
 
@@ -316,14 +347,15 @@ public:
     }
 
 private:
-    int gridIndex(const Vec3f& p, int axis) const
+    int gridIndex(const Vec3f& p,
+                  int axis) const
     {
-        int index = static_cast<int>(scene_rdl2::math::floor(
-            (p[axis] - mAABB.lower[axis]) * mInvUnitWIdth[axis]));
+        int index = static_cast<int>(scene_rdl2::math::floor((p[axis] - mAABB.lower[axis]) * mInvUnitWIdth[axis]));
         return scene_rdl2::math::clamp(index, 0, mRes[axis] - 1);
     }
 
-    float gridPosition(int index, int axis) const
+    float gridPosition(int index,
+                       int axis) const
     {
         return mAABB.lower[axis] + index * mUnitWidth[axis];
     }
@@ -352,34 +384,33 @@ constexpr int DDAIntersector::sMaxResolution;
 VdbVolume::~VdbVolume() = default;
 
 VdbVolume::VdbVolume(const std::string& vdbFilePath,
-        const std::string& densityGridName,
-        const std::string& emissionGridName,
-        const std::string& velocityGridName,
-        const MotionBlurParams& motionBlurParams,
-        LayerAssignmentId&& layerAssignmentId,
-        PrimitiveAttributeTable&& primitiveAttributeTable):
+                     const std::string& densityGridName,
+                     const std::string& emissionGridName,
+                     const std::string& velocityGridName,
+                     const MotionBlurParams& motionBlurParams,
+                     LayerAssignmentId&& layerAssignmentId,
+                     PrimitiveAttributeTable&& primitiveAttributeTable) :
     NamedPrimitive(std::move(layerAssignmentId)),
-    mHasUniformVoxels(false), mHasEmissionField(false),
+    mHasUniformVoxels(false),
+    mHasEmissionField(false),
     mInterpolationMode(Interpolation::BOX),
     mIsEmpty(true),
     mIsMotionBlurOn(motionBlurParams.isMotionBlurOn())
 {
-    MNRY_ASSERT_REQUIRE(mLayerAssignmentId.getType() ==
-        LayerAssignmentId::Type::CONSTANT);
-    mVdbVolumeData.reset(new VdbVolumeData(
-        vdbFilePath,
-        densityGridName,
-        emissionGridName,
-        velocityGridName,
-        motionBlurParams,
-        std::move(primitiveAttributeTable)));
+    MNRY_ASSERT_REQUIRE(mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT);
+
+    mVdbVolumeData.reset(new VdbVolumeData(vdbFilePath,
+                                           densityGridName,
+                                           emissionGridName,
+                                           velocityGridName,
+                                           motionBlurParams,
+                                           std::move(primitiveAttributeTable)));
 }
 
 size_t
 VdbVolume::getMemory() const
 {
-    size_t mem = sizeof(VdbVolume) - sizeof(NamedPrimitive) +
-        NamedPrimitive::getMemory();
+    size_t mem = sizeof(VdbVolume) - sizeof(NamedPrimitive) + NamedPrimitive::getMemory();
     mem += scene_rdl2::util::getVectorElementsMemory(mTopologyAccessors) +
            scene_rdl2::util::getVectorElementsMemory(mTopologyIntersectors);
 
@@ -427,7 +458,8 @@ VdbVolume::transformPrimitive(const scene_rdl2::math::Mat4f& primToRender)
 }
 
 void
-VdbVolume::tessellate(const TessellationParams& tessellationParams, TessellationStats& stats)
+VdbVolume::tessellate(const TessellationParams& tessellationParams,
+                      TessellationStats& stats)
 {
     // If we are a shared primitive, our primToRender is currently identity
     // We'll need to store off the worldToRender matrix
@@ -438,6 +470,7 @@ VdbVolume::tessellate(const TessellationParams& tessellationParams, Tessellation
     bool isInitialized = initialize(*getRdlGeometry(),
                                     tessellationParams.mRdlLayer,
                                     tessellationParams.mVolumeAssignmentTable);
+
     mIsEmpty = !isInitialized;
     if (!isInitialized) {
         return;
@@ -455,6 +488,7 @@ VdbVolume::tessellate(const TessellationParams& tessellationParams, Tessellation
         Vec3f pMin, pMax;
         const scene_rdl2::math::Mat4f* xform[2];
         if (hasUniformVoxels()) {
+
             // Uniform case
             openvdb::math::CoordBBox bbox = mTopologyGrid->evalActiveVoxelBoundingBox();
             pMin = Vec3f(bbox.min().x(), bbox.min().y(), bbox.min().z());
@@ -467,8 +501,12 @@ VdbVolume::tessellate(const TessellationParams& tessellationParams, Tessellation
             xform[1] = &mLinearTransform[1]->mIndexToRender;
         } else {
             // Non-uniform case
-            mDDAIntersector.reset(new DDAIntersector(mPrimToRender, mRenderToPrim, mTopologyGrid,
-                                                     mTopologyAccessors, mIsMotionBlurOn));
+            mDDAIntersector.reset(new DDAIntersector(mPrimToRender,
+                                                     mRenderToPrim,
+                                                     mTopologyGrid,
+                                                     mTopologyAccessors,
+                                                     mIsMotionBlurOn));
+
             const BBox3f& aabb = mDDAIntersector->getAABB();
             pMin = aabb.lower;
             pMax = aabb.upper;
@@ -500,26 +538,31 @@ VdbVolume::tessellate(const TessellationParams& tessellationParams, Tessellation
     mBBoxIndices[4 * 0 + 1] = 1;
     mBBoxIndices[4 * 0 + 2] = 5;
     mBBoxIndices[4 * 0 + 3] = 7;
+
     // right
     mBBoxIndices[4 * 1 + 0] = 7;
     mBBoxIndices[4 * 1 + 1] = 5;
     mBBoxIndices[4 * 1 + 2] = 4;
     mBBoxIndices[4 * 1 + 3] = 6;
+
     // back
     mBBoxIndices[4 * 2 + 0] = 6;
     mBBoxIndices[4 * 2 + 1] = 4;
     mBBoxIndices[4 * 2 + 2] = 0;
     mBBoxIndices[4 * 2 + 3] = 2;
+
     // left
     mBBoxIndices[4 * 3 + 0] = 2;
     mBBoxIndices[4 * 3 + 1] = 0;
     mBBoxIndices[4 * 3 + 2] = 1;
     mBBoxIndices[4 * 3 + 3] = 3;
+
     // up
     mBBoxIndices[4 * 4 + 0] = 2;
     mBBoxIndices[4 * 4 + 1] = 3;
     mBBoxIndices[4 * 4 + 2] = 7;
     mBBoxIndices[4 * 4 + 3] = 6;
+
     // down
     mBBoxIndices[4 * 5 + 0] = 1;
     mBBoxIndices[4 * 5 + 1] = 0;
@@ -531,16 +574,19 @@ int
 VdbVolume::getIntersectionAssignmentId(int /*primID*/) const
 {
     MNRY_ASSERT(mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT,
-        "Volume assignments must be constant");
+                "Volume assignments must be constant");
+
     int assignmentId = mLayerAssignmentId.getConstId();
     MNRY_ASSERT(assignmentId != -1, "unassigned part");
     return assignmentId;
 }
 
 void
-VdbVolume::getTessellatedMesh(BufferDesc * vertexBufferDesc,
-        BufferDesc& indexBufferDesc,
-        size_t& vertexCount, size_t& faceCount, size_t& timeSteps) const
+VdbVolume::getTessellatedMesh(BufferDesc* vertexBufferDesc,
+                              BufferDesc& indexBufferDesc,
+                              size_t& vertexCount,
+                              size_t& faceCount,
+                              size_t& timeSteps) const
 {
     timeSteps = mIsMotionBlurOn ? 2 : 1;
     faceCount = 6;
@@ -557,32 +603,35 @@ VdbVolume::getTessellatedMesh(BufferDesc * vertexBufferDesc,
 
 void
 VdbVolume::postIntersect(mcrt_common::ThreadLocalState& tls,
-        const scene_rdl2::rdl2::Layer* pRdlLayer, const mcrt_common::Ray& ray,
-        Intersection& intersection) const
+                         const scene_rdl2::rdl2::Layer* pRdlLayer,
+                         const mcrt_common::Ray& ray,
+                         Intersection& intersection) const
 {
     int assignmentId = mLayerAssignmentId.getConstId();
     intersection.setLayerAssignments(assignmentId, pRdlLayer);
 
     const scene_rdl2::rdl2::Material* material = intersection.getMaterial();
-    const AttributeTable *table =
-        material->get<shading::RootShader>().getAttributeTable();
+    const AttributeTable *table = material->get<shading::RootShader>().getAttributeTable();
     intersection.setTable(&tls.mArena, table);
     intersection.setIds(ray.primID, 0, 0);
     overrideInstanceAttrs(ray, intersection);
 
     Vec3f Ng = normalize(ray.Ng);
-    intersection.setDifferentialGeometry(Ng, Ng, scene_rdl2::math::one,
-        scene_rdl2::math::zero, scene_rdl2::math::zero, false);
+    intersection.setDifferentialGeometry(Ng, Ng,
+                                         scene_rdl2::math::one,
+                                         scene_rdl2::math::zero,
+                                         scene_rdl2::math::zero,
+                                         false);
 
     const scene_rdl2::rdl2::Geometry* geometry = intersection.getGeometryObject();
     MNRY_ASSERT(geometry != nullptr);
-    intersection.setEpsilonHint( geometry->getRayEpsilon() );
+    intersection.setEpsilonHint(geometry->getRayEpsilon());
 
     // wireframe AOV is blank
     if (table->requests(StandardAttributes::sNumPolyVertices)) {
         intersection.setAttribute(StandardAttributes::sNumPolyVertices, 0);
         intersection.setAttribute(StandardAttributes::sPolyVertexType,
-            static_cast<int>(StandardAttributes::POLYVERTEX_TYPE_POLYGON));
+                                  static_cast<int>(StandardAttributes::POLYVERTEX_TYPE_POLYGON));
 
     }
 }
@@ -600,11 +649,14 @@ VdbVolume::computeAABB() const
 BBox3f
 VdbVolume::computeAABBAtTimeStep(int timeStep) const
 {
-    MNRY_ASSERT(timeStep >= 0 && timeStep < static_cast<int>(getMotionSamplesCount()), "timeStep out of range");
+    MNRY_ASSERT(timeStep >= 0 && timeStep < static_cast<int>(getMotionSamplesCount()),
+                "timeStep out of range");
+
     BBox3f result(mBBoxVertices[timeStep]);
     for (int i = 1; i < 8; i++) {
         result.extend(mBBoxVertices[timeStep + 2 * i]);
     }
+
     return result;
 }
 
@@ -620,7 +672,7 @@ VdbVolume::computeEmissionDistribution(const scene_rdl2::rdl2::VolumeShader* vol
     MNRY_ASSERT_REQUIRE(mEmissionGrid->transform().isLinear());
 
     std::vector<float> values = getGridLuminance(mEmissionSampler,
-        *static_cast<const openvdb::VectorGrid*>(mEmissionGrid.get()));
+                                                 *static_cast<const openvdb::VectorGrid*>(mEmissionGrid.get()));
 
     return computeEmissionDistributionImpl(getRdlGeometry(),
                                            *static_cast<const openvdb::VectorGrid*>(mEmissionGrid.get()),
@@ -631,7 +683,7 @@ VdbVolume::computeEmissionDistribution(const scene_rdl2::rdl2::VolumeShader* vol
 
 const scene_rdl2::rdl2::Material *
 VdbVolume::getIntersectionMaterial(const scene_rdl2::rdl2::Layer *pRdlLayer,
-        const mcrt_common::Ray &ray) const
+                                   const mcrt_common::Ray &ray) const
 {
     int layerAssignmentId = getIntersectionAssignmentId(ray.primID);
     const scene_rdl2::rdl2::Material *pMaterial = MNRY_VERIFY(pRdlLayer->lookupMaterial(layerAssignmentId));
@@ -644,14 +696,21 @@ VdbVolume::evalVolumeSamplePosition(mcrt_common::ThreadLocalState* tls,
                                     const Vec3f& pSample,
                                     float time) const
 {
-    const openvdb::Vec3d p = mVdbVelocity->getEvalPosition(tls, volumeId, pSample, time);
+    const openvdb::Vec3d p = mVdbVelocity->getEvalPosition(tls,
+                                                           volumeId,
+                                                           pSample,
+                                                           time);
     return scene_rdl2::math::Vec3f(p.x(), p.y(), p.z());
 }
 
  scene_rdl2::math::Vec3f
- VdbVolume::transformVolumeSamplePosition(const Vec3f& pSample, float time) const
+ VdbVolume::transformVolumeSamplePosition(const Vec3f& pSample,
+                                          float time) const
 {
-    return transformPoint(mPrimToRender, pSample, time, mIsMotionBlurOn);
+    return transformPoint(mPrimToRender,
+                          pSample,
+                          time,
+                          mIsMotionBlurOn);
 }
 
 scene_rdl2::math::Color
@@ -664,7 +723,9 @@ VdbVolume::sampleBakedDensity(mcrt_common::ThreadLocalState* tls,
                                                                  volumeId,
                                                                  p,
                                                                  geom::internal::Interpolation::POINT);
-        return scene_rdl2::math::Color(density.x(), density.y(), density.z());
+        return scene_rdl2::math::Color(density.x(),
+                                       density.y(),
+                                       density.z());
     } else {
         return mDensityColor;
     }
@@ -674,11 +735,20 @@ Color
 VdbVolume::evalDensity(mcrt_common::ThreadLocalState* tls,
                        uint32_t volumeId,
                        const Vec3f& pSample, float /*rayVolumeDepth*/,
-                       const scene_rdl2::rdl2::VolumeShader* const /*volumeShader*/) const
+                       const scene_rdl2::rdl2::VolumeShader* const) const
 {
-    const openvdb::Vec3d p(pSample[0], pSample[1], pSample[2]);
-    const Color density = Color(mDensitySampler.eval(tls, volumeId, p, Interpolation::POINT));
-    return density * sampleBakedDensity(tls, volumeId, p);
+    const openvdb::Vec3d p(pSample[0],
+                           pSample[1],
+                           pSample[2]);
+
+    const Color density = Color(mDensitySampler.eval(tls,
+                                                     volumeId,
+                                                     p,
+                                                     Interpolation::POINT));
+
+    return density * sampleBakedDensity(tls,
+                                        volumeId,
+                                        p);
 }
 
 void
@@ -690,18 +760,35 @@ VdbVolume::evalVolumeCoefficients(mcrt_common::ThreadLocalState* tls,
                                   Color* temperature,
                                   bool highQuality,
                                   float /*rayVolumeDepth*/,
-                                  const scene_rdl2::rdl2::VolumeShader* const /*volumeShader*/) const
+                                  const scene_rdl2::rdl2::VolumeShader* const) const
 {
-    const openvdb::Vec3d p(pSample[0], pSample[1], pSample[2]);
-    Interpolation mode = highQuality ? mInterpolationMode : Interpolation::POINT;
-    *extinction = Color(mDensitySampler.eval(tls, volumeId, p, mode));
+    const openvdb::Vec3d p(pSample[0],
+                           pSample[1],
+                           pSample[2]);
+
+    Interpolation mode = highQuality ?
+                         mInterpolationMode :
+                         Interpolation::POINT;
+
+    *extinction = Color(mDensitySampler.eval(tls,
+                                             volumeId,
+                                             p,
+                                             mode));
     *albedo = Color(1.0f);
     if (temperature) {
-        const auto colorVector = mEmissionSampler.eval(tls, volumeId, p, Interpolation::POINT);
-        *temperature = Color(colorVector.x(), colorVector.y(), colorVector.z());
+        const auto colorVector = mEmissionSampler.eval(tls,
+                                                       volumeId,
+                                                       p,
+                                                       Interpolation::POINT);
+
+        *temperature = Color(colorVector.x(),
+                             colorVector.y(),
+                             colorVector.z());
     }
 
-    *extinction *= sampleBakedDensity(tls, volumeId, p);
+    *extinction *= sampleBakedDensity(tls,
+                                      volumeId,
+                                      p);
 }
 
 Color
@@ -709,16 +796,27 @@ VdbVolume::evalTemperature(mcrt_common::ThreadLocalState* tls,
                            uint32_t volumeId,
                            const Vec3f& pSample) const
 {
-    const openvdb::Vec3d p(pSample[0], pSample[1], pSample[2]);
-    const auto colorVector = mEmissionSampler.eval(tls, volumeId, p, Interpolation::POINT);
-    return Color(colorVector.x(), colorVector.y(), colorVector.z());
+    const openvdb::Vec3d p(pSample[0],
+                           pSample[1],
+                           pSample[2]);
+
+    const auto colorVector = mEmissionSampler.eval(tls,
+                                                   volumeId,
+                                                   p,
+                                                   Interpolation::POINT);
+
+    return Color(colorVector.x(),
+                 colorVector.y(),
+                 colorVector.z());
 }
 
 void
 VdbVolume::initVolumeSampleInfo(VolumeSampleInfo* info,
-        const Vec3f& rayOrg, const Vec3f& rayDir, const float time,
-        const scene_rdl2::rdl2::VolumeShader* volumeShader,
-        int volumeId) const
+                                const Vec3f& rayOrg,
+                                const Vec3f& rayDir,
+                                const float time,
+                                const scene_rdl2::rdl2::VolumeShader* volumeShader,
+                                int volumeId) const
 {
     // if we have an instance feature id for this volume id, use it
     const float featureSize = getInstanceFeatureSize(volumeId);
@@ -738,22 +836,36 @@ VdbVolume::initVolumeSampleInfo(VolumeSampleInfo* info,
     // the identity and we can avoid the xform.
     if (getIsReference()) {
         info->initialize(volumeShader,
-            rayOrg, rayDir, featureSize,
-            (mRdlGeometry->getVisibilityMask() & scene_rdl2::rdl2::SHADOW) != 0,
-            /* isVDB = */ true);
+                         rayOrg,
+                         rayDir,
+                         featureSize,
+                         (mRdlGeometry->getVisibilityMask() & scene_rdl2::rdl2::SHADOW) != 0,
+                         true); // isVdb
     } else {
         info->initialize(volumeShader,
-            transformPoint( mRenderToPrim, rayOrg, time, mIsMotionBlurOn),
-            transformVector(mRenderToPrim, rayDir, time, mIsMotionBlurOn), featureSize,
-            (mRdlGeometry->getVisibilityMask() & scene_rdl2::rdl2::SHADOW) != 0,
-            /* isVDB = */ true);
+                         transformPoint(mRenderToPrim,
+                                        rayOrg,
+                                        time,
+                                        mIsMotionBlurOn),
+                         transformVector(mRenderToPrim,
+                                         rayDir,
+                                         time,
+                                         mIsMotionBlurOn),
+                         featureSize,
+                         (mRdlGeometry->getVisibilityMask() & scene_rdl2::rdl2::SHADOW) != 0,
+                         true); // isVdb
     }
 }
 
 bool
-VdbVolume::queryIntersections(const Vec3f& rayOrg, const Vec3f& rayDir,
-                              float tNear, float time, int threadIdx, int volumeId,
-                              VolumeRayState& volumeRayState, bool computeRenderSpaceDistance)
+VdbVolume::queryIntersections(const Vec3f& rayOrg,
+                              const Vec3f& rayDir,
+                              float tNear,
+                              float time,
+                              int threadIdx,
+                              int volumeId,
+                              VolumeRayState& volumeRayState,
+                              bool computeRenderSpaceDistance)
 {
 
     // A note about instancing:  If the VdbVolume is a shared primitive
@@ -798,6 +910,7 @@ VdbVolume::queryIntersections(const Vec3f& rayOrg, const Vec3f& rayDir,
             } else {
                 rP = scene_rdl2::math::transformPoint(i2r0, iP);
             }
+
             return distance(rP, rayOrg);
         };
 
@@ -807,21 +920,25 @@ VdbVolume::queryIntersections(const Vec3f& rayOrg, const Vec3f& rayDir,
         if (!mTopologyIntersectors[threadIdx].setIndexRay(indexRay)) {
             return intersectVoxel;
         }
+
         double t0, t1;
         float tEnd = volumeRayState.getTEnd();
         while (mTopologyIntersectors[threadIdx].march(t0, t1)) {
             float ft0 = static_cast<float>(t0);
             float ft1 = static_cast<float>(t1);
+
             // when the interval is extremely small, the casting from
             // double to float can result in a zero length interval, which can
             // generate subtle sorting errors later in the interval compile stage
             if (scene_rdl2::math::isEqual(ft0, ft1)) {
                 continue;
             }
+
             intersectVoxel = true;
             if (ft0 >= tEnd) {
                 break;
             }
+
             if (computeRenderSpaceDistance) {
                 float d[2];
                 d[0] = renderSpaceDistance(org, dir, ft0);
@@ -830,21 +947,32 @@ VdbVolume::queryIntersections(const Vec3f& rayOrg, const Vec3f& rayDir,
             } else {
                 volumeRayState.addInterval(this, ft0, volumeId, true);
             }
+
             if (ft1 >= tEnd) {
                 break;
             }
+
             volumeRayState.addInterval(this, ft1, volumeId, false);
         }
+
         return intersectVoxel;
     } else {
+
         // Call our custom intersect() function for the non-uniform case
-        return mDDAIntersector->intersect(this, rayOrg, rayDir, tNear, volumeId,
-            volumeRayState, time);
+        return mDDAIntersector->intersect(this,
+                                          rayOrg,
+                                          rayDir,
+                                          tNear,
+                                          volumeId,
+                                          volumeRayState,
+                                          time);
     }
 }
 
 bool
-VdbVolume::isInActiveField(uint32_t threadIdx, const Vec3f& p, float time) const
+VdbVolume::isInActiveField(uint32_t threadIdx,
+                           const Vec3f& p,
+                           float time) const
 {
     // A note about instancing:  If the VdbVolume is a shared primitive
     // then it is assumed that p is already in the
@@ -855,9 +983,13 @@ VdbVolume::isInActiveField(uint32_t threadIdx, const Vec3f& p, float time) const
         if (mLinearTransform[0] && mLinearTransform[1]) {
             Vec3f pIndex0 = scene_rdl2::math::transformPoint(mLinearTransform[0]->mRenderToIndex, p);
             Vec3f pIndex1 = scene_rdl2::math::transformPoint(mLinearTransform[1]->mRenderToIndex, p);
-            Vec3f pIndex  = lerp(pIndex0, pIndex1, time);
-            return mTopologyAccessors[threadIdx].isValueOn(
-                openvdb::Coord(pIndex.x, pIndex.y, pIndex.z));
+            Vec3f pIndex  = lerp(pIndex0,
+                                 pIndex1,
+                                 time);
+
+            return mTopologyAccessors[threadIdx].isValueOn(openvdb::Coord(pIndex.x,
+                                                                          pIndex.y,
+                                                                          pIndex.z));
         } else {
             Vec3f pLocal;
             if (getIsReference()) {
@@ -866,44 +998,51 @@ VdbVolume::isInActiveField(uint32_t threadIdx, const Vec3f& p, float time) const
             } else {
                 Vec3f pLocal0 = scene_rdl2::math::transformPoint(mRenderToPrim[0], p);
                 Vec3f pLocal1 = scene_rdl2::math::transformPoint(mRenderToPrim[1], p);
-                pLocal  = lerp(pLocal0, pLocal1, time);
+                pLocal  = lerp(pLocal0,
+                               pLocal1,
+                               time);
             }
+
             return mTopologyAccessors[threadIdx].isValueOn(
-                mTopologyGrid->transform().worldToIndexCellCentered(openvdb::Vec3d(
-                pLocal.x, pLocal.y, pLocal.z)));
+                mTopologyGrid->transform().worldToIndexCellCentered(openvdb::Vec3d(pLocal.x,
+                                                                                   pLocal.y,
+                                                                                   pLocal.z)));
         }
     } else {
         if (mLinearTransform[0]) {
             Vec3f pIndex = scene_rdl2::math::transformPoint(mLinearTransform[0]->mRenderToIndex, p);
-            return mTopologyAccessors[threadIdx].isValueOn(
-                openvdb::Coord(pIndex.x, pIndex.y, pIndex.z));
+
+            return mTopologyAccessors[threadIdx].isValueOn(openvdb::Coord(pIndex.x,
+                                                                          pIndex.y,
+                                                                          pIndex.z));
         } else {
             Vec3f pLocal = scene_rdl2::math::transformPoint(mRenderToPrim[0], p);
+
             return mTopologyAccessors[threadIdx].isValueOn(
-                mTopologyGrid->transform().worldToIndexCellCentered(openvdb::Vec3d(
-                pLocal.x, pLocal.y, pLocal.z)));
+                mTopologyGrid->transform().worldToIndexCellCentered(openvdb::Vec3d(pLocal.x,
+                                                                                   pLocal.y,
+                                                                                   pLocal.z)));
         }
     }
 }
 
 void
 VdbVolume::initMotionBlurBoundary(openvdb::FloatGrid::Ptr& topologyGrid,
-        openvdb::VectorGrid::Ptr velocityGrid,
-        float tShutterOpen, float tShutterClose)
+                                  openvdb::VectorGrid::Ptr velocityGrid,
+                                  float tShutterOpen,
+                                  float tShutterClose)
 {
     // temporary per thread local storage for padding operation
     struct PaddOpTls {
         PaddOpTls() : mIsInitialized(false) {}
 
         void initialize(openvdb::FloatGrid::Ptr& topologyGrid,
-            openvdb::VectorGrid::Ptr velocityGrid)
+                        openvdb::VectorGrid::Ptr velocityGrid)
         {
-            mVelocityAccessor.reset(new openvdb::VectorGrid::ConstAccessor(
-                velocityGrid->getConstAccessor()));
+            mVelocityAccessor.reset(new openvdb::VectorGrid::ConstAccessor(velocityGrid->getConstAccessor()));
             mPaddedGrid = openvdb::FloatGrid::create();
             mPaddedGrid->setTransform(topologyGrid->transformPtr());
-            mPaddedGridAccessor.reset(new openvdb::FloatGrid::Accessor(
-                mPaddedGrid->getAccessor()));
+            mPaddedGridAccessor.reset(new openvdb::FloatGrid::Accessor(mPaddedGrid->getAccessor()));
             mPaddedVelocityGrid = openvdb::VectorGrid::create();
             mPaddedVelocityGrid->setTransform(velocityGrid->transformPtr());
             mIsInitialized = true;
@@ -917,68 +1056,67 @@ VdbVolume::initMotionBlurBoundary(openvdb::FloatGrid::Ptr& topologyGrid,
     };
 
     tbb::enumerable_thread_specific<PaddOpTls> mblurTls;
-    typedef typename openvdb::tree::IteratorRange<
-        openvdb::FloatGrid::TreeType::LeafCIter> IterRange;
+    typedef typename openvdb::tree::IteratorRange<openvdb::FloatGrid::TreeType::LeafCIter> IterRange;
     IterRange range(topologyGrid->tree().cbeginLeaf());
     float voxelLength = topologyGrid->voxelSize().z();
     tbb::parallel_for(range, [&](IterRange& range) {
-        tbb::enumerable_thread_specific<PaddOpTls>::reference localTmp =
-            mblurTls.local();
+        tbb::enumerable_thread_specific<PaddOpTls>::reference localTmp = mblurTls.local();
         if (!localTmp.mIsInitialized) {
             localTmp.initialize(topologyGrid, velocityGrid);
         }
-        const openvdb::VectorGrid::ConstAccessor& vAccessor =
-            *(localTmp.mVelocityAccessor);
+
+        const openvdb::VectorGrid::ConstAccessor& vAccessor = *(localTmp.mVelocityAccessor);
         openvdb::FloatGrid::Ptr& paddedGrid = localTmp.mPaddedGrid;
-        openvdb::FloatGrid::Accessor& paddedGridAccessor =
-            *(localTmp.mPaddedGridAccessor);
+        openvdb::FloatGrid::Accessor& paddedGridAccessor = *(localTmp.mPaddedGridAccessor);
         openvdb::VectorGrid::Ptr paddedVGrid = localTmp.mPaddedVelocityGrid;
         for (; range; ++range) {
             const auto& leafIter = range.iterator();
             for (auto iter = leafIter->cbeginValueOn(); iter; ++iter) {
                 openvdb::Vec3s velocity;
                 const openvdb::math::Coord& coord = iter.getCoord();
-                const openvdb::Vec3d p =
-                    topologyGrid->indexToWorld(coord);
-                openvdb::math::Coord vcoord =
-                    openvdb::math::Coord::round(
-                    velocityGrid->worldToIndex(p));
+                const openvdb::Vec3d p = topologyGrid->indexToWorld(coord);
+                openvdb::math::Coord vcoord = openvdb::math::Coord::round(velocityGrid->worldToIndex(p));
                 if (!vAccessor.probeValue(vcoord, velocity)) {
                     continue;
                 }
+
                 float dt = voxelLength / velocity.length();
 
                 // The advection code in VDBVelocity.h looks both forwards and backwards
                 // in time by up to the maximum value of shutter open and close.
                 // Thus we must ensure the velocity is defined across the entire time range.
                 // This is also what the "Kulla, Farjardo 12 approach" does in the comment below.
-                float maxT = scene_rdl2::math::max(scene_rdl2::math::abs(tShutterOpen), scene_rdl2::math::abs(tShutterClose));
+                float maxT = scene_rdl2::math::max(scene_rdl2::math::abs(tShutterOpen),
+                                                   scene_rdl2::math::abs(tShutterClose));
+
                 for (float t = -maxT; t <= maxT; t += dt) {
                     const openvdb::Vec3d pPrime = p + velocity * t;
-                    // activate voxel velocity passes through
-                    paddedGridAccessor.setValueOn(
-                        openvdb::math::Coord::round(
-                        paddedGrid->worldToIndex(pPrime)));
 
-                    vcoord = openvdb::math::Coord::round(
-                        velocityGrid->worldToIndex(pPrime));
+                    // activate voxel velocity passes through
+                    paddedGridAccessor.setValueOn(openvdb::math::Coord::round(paddedGrid->worldToIndex(pPrime)));
+
+                    vcoord = openvdb::math::Coord::round(velocityGrid->worldToIndex(pPrime));
                     if (!vAccessor.isValueOn(vcoord)) {
-                        openvdb::tools::setValueOnMax(
-                            paddedVGrid->tree(), vcoord, velocity);
+                        openvdb::tools::setValueOnMax(paddedVGrid->tree(),
+                                                      vcoord,
+                                                      velocity);
                     }
                 }
             }
         }
     });
+
     // merge back temporary padding grids to input grids
     for (auto it = mblurTls.begin(); it != mblurTls.end(); ++it) {
         topologyGrid->topologyUnion(*(it->mPaddedGrid));
         openvdb::tools::compMax(*velocityGrid, *(it->mPaddedVelocityGrid));
     }
+
     // dilate the padded grid by one voxel in case our padding scheme above
     // "scratches" some voxels by cornors
     openvdb::tools::dilateActiveValues(topologyGrid->tree(), 1,
-        openvdb::tools::NN_FACE, openvdb::tools::EXPAND_TILES);
+                                       openvdb::tools::NN_FACE,
+                                       openvdb::tools::EXPAND_TILES);
 
     // This is the Kulla, Farjardo 12 approach
     // "we expand the bounding box of non-zero blocks by the length of
@@ -1001,7 +1139,8 @@ VdbVolume::initMotionBlurBoundary(openvdb::FloatGrid::Ptr& topologyGrid,
 
 // Returns nth grid that has name "name"
 const openvdb::GridBase::Ptr
-findNthGridByName(const openvdb::GridPtrVec& grids, const std::string& name)
+findNthGridByName(const openvdb::GridPtrVec& grids,
+                  const std::string& name)
 {
     // get grid index from name
     int gridIndex = 0;
@@ -1024,6 +1163,7 @@ findNthGridByName(const openvdb::GridPtrVec& grids, const std::string& name)
             }
         }
     }
+
     return openvdb::GridBase::Ptr();
 }
 
@@ -1040,39 +1180,37 @@ VdbVolume::initializePhase1(const std::string& vdbFilePath,
     // openvdb::io::File::open() can throw an excpetion. That excpetion is caught by
     // moonray::rt::GeometryManager::tessellate.
     file.open();
+
     // Read in just the metadata for all grids.
     // We verify metadata before loading the voxel data.
     grids = file.readAllGridMetadata();
     if ((!grids) || (grids->size() == 0)) {
-        rdlGeometry.warn("VDB file \"", vdbFilePath,
-            "\" contains no grids.");
+        rdlGeometry.warn("VDB file \"", vdbFilePath, "\" contains no grids.");
         return false;
     }
 
     // load in velocity grid if motion blur is enabled
     float velocityScale = mVdbVolumeData->mVelocityScale;
-    if (mVdbVolumeData->mIsMotionBlurOn &&
-        !isZero(velocityScale)) {
-        const auto sceneContext =
-            rdlGeometry.getSceneClass().getSceneContext();
-        float fps = sceneContext->getSceneVariables().get(
-            scene_rdl2::rdl2::SceneVariables::sFpsKey);
+    if (mVdbVolumeData->mIsMotionBlurOn && !isZero(velocityScale)) {
+        const auto sceneContext = rdlGeometry.getSceneClass().getSceneContext();
+        float fps = sceneContext->getSceneVariables().get(scene_rdl2::rdl2::SceneVariables::sFpsKey);
         float dt = 1.0f / fps;
+
         // information to remap ray's time sample (0-1)
         // to the actual time value we use to perturb the ray
         float tShutterOpen = dt * mVdbVolumeData->mShutterOpen;
-        float tShutterRange = dt * mVdbVolumeData->mShutterClose -
-            tShutterOpen;
+        float tShutterRange = dt * mVdbVolumeData->mShutterClose - tShutterOpen;
         mVdbVelocity->setShutterValues(tShutterOpen, tShutterRange);
-        openvdb::GridBase::Ptr velocityGridTmp = findNthGridByName(
-            *grids, mVdbVolumeData->mVelocityGridName);
+        openvdb::GridBase::Ptr velocityGridTmp = findNthGridByName(*grids,
+                                                                   mVdbVolumeData->mVelocityGridName);
+
         // validate grid from metadata
         if (velocityGridTmp && velocityGridTmp->isType<openvdb::VectorGrid>()) {
+
             // read voxel data
             velocityGridTmp = file.readGrid(mVdbVolumeData->mVelocityGridName);
             if (!velocityGridTmp->empty()) {
-                velocityGrid = openvdb::gridPtrCast<openvdb::VectorGrid>(
-                    velocityGridTmp);
+                velocityGrid = openvdb::gridPtrCast<openvdb::VectorGrid>(velocityGridTmp);
 
                 // scale the velocity
                 openvdb::tools::foreach(velocityGrid->beginValueOn(),
@@ -1106,25 +1244,28 @@ VdbVolume::initializePhase2(const scene_rdl2::rdl2::Geometry& rdlGeometry,
 {
     mHasUniformVoxels = mTopologyGrid->hasUniformVoxels();
     if (mTopologyGrid->transform().isLinear()) {
-        openvdb::math::MapBase::ConstPtr map =
-            mTopologyGrid->transform().baseMap();
+        openvdb::math::MapBase::ConstPtr map = mTopologyGrid->transform().baseMap();
         openvdb::math::Mat4d M = map->getAffineMap()->getMat4().asPointer();
+
         // Loop over 2 time samples
         for (int i = 0; i < 2; i++) {
-            mLinearTransform[i].reset(new LinearGridTransform(Mat4f(
-                M[0][0], M[0][1], M[0][2], M[0][3],
-                M[1][0], M[1][1], M[1][2], M[1][3],
-                M[2][0], M[2][1], M[2][2], M[2][3],
-                M[3][0], M[3][1], M[3][2], M[3][3])));
+            mLinearTransform[i].reset(new LinearGridTransform(Mat4f(M[0][0], M[0][1], M[0][2], M[0][3],
+                                                                    M[1][0], M[1][1], M[1][2], M[1][3],
+                                                                    M[2][0], M[2][1], M[2][2], M[2][3],
+                                                                    M[3][0], M[3][1], M[3][2], M[3][3])));
             mLinearTransform[i]->appendXform(mPrimToRender[i]);
         }
         Mat4f indexToRenderMid = lerp(mLinearTransform[0]->mIndexToRender,
-                                            mLinearTransform[1]->mIndexToRender, 0.5f);
+                                      mLinearTransform[1]->mIndexToRender,
+                                      0.5f);
+
         mFeatureSize = cbrt(indexToRenderMid.det());
+
         // vdb ray intersector does not support grids with non-uniform voxels
         if (mHasUniformVoxels) {
             size_t threadCount = mcrt_common::getMaxNumTLS();
             mTopologyIntersectors.reserve(threadCount);
+
             // construct VolumeRayIntersector for the first thread
             mTopologyIntersectors.emplace_back(*mTopologyGrid);
             for (size_t i = 1; i < threadCount; ++i) {
@@ -1136,14 +1277,20 @@ VdbVolume::initializePhase2(const scene_rdl2::rdl2::Geometry& rdlGeometry,
         // vdb grid uses non-linear transform
         mLinearTransform[0].reset();
         mLinearTransform[1].reset();
+
         // use the voxel size in z axis as marching step size, which will be
         // consistant across frustum VDB regardless of its distance to camera
-        Mat4f primToRenderMid = lerp(mPrimToRender[0], mPrimToRender[1], 0.5f);
+        Mat4f primToRenderMid = lerp(mPrimToRender[0],
+                                     mPrimToRender[1],
+                                     0.5f);
+
         mFeatureSize = mTopologyGrid->voxelSize().z() * cbrt(primToRenderMid.det());
     }
 
     // Set feature sizes for each instance of this volume.
-    volumeAssignmentTable->setFeatureSizes(this, volumeIds, mFeatureSize);
+    volumeAssignmentTable->setFeatureSizes(this,
+                                           volumeIds,
+                                           mFeatureSize);
 
     if (getIsReference()) {
         MNRY_ASSERT(isEqual(mPrimToRender[0], Mat4f(one)));
@@ -1152,6 +1299,7 @@ VdbVolume::initializePhase2(const scene_rdl2::rdl2::Geometry& rdlGeometry,
             MNRY_ASSERT(isEqual(mPrimToRender[1], Mat4f(one)));
             MNRY_ASSERT(isEqual(mRenderToPrim[1], Mat4f(one)));
         }
+
         // We want mRenderToPrim to be the indentity, but we
         // want mPrimToRender to be the world2render xform
         // TODO: fix the dual usage of VdbVolume's mPrimToRender matrices. Even with the comment here, it's a bad state
@@ -1162,19 +1310,18 @@ VdbVolume::initializePhase2(const scene_rdl2::rdl2::Geometry& rdlGeometry,
     }
 
     if (velocityGrid) {
-        float velocitySampleRate = clamp(
-            mVdbVolumeData->mVelocitySampleRate);
+        float velocitySampleRate = clamp(mVdbVolumeData->mVelocitySampleRate);
         if (velocitySampleRate > 0.0f && velocitySampleRate < 1.0f) {
             // down sample velocity
-            openvdb::VectorGrid::Ptr decimatedGrid(
-                new openvdb::VectorGrid());
+            openvdb::VectorGrid::Ptr decimatedGrid(new openvdb::VectorGrid());
             decimatedGrid->setTransform(velocityGrid->transform().copy());
             decimatedGrid->transform().preScale(1.0f / velocitySampleRate);
-            openvdb::tools::resampleToMatch<openvdb::tools::BoxSampler>(
-                *velocityGrid, *decimatedGrid);
+            openvdb::tools::resampleToMatch<openvdb::tools::BoxSampler>(*velocityGrid,
+                                                                        *decimatedGrid);
             velocityGrid = decimatedGrid;
         }
-        mVdbVelocity->setVelocityGrid(velocityGrid, volumeIds);
+        mVdbVelocity->setVelocityGrid(velocityGrid,
+                                      volumeIds);
     }
 
     // set up per thread accessors for render time usage
@@ -1257,14 +1404,17 @@ VdbVolume::initDensitySampler(openvdb::io::File& file,
                               const std::vector<int>& volumeIds)
 {
     mTopologyGrid.reset();
+
     // read metadata of grid with name densityGridName.
     openvdb::GridBase::Ptr densityGrid = findNthGridByName(*grids, densityGridName);
+
     // check that it is a valid grid. If not, throw error.
     if (densityGrid) {
         if (!densityGrid->isType<openvdb::FloatGrid>()) {
             rdlGeometry.error("Density grid: \"", densityGridName, "\" is not a float grid.");
             return false;
         }
+
         // read voxel data
         densityGrid = file.readGrid(densityGridName);
         if (densityGrid->empty()) {
@@ -1281,11 +1431,18 @@ VdbVolume::initDensitySampler(openvdb::io::File& file,
     // padding extra voxels for motion blur usage
     if (velocityGrid) {
         float shutterOpen, shutterClose;
-        mVdbVelocity->getShutterOpenAndClose(shutterOpen, shutterClose);
-        initMotionBlurBoundary(mTopologyGrid, velocityGrid,
-            shutterOpen, shutterClose);
+        mVdbVelocity->getShutterOpenAndClose(shutterOpen,
+                                             shutterClose);
+        initMotionBlurBoundary(mTopologyGrid,
+                               velocityGrid,
+                               shutterOpen,
+                               shutterClose);
     }
-    mDensitySampler.initialize(mTopologyGrid, volumeIds, STATS_DENSITY_GRID_SAMPLES);
+
+    mDensitySampler.initialize(mTopologyGrid,
+                               volumeIds,
+                               STATS_DENSITY_GRID_SAMPLES);
+
     return true;
 }
 
@@ -1298,14 +1455,17 @@ VdbVolume::initEmissionSampler(openvdb::io::File& file,
                                const std::vector<int>& volumeIds)
 {
     mEmissionGrid.reset();
+
     // read metadata of grid with name densityGridName.
     openvdb::GridBase::Ptr emissionGrid = findNthGridByName(*grids, emissionGridName);
+
     // check that it is a valid grid. If not, throw error.
     if (emissionGrid) {
         if (!emissionGrid->isType<openvdb::VectorGrid>()) {
             rdlGeometry.error("Emission grid: \"", emissionGridName, "\" is not an RGB grid.");
             return false;
         }
+
         // read voxel data
         emissionGrid = file.readGrid(emissionGridName);
         if (emissionGrid->empty()) {
@@ -1319,14 +1479,17 @@ VdbVolume::initEmissionSampler(openvdb::io::File& file,
         return false;
     }
 
-    mEmissionSampler.initialize(mEmissionGrid, volumeIds, STATS_EMISSION_GRID_SAMPLES);
+    mEmissionSampler.initialize(mEmissionGrid,
+                                volumeIds,
+                                STATS_EMISSION_GRID_SAMPLES);
+
     return true;
 }
 
 void
 VdbVolume::bakeVolumeShaderDensityMap(const scene_rdl2::rdl2::VolumeShader* volumeShader,
                                       const scene_rdl2::math::Mat4f& primToRender,
-                                      const MotionBlurParams& /* motionBlurParams */,
+                                      const MotionBlurParams&,
                                       const VolumeAssignmentTable* volumeAssignmentTable,
                                       const int assignmentId)
 {
@@ -1336,7 +1499,7 @@ VdbVolume::bakeVolumeShaderDensityMap(const scene_rdl2::rdl2::VolumeShader* volu
         shading::TLState *tls = mcrt_common::getFrameUpdateTLS()->mShadingTls.get();
         mDensityColor = volumeShader->extinct(tls, shading::State(&isect), 
                                               scene_rdl2::math::Color(1.f), 
-                                              /*rayVolumeDepth*/ -1);
+                                              -1); // rayVolumeDepth
         return;
     }
 
@@ -1352,8 +1515,9 @@ VdbVolume::bakeVolumeShaderDensityMap(const scene_rdl2::rdl2::VolumeShader* volu
     {
         // Divisions
         int divisions = volumeShader->getBakeDivisions();
-        float maxDivisions = scene_rdl2::math::max(bbox.max().x() - bbox.min().x(), scene_rdl2::math::max(bbox.max().y() - bbox.min().y(),
-            bbox.max().z() - bbox.min().z()));
+        float maxDivisions = scene_rdl2::math::max(bbox.max().x() - bbox.min().x(),
+                                                   scene_rdl2::math::max(bbox.max().y() - bbox.min().y(),
+                                                                         bbox.max().z() - bbox.min().z()));
         rez = openvdb::Vec3d(divisions / maxDivisions);
         break;
     }
@@ -1381,9 +1545,16 @@ VdbVolume::bakeVolumeShaderDensityMap(const scene_rdl2::rdl2::VolumeShader* volu
     mBakedDensityGrid->setTransform(newTransform);
 
     // fill
-    bbox.reset(openvdb::math::Coord(bbox.min().x() * rez.x(), bbox.min().y() * rez.y(), bbox.min().z() * rez.z()),
-               openvdb::math::Coord(bbox.max().x() * rez.x(), bbox.max().y() * rez.y(), bbox.max().z() * rez.z()));
-    mBakedDensityGrid->denseFill(bbox, openvdb::Vec3f(1.f, 1.f, 1.f), true);
+    bbox.reset(openvdb::math::Coord(bbox.min().x() * rez.x(),
+                                    bbox.min().y() * rez.y(),
+                                    bbox.min().z() * rez.z()),
+               openvdb::math::Coord(bbox.max().x() * rez.x(),
+                                    bbox.max().y() * rez.y(),
+                                    bbox.max().z() * rez.z()));
+
+    mBakedDensityGrid->denseFill(bbox,
+                                 openvdb::Vec3f(1.f, 1.f, 1.f),
+                                 true);
 
     // bake map shader
     openvdb::tools::foreach(mBakedDensityGrid->beginValueOn(),
@@ -1391,15 +1562,19 @@ VdbVolume::bakeVolumeShaderDensityMap(const scene_rdl2::rdl2::VolumeShader* volu
             // get xyz position of grid in primitive space == world space
             const openvdb::Vec3d pd = mBakedDensityGrid->indexToWorld(it.getCoord());
             const scene_rdl2::math::Vec3f p(pd.x(), pd.y(), pd.z());
+
             // sample volume shader
             shading::Intersection isect;
             isect.setP(scene_rdl2::math::transformPoint(primToRender, p));
             shading::TLState *tls = mcrt_common::getFrameUpdateTLS()->mShadingTls.get();
             const scene_rdl2::math::Color result = volumeShader->extinct(tls, shading::State(&isect), 
                                                                          scene_rdl2::math::Color(1.0f), 
-                                                                         /*rayVolumeDepth*/ -1);
+                                                                         -1); // rayVolumeDepth
+
             // set result to new grid
-            it.setValue(openvdb::Vec3f(result.r, result.g, result.b));
+            it.setValue(openvdb::Vec3f(result.r,
+                                       result.g,
+                                       result.b));
         }
     );
 

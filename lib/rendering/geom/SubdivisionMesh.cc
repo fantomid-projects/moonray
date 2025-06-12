@@ -24,7 +24,9 @@ class SubdMesh;
 
 struct SubdivisionMesh::Impl
 {
-    explicit Impl(internal::SubdMesh* subdMesh) : mSubdMesh(subdMesh) {}
+    explicit Impl(internal::SubdMesh* subdMesh) :
+        mSubdMesh(subdMesh) {}
+
     std::unique_ptr<internal::SubdMesh> mSubdMesh;
 };
 
@@ -34,19 +36,19 @@ SubdivisionMesh::SubdivisionMesh(Impl* impl) :
 
 SubdivisionMesh::~SubdivisionMesh() = default;
 
-SubdivisionMesh::SubdivisionMesh(
-        Scheme scheme,
-        FaceVertexCount&& faceVertexCount,
-        IndexBuffer&& indices,
-        VertexBuffer&& vertices,
-        LayerAssignmentId&& layerAssignmentId,
-        shading::PrimitiveAttributeTable&& primitiveAttributeTable)
+SubdivisionMesh::SubdivisionMesh(Scheme scheme,
+                                 FaceVertexCount&& faceVertexCount,
+                                 IndexBuffer&& indices,
+                                 VertexBuffer&& vertices,
+                                 LayerAssignmentId&& layerAssignmentId,
+                                 shading::PrimitiveAttributeTable&& primitiveAttributeTable)
 {
-    mImpl = fauxstd::make_unique<Impl>(new internal::OpenSubdivMesh(
-        scheme,
-        std::move(faceVertexCount), std::move(indices),
-        std::move(vertices), std::move(layerAssignmentId),
-        std::move(primitiveAttributeTable)));
+    mImpl = fauxstd::make_unique<Impl>(new internal::OpenSubdivMesh(scheme,
+                                                                    std::move(faceVertexCount),
+                                                                    std::move(indices),
+                                                                    std::move(vertices),
+                                                                    std::move(layerAssignmentId),
+                                                                    std::move(primitiveAttributeTable)));
 }
 
 std::unique_ptr<SubdivisionMesh>
@@ -72,7 +74,6 @@ SubdivisionMesh::getSubdivideVertexCount() const
 {
     return mImpl->mSubdMesh->getTessellatedMeshVertexCount();
 }
-
 
 Primitive::size_type
 SubdivisionMesh::getMemory() const
@@ -140,7 +141,7 @@ SubdivisionMesh::getSubdFVarLinearInterpolation() const
 }
 
 void
-SubdivisionMesh::setSubdCreases(IndexBuffer&&     creaseIndices,
+SubdivisionMesh::setSubdCreases(IndexBuffer&& creaseIndices,
                                 SharpnessBuffer&& creaseSharpnesses)
 {
     mImpl->mSubdMesh->setSubdCreases(std::move(creaseIndices),
@@ -154,7 +155,7 @@ SubdivisionMesh::hasSubdCreases() const
 }
 
 void
-SubdivisionMesh::setSubdCorners(IndexBuffer&&     cornerIndices,
+SubdivisionMesh::setSubdCorners(IndexBuffer&& cornerIndices,
                                 SharpnessBuffer&& cornerSharpnesses)
 {
     mImpl->mSubdMesh->setSubdCorners(std::move(cornerIndices),
@@ -180,7 +181,8 @@ SubdivisionMesh::hasSubdHoles() const
 }
 
 void
-SubdivisionMesh::setParts(size_t partCount, FaceToPartBuffer&& faceToPart)
+SubdivisionMesh::setParts(size_t partCount,
+                          FaceToPartBuffer&& faceToPart)
 {
     mImpl->mSubdMesh->setParts(partCount, std::move(faceToPart));
 }
@@ -216,22 +218,30 @@ SubdivisionMesh::setCurvedMotionBlurSampleCount(int count)
 }
 
 void
-SubdivisionMesh::transformPrimitive(
-        const MotionBlurParams& motionBlurParams,
-        const shading::XformSamples& prim2render)
+SubdivisionMesh::transformPrimitive(const MotionBlurParams& motionBlurParams,
+                                    const shading::XformSamples& prim2render)
 {
     size_t motionSamplesCount = getMotionSamplesCount();
     shading::XformSamples p2r = prim2render;
     if (motionSamplesCount > 1 && prim2render.size() == 1) {
         p2r.resize(motionSamplesCount, prim2render[0]);
     }
+
     const shading::PrimitiveAttributeTable* primAttrTab = &mImpl->mSubdMesh->getPrimitiveAttributeTable();
-    transformVertexBuffer(mImpl->mSubdMesh->getControlVertexBuffer(), p2r, motionBlurParams,
-                          mImpl->mSubdMesh->getMotionBlurType(), mImpl->mSubdMesh->getCurvedMotionBlurSampleCount(),
+    transformVertexBuffer(mImpl->mSubdMesh->getControlVertexBuffer(),
+                          p2r,
+                          motionBlurParams,
+                          mImpl->mSubdMesh->getMotionBlurType(),
+                          mImpl->mSubdMesh->getCurvedMotionBlurSampleCount(),
                           primAttrTab);
+
     float shutterOpenDelta, shutterCloseDelta;
-    motionBlurParams.getMotionBlurDelta(shutterOpenDelta, shutterCloseDelta);
-    mImpl->mSubdMesh->setTransform(p2r, shutterOpenDelta, shutterCloseDelta);
+    motionBlurParams.getMotionBlurDelta(shutterOpenDelta,
+                                        shutterCloseDelta);
+
+    mImpl->mSubdMesh->setTransform(p2r,
+                                   shutterOpenDelta,
+                                   shutterCloseDelta);
 }
 
 internal::Primitive*
@@ -242,7 +252,7 @@ SubdivisionMesh::getPrimitiveImpl()
 
 void
 SubdivisionMesh::updateVertexData(const std::vector<float>& vertexData,
-        const shading::XformSamples& prim2render)
+                                  const shading::XformSamples& prim2render)
 {
     if (vertexData.size() > 0) {
         mImpl->mSubdMesh->updateVertexData(vertexData, prim2render);

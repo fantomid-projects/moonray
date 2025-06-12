@@ -59,15 +59,14 @@ intersectFunc(const RTCIntersectFunctionNArguments* args)
     const MotionTransform& xform = instance->getLocal2Parent();
     const RTCScene referenceScene = instance->getReferenceScene();
     int geomID = instance->getGeomID();
-    mcrt_common::IntersectContext* context =
-        (mcrt_common::IntersectContext*)args->context;
+    mcrt_common::IntersectContext* context = (mcrt_common::IntersectContext*)args->context;
     for (unsigned int index = 0; index < N; ++index) {
         int rayId = RTCRayN_id(rays, N, index);
-        mcrt_common::RayExtension& rayExtension =
-            context->mRayExtension[rayId];
+        mcrt_common::RayExtension& rayExtension = context->mRayExtension[rayId];
         if (valid[index] == 0) {
             continue;
         }
+
         const Mat43 inL2R = rayExtension.l2r;
         void* inUserData = rayExtension.userData;
         const void* inInstance0 = rayExtension.instance0OrLight;
@@ -87,14 +86,15 @@ intersectFunc(const RTCIntersectFunctionNArguments* args)
             P2L = L2P.inverse();
         }
 
-        Vec3f localOrg = scene_rdl2::math::transformPoint(P2L, Vec3f(
-            RTCRayN_org_x(rays, N, index),
-            RTCRayN_org_y(rays, N, index),
-            RTCRayN_org_z(rays, N, index)));
-        Vec3f localDir = scene_rdl2::math::transformVector(P2L, Vec3f(
-            RTCRayN_dir_x(rays, N, index),
-            RTCRayN_dir_y(rays, N, index),
-            RTCRayN_dir_z(rays, N, index)));
+        Vec3f localOrg = scene_rdl2::math::transformPoint(P2L,
+                                                          Vec3f(RTCRayN_org_x(rays, N, index),
+                                                                RTCRayN_org_y(rays, N, index),
+                                                                RTCRayN_org_z(rays, N, index)));
+
+        Vec3f localDir = scene_rdl2::math::transformVector(P2L,
+                                                           Vec3f(RTCRayN_dir_x(rays, N, index),
+                                                                 RTCRayN_dir_y(rays, N, index),
+                                                                 RTCRayN_dir_z(rays, N, index)));
 
         RTCRayHit localRay;
         localRay.ray.org_x = localOrg.x;
@@ -112,9 +112,10 @@ intersectFunc(const RTCIntersectFunctionNArguments* args)
         localRay.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
         rayExtension.l2r = Mat43(scene_rdl2::math::one);
         rayExtension.userData = nullptr;
+
         // Clear instance pointers at and beyond the current depth
         memset(&rayExtension.instance0OrLight + rayExtension.instanceAttributesDepth, 0,
-           (Instance::sMaxInstanceAttributesDepth - rayExtension.instanceAttributesDepth) * sizeof(void*));
+               (Instance::sMaxInstanceAttributesDepth - rayExtension.instanceAttributesDepth) * sizeof(void*));
 
         // Increase the instance attribute depth so we know
         // which instanceN member to set if the ray intersects the instance.
@@ -136,8 +137,7 @@ intersectFunc(const RTCIntersectFunctionNArguments* args)
         const geom::internal::TLState *geomTls = static_cast<geom::internal::TLState *>(rayExtension.geomTls);
         if (state >= 0 && geomTls) {
             MNRY_ASSERT(geomTls->mVolumeRayState.getVolumeAssignmentTable() != nullptr);
-            const geom::internal::VolumeIdFSM &fsm =
-                geomTls->mVolumeRayState.getVolumeAssignmentTable()->getInstanceVolumeIds();
+            const geom::internal::VolumeIdFSM &fsm = geomTls->mVolumeRayState.getVolumeAssignmentTable()->getInstanceVolumeIds();
             rayExtension.volumeInstanceState = fsm.transition(state, instance);
         }
 
@@ -145,7 +145,9 @@ intersectFunc(const RTCIntersectFunctionNArguments* args)
         rtcInitIntersectArguments(&args);
         args.context = &(context->mRtcContext);
 
-        rtcIntersect1(referenceScene, &localRay, &args);
+        rtcIntersect1(referenceScene,
+                      &localRay,
+                      &args);
 
         if (localRay.hit.geomID == RTC_INVALID_GEOMETRY_ID) {
             // no new intersection found, restore original intersection state
@@ -160,19 +162,26 @@ intersectFunc(const RTCIntersectFunctionNArguments* args)
             // intersection is found, update the intersection state
             if (localRay.hit.instID[0] != localRay.hit.geomID) {
                 // ray intersect a leaf Primitive
-                rayExtension.userData = rtcGetGeometryUserData(
-                    rtcGetGeometry(referenceScene, localRay.hit.geomID));
+                rayExtension.userData = rtcGetGeometryUserData(rtcGetGeometry(referenceScene,
+                                                                              localRay.hit.geomID));
             }
+
             // the way we use instID is different from how embree's official
             // single level instance geometry. If the ray hits an instance,
             // we mark the instID = geomID. We use this mechanic to identify
             // whether the ray hit an instance or not after rtcIntersect call
             localRay.hit.geomID = geomID;
             localRay.hit.instID[0] = geomID;
+
             // we found a hit, concat scene transform to ray l2r
             RTCRayN_tfar(rays, N, index) = localRay.ray.tfar;
             rayExtension.l2r *= L2P;
-            rtcCopyHitToHitN(hits, &localRay.hit, N, index);
+
+            rtcCopyHitToHitN(hits,
+                             &localRay.hit,
+                             N,
+                             index);
+
             switch (rayExtension.instanceAttributesDepth) {
             case 1:
                 if (topLevel) {
@@ -200,8 +209,10 @@ intersectFunc(const RTCIntersectFunctionNArguments* args)
                 break;
             }
         }
+
         // restore the previous instance depth before the recursion unwinds
         rayExtension.instanceAttributesDepth = inInstanceAttributesDepth;
+
         // restore volume instance state
         rayExtension.volumeInstanceState = inVolumeInstanceState;
     }
@@ -223,8 +234,7 @@ occludedFunc(const RTCOccludedFunctionNArguments* args)
     const Instance* instance = (const Instance*)userData->mPrimitive;
     const MotionTransform& xform = instance->getLocal2Parent();
     const RTCScene referenceScene = instance->getReferenceScene();
-    mcrt_common::IntersectContext* context =
-        (mcrt_common::IntersectContext*)args->context;
+    mcrt_common::IntersectContext* context = (mcrt_common::IntersectContext*)args->context;
     for (unsigned int index = 0; index < N; ++index) {
         if (valid[index] == 0) {
             continue;
@@ -233,16 +243,20 @@ occludedFunc(const RTCOccludedFunctionNArguments* args)
         Vec3f localDir;
         float time = RTCRayN_time(rays, N, index);
         const Mat43 P2L = xform.isStatic() ?
-            xform.getStaticInverse() : xform.eval(time).inverse();
+                          xform.getStaticInverse() :
+                          xform.eval(time).inverse();
+
         // transform ray to local space
-        localOrg = scene_rdl2::math::transformPoint(P2L, Vec3f(
-            RTCRayN_org_x(rays, N, index),
-            RTCRayN_org_y(rays, N, index),
-            RTCRayN_org_z(rays, N, index)));
-        localDir = scene_rdl2::math::transformVector(P2L, Vec3f(
-            RTCRayN_dir_x(rays, N, index),
-            RTCRayN_dir_y(rays, N, index),
-            RTCRayN_dir_z(rays, N, index)));
+        localOrg = scene_rdl2::math::transformPoint(P2L,
+                                                    Vec3f(RTCRayN_org_x(rays, N, index),
+                                                          RTCRayN_org_y(rays, N, index),
+                                                          RTCRayN_org_z(rays, N, index)));
+
+        localDir = scene_rdl2::math::transformVector(P2L,
+                                                     Vec3f(RTCRayN_dir_x(rays, N, index),
+                                                           RTCRayN_dir_y(rays, N, index),
+                                                           RTCRayN_dir_z(rays, N, index)));
+
         RTCRay localRay;
         localRay.org_x = localOrg.x;
         localRay.org_y = localOrg.y;
@@ -284,6 +298,7 @@ Instance::computeAABB() const
     BBox3f localBound;
     localBound.lower = Vec3f(refBound.lower_x, refBound.lower_y, refBound.lower_z);
     localBound.upper = Vec3f(refBound.upper_x, refBound.upper_y, refBound.upper_z);
+
     // Instance with empty source scene (usually due to incorrect user setup)
     // Make it a valid (but meaningless) bounding box so it won't break the
     // partition process during BVH construction
@@ -308,17 +323,19 @@ Instance::computeAABB() const
         // pbrt-v3 has an implementation that formulating bbox corner movement
         // as time space function and evaluate the derivative zero point.
         // Might worth investigating and port it in the future
-        bound = merge(
-            transformBounds(local2Parent.eval(0), localBound),
-            transformBounds(local2Parent.eval(1), localBound));
+        bound = merge(transformBounds(local2Parent.eval(0), localBound),
+                      transformBounds(local2Parent.eval(1), localBound));
+
         constexpr size_t sampleCount = 128;
         const float sampleDelta = 1.0f / sampleCount;
         for (size_t i = 1; i < sampleCount; ++i) {
             float t = i * sampleDelta;
             bound = merge(bound,
-                transformBounds(local2Parent.eval(t), localBound));
+                          transformBounds(local2Parent.eval(t),
+                                          localBound));
         }
     }
+
     return bound;
 }
 
@@ -332,6 +349,7 @@ Instance::computeAABBAtTimeStep(int timeStep) const
     BBox3f localBound;
     localBound.lower = Vec3f(refBound.lower_x, refBound.lower_y, refBound.lower_z);
     localBound.upper = Vec3f(refBound.upper_x, refBound.upper_y, refBound.upper_z);
+
     // Instance with empty source scene (usually due to incorrect user setup)
     // Make it a valid (but meaningless) bounding box so it won't break the
     // partition process during BVH construction
@@ -351,8 +369,7 @@ Instance::computeAABBAtTimeStep(int timeStep) const
 bool
 Instance::hasAssignment(int assignmentId) const
 {
-    const auto& pImpl = PrimitivePrivateAccess::getPrimitiveImpl(
-        getReference()->getPrimitive().get());
+    const auto& pImpl = PrimitivePrivateAccess::getPrimitiveImpl(getReference()->getPrimitive().get());
     return pImpl->hasAssignment(assignmentId);
 }
 

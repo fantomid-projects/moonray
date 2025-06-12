@@ -60,14 +60,16 @@ class VolumeSampleInfo;
 /// Tessellation parameters
 struct TessellationParams {
     TessellationParams(const scene_rdl2::rdl2::Layer *rdlLayer,
-        const std::vector<mcrt_common::Frustum>& frustums,
-        const std::vector<mcrt_common::Fishtum>& fishtums,
-        const scene_rdl2::math::Mat4d& world2render,
-        bool enableDisplacement,
-        bool fastGeomUpdate,
-        bool isBaking,
-        const VolumeAssignmentTable* volumeAssignmentTable) :
-            mRdlLayer(rdlLayer), mFrustums(frustums), mFishtums(fishtums),
+                       const std::vector<mcrt_common::Frustum>& frustums,
+                       const std::vector<mcrt_common::Fishtum>& fishtums,
+                       const scene_rdl2::math::Mat4d& world2render,
+                       bool enableDisplacement,
+                       bool fastGeomUpdate,
+                       bool isBaking,
+                       const VolumeAssignmentTable* volumeAssignmentTable) :
+            mRdlLayer(rdlLayer),
+            mFrustums(frustums),
+            mFishtums(fishtums),
             mWorld2Render(world2render),
             mEnableDisplacement(enableDisplacement),
             mFastGeomUpdate(fastGeomUpdate),
@@ -111,7 +113,11 @@ public:
     /// A Primitive stores a geometry primitive to be rendered. The Procedural
     /// creating the primitive must construct / update it passing vertex "P"
     /// and "N" defined in local-space(local space of the primitive).
-    Primitive() : mRdlGeometry(nullptr), mIsReference(false), mFeatureSize(1.0f), mDensityColor(1.0f)
+    Primitive() :
+        mRdlGeometry(nullptr),
+        mIsReference(false),
+        mFeatureSize(1.0f),
+        mDensityColor(1.0f)
     {
         // VDBVelocity stores shutter open and close data, an openvdb velocity grid,
         // and openvdb velocity samplers. It is needed for motion blur when the primitive
@@ -146,7 +152,8 @@ public:
 
     /// This method tessellates the primitive into sub primitives that
     /// can be ray-traced. (triangles, bezier spans...etc)
-    virtual void tessellate(const TessellationParams& tessellationParams, TessellationStats& stats)
+    virtual void tessellate(const TessellationParams& tessellationParams,
+                            TessellationStats& stats)
     {
         MNRY_ASSERT(0, "not implemented");
     }
@@ -197,8 +204,9 @@ public:
     /// data structure (except for mP which is initialized automatically
     /// from the ray hit distance).
     virtual void postIntersect(mcrt_common::ThreadLocalState &tls,
-            const scene_rdl2::rdl2::Layer *pRdlLayer, const mcrt_common::Ray &ray,
-            shading::Intersection &intersection) const
+                               const scene_rdl2::rdl2::Layer *pRdlLayer,
+                               const mcrt_common::Ray &ray,
+                               shading::Intersection &intersection) const
     {
         MNRY_ASSERT(0, "not implemented");
     }
@@ -206,7 +214,9 @@ public:
     /// Calculate the intersection curvature dnds, dndt
     /// return false if the curvature of this Primitive can't be calculated
     virtual bool computeIntersectCurvature(const mcrt_common::Ray &ray,
-            const shading::Intersection &intersection, Vec3f &dnds, Vec3f &dndt) const
+                                           const shading::Intersection &intersection,
+                                           Vec3f &dnds,
+                                           Vec3f &dndt) const
     {
         return false;
     }
@@ -226,9 +236,11 @@ public:
     }
 
     virtual void initVolumeSampleInfo(VolumeSampleInfo* info,
-            const Vec3f& rayOrg, const Vec3f& rayDir, float time,
-            const scene_rdl2::rdl2::VolumeShader* volumeShader,
-            int volumeId) const = 0;
+                                      const Vec3f& rayOrg,
+                                      const Vec3f& rayDir,
+                                      float time,
+                                      const scene_rdl2::rdl2::VolumeShader* volumeShader,
+                                      int volumeId) const = 0;
 
     /// Query whether thre are multiple frame samples for this Primitive
     bool isMotionBlurOn() const
@@ -284,7 +296,8 @@ public:
         return mFeatureSize;
     }
 
-    void setInstanceFeatureSize(int volumeId, float featureSize) {
+    void setInstanceFeatureSize(int volumeId,
+                                float featureSize) {
         mInstanceFeatureSize[volumeId] = featureSize;
     }
 
@@ -335,7 +348,8 @@ public:
 
     // This sample position is used for sampling map shaders. It must be in render space.
     // TODO: use "time" parameter for xform motion blur of "baked density" grid in Mesh Primitives.
-    virtual scene_rdl2::math::Vec3f transformVolumeSamplePosition(const Vec3f& pSample, float /* time */) const
+    virtual scene_rdl2::math::Vec3f transformVolumeSamplePosition(const Vec3f& pSample,
+                                                                  float /* time */) const
     {
         return pSample;
     }
@@ -345,10 +359,10 @@ public:
     // because the density grid is stored in world space in VdbVolume and it is stored in
     // render space for all other primitives.
     virtual scene_rdl2::math::Color evalDensity(mcrt_common::ThreadLocalState* tls,
-                                    uint32_t volumeId,
-                                    const Vec3f& pSample,
-                                    const float rayVolumeDepth,
-                                    const scene_rdl2::rdl2::VolumeShader* const volumeShader) const;
+                                                uint32_t volumeId,
+                                                const Vec3f& pSample,
+                                                const float rayVolumeDepth,
+                                                const scene_rdl2::rdl2::VolumeShader* const volumeShader) const;
 
     // Performs voxel value lookup. VdbVolume can have voxel grids for extinction,
     // albedo, and temperature. Meshes have voxel grids only for extinction.
@@ -363,8 +377,8 @@ public:
                                         const scene_rdl2::rdl2::VolumeShader* const volumeShader) const;
 
     virtual scene_rdl2::math::Color evalTemperature(mcrt_common::ThreadLocalState* tls,
-                                        uint32_t volumeId,
-                                        const Vec3f& pSample) const
+                                                    uint32_t volumeId,
+                                                    const Vec3f& pSample) const
     {
         return scene_rdl2::math::Color(1.0f);
     }

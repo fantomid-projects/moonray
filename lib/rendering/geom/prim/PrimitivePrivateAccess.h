@@ -20,16 +20,18 @@ namespace internal {
 class PrimitivePrivateAccess {
 public:
     static void transformPrimitive(geom::Primitive* handle,
-            const MotionBlurParams& motionBlurParams,
-            const shading::XformSamples& prim2render) {
-        handle->transformPrimitive(motionBlurParams, prim2render);
+                                   const MotionBlurParams& motionBlurParams,
+                                   const shading::XformSamples& prim2render) {
+        handle->transformPrimitive(motionBlurParams,
+                                   prim2render);
     }
 
     static Primitive* getPrimitiveImpl(geom::Primitive* handle) {
         return handle->getPrimitiveImpl();
     }
 
-    static void setBVHScene(geom::SharedPrimitive& handle, void* bvhScene) {
+    static void setBVHScene(geom::SharedPrimitive& handle,
+                            void* bvhScene) {
         handle.setBVHScene(bvhScene);
     }
 

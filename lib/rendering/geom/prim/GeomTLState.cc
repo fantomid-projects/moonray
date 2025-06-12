@@ -8,9 +8,11 @@ namespace geom {
 namespace internal {
 
 TLState::TLState(mcrt_common::ThreadLocalState *tls, 
-        const mcrt_common::TLSInitParams &initParams,
-        bool okToAllocBundledResources):
-    BaseTLState(tls->mThreadIdx, tls->mArena, tls->mPixelArena),
+                 const mcrt_common::TLSInitParams &initParams,
+                 bool okToAllocBundledResources) :
+    BaseTLState(tls->mThreadIdx,
+                tls->mArena,
+                tls->mPixelArena),
     mSubsurfaceTraceSet(nullptr)
 {
     reset();
@@ -27,10 +29,12 @@ TLState::reset()
 
 std::shared_ptr<TLState>
 TLState::allocTls(mcrt_common::ThreadLocalState *tls,
-        const mcrt_common::TLSInitParams &initParams,
-        bool okToAllocBundledResources)
+                  const mcrt_common::TLSInitParams &initParams,
+                  bool okToAllocBundledResources)
 {
-    return std::make_shared<TLState>(tls, initParams, okToAllocBundledResources);
+    return std::make_shared<TLState>(tls,
+                                     initParams,
+                                     okToAllocBundledResources);
 }
 
 //-----------------------------------------------------------------------------

@@ -41,16 +41,16 @@ public:
     void clear();
 
     void forEachPrimitive(PrimitiveVisitor& visitor,
-            bool parallel = true);
+                          bool parallel = true);
 
     void forEachStatic(PrimitiveVisitor& visitor,
-            bool parallel = true);
+                       bool parallel = true);
 
     void forEachDynamic(PrimitiveVisitor& visitor,
-            bool parallel = true);
+                        bool parallel = true);
 
     void forEachDeformable(PrimitiveVisitor& visitor,
-            bool parallel = true);
+                           bool parallel = true);
 
 private:
     /// @remark For renderer internal use, procedural should never call this
@@ -59,9 +59,8 @@ private:
 
     /// @remark For renderer internal use, procedural should never call this
     /// @internal
-    virtual void transformPrimitive(
-            const MotionBlurParams& motionBlurParams,
-            const shading::XformSamples& prim2render) override;
+    virtual void transformPrimitive(const MotionBlurParams& motionBlurParams,
+                                    const shading::XformSamples& prim2render) override;
 
 private:
     struct Impl;

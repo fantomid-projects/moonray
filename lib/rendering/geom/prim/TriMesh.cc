@@ -29,26 +29,31 @@ using namespace shading;
 using namespace scene_rdl2::math;
 
 TriMesh::TriMesh(size_t estiFaceCount,
-        PolygonMesh::FaceVertexCount&& faceVertexCount,
-        PolygonMesh::IndexBuffer&& indices,
-        PolygonMesh::VertexBuffer&& vertices,
-        LayerAssignmentId&& layerAssignmentId,
-        PrimitiveAttributeTable&& primitiveAttributeTable):
-        PolyMesh(estiFaceCount, std::move(faceVertexCount),
-            std::move(indices), std::move(vertices),
-            std::move(layerAssignmentId),
-            std::move(primitiveAttributeTable))
+                 PolygonMesh::FaceVertexCount&& faceVertexCount,
+                 PolygonMesh::IndexBuffer&& indices,
+                 PolygonMesh::VertexBuffer&& vertices,
+                 LayerAssignmentId&& layerAssignmentId,
+                 PrimitiveAttributeTable&& primitiveAttributeTable):
+                 PolyMesh(estiFaceCount,
+                          std::move(faceVertexCount),
+                          std::move(indices),
+                          std::move(vertices),
+                          std::move(layerAssignmentId),
+                          std::move(primitiveAttributeTable))
 {
 }
 
 bool
-TriMesh::bakePosMap(int width, int height, int udim,
-        TypedAttributeKey<Vec2f> stKey,
-        Vec3fa *posResult, Vec3f *nrmResult) const
+TriMesh::bakePosMap(int width,
+                    int height,
+                    int udim,
+                    TypedAttributeKey<Vec2f> stKey,
+                    Vec3fa *posResult,
+                    Vec3f *nrmResult) const
 {
     const Attributes *primitiveAttributes = getAttributes();
     MNRY_ASSERT_REQUIRE(primitiveAttributes->isSupported(stKey));
-    // throw out the anchor boys....
+
     if (mIsTessellated) {
         // triangle got tessellated to quads
         for (size_t faceId = 0; faceId < getTessellatedMeshFaceCount(); ++faceId) {
@@ -65,10 +70,17 @@ TriMesh::bakePosMap(int width, int height, int udim,
 
             // FIXME: we are forced to fetch st1 and st3 twice.
             Vec2f st0, st1, st2, st3;
-            getTriangleAttributes(stKey, baseFaceId, faceId, st0, st1, st3,
-                0.0f, true);
-            getTriangleAttributes(stKey, baseFaceId, faceId, st2, st3, st1,
-                0.0f, false);
+            getTriangleAttributes(stKey,
+                                  baseFaceId,
+                                  faceId,
+                                  st0, st1, st3,
+                                  0.0f, true);
+
+            getTriangleAttributes(stKey,
+                                  baseFaceId,
+                                  faceId,
+                                  st2, st3, st1,
+                                  0.0f, false);
 
             // check if this face exists in this udim and if so
             // transform the st coordinates into the normalized range
@@ -80,33 +92,55 @@ TriMesh::bakePosMap(int width, int height, int udim,
                 const Vec3f *nrm3 = nullptr;
                 Vec3f nrmData0, nrmData1, nrmData2, nrmData3;
                 if (nrmResult) {
-                    getTriangleNormal(baseFaceId, faceId,
-                        nrmData0, nrmData1, nrmData3,
-                        0.0f, /* isFirst = */ true);
-                    getTriangleNormal(baseFaceId, faceId,
-                        nrmData2, nrmData3, nrmData1,
-                        0.0f, /* isFirst = */ false);
+                    getTriangleNormal(baseFaceId,
+                                      faceId,
+                                      nrmData0, nrmData1, nrmData3,
+                                      0.0f,
+                                      true); // isFirst
+
+                    getTriangleNormal(baseFaceId,
+                                      faceId,
+                                      nrmData2, nrmData3, nrmData1,
+                                      0.0f,
+                                      false); // isFirst
+ 
                     nrm0 = &nrmData0;
                     nrm1 = &nrmData1;
                     nrm2 = &nrmData2;
                     nrm3 = &nrmData3;
                 }
+
                 // first triangle: <0, 1, 3>
                 scene_rdl2::math::BBox2f roiST(
                     Vec2f(std::min(st0.x, std::min(st1.x, st3.x)),
                           std::min(st0.y, std::min(st1.y, st3.y))),
+
                     Vec2f(std::max(st0.x, std::max(st1.x, st3.x)),
                           std::max(st0.y, std::max(st1.y, st3.y))));
-                rasterizeTrianglePos(roiST, width, height, st0, st1, st3,
-                    pos0, pos1, pos3, nrm0, nrm1, nrm3, posResult, nrmResult);
+
+                rasterizeTrianglePos(roiST,
+                                     width,
+                                     height,
+                                     st0, st1, st3,
+                                     pos0, pos1, pos3,
+                                     nrm0, nrm1, nrm3,
+                                     posResult,
+                                     nrmResult);
+
                 // second triangle: <2, 3, 1>
-                roiST = scene_rdl2::math::BBox2f(
-                    Vec2f(std::min(st2.x, std::min(st3.x, st1.x)),
-                          std::min(st2.y, std::min(st3.y, st1.y))),
-                    Vec2f(std::max(st2.x, std::max(st3.x, st1.x)),
-                          std::max(st2.y, std::max(st3.y, st1.y))));
-                rasterizeTrianglePos(roiST, width, height, st2, st3, st1,
-                    pos2, pos3, pos1, nrm2, nrm3, nrm1, posResult, nrmResult);
+                roiST = scene_rdl2::math::BBox2f(Vec2f(std::min(st2.x, std::min(st3.x, st1.x)),
+                                                       std::min(st2.y, std::min(st3.y, st1.y))),
+                                                 Vec2f(std::max(st2.x, std::max(st3.x, st1.x)),
+                                                       std::max(st2.y, std::max(st3.y, st1.y))));
+
+                rasterizeTrianglePos(roiST,
+                                     width,
+                                     height,
+                                     st2, st3, st1,
+                                     pos2, pos3, pos1,
+                                     nrm2, nrm3, nrm1,
+                                     posResult,
+                                     nrmResult);
             }
         }
     } else {
@@ -126,25 +160,33 @@ TriMesh::bakePosMap(int width, int height, int udim,
             // transform the st coordinates into the normalized range
             if (udimxform(udim, st0) && udimxform(udim, st1) &&
                 udimxform(udim, st2)) {
-                scene_rdl2::math::BBox2f roiST(
-                    Vec2f(std::min(st0.x, std::min(st1.x, st2.x)),
-                          std::min(st0.y, std::min(st1.y, st2.y))),
-                    Vec2f(std::max(st0.x, std::max(st1.x, st2.x)),
-                          std::max(st0.y, std::max(st1.y, st2.y))));
+                scene_rdl2::math::BBox2f roiST(Vec2f(std::min(st0.x, std::min(st1.x, st2.x)),
+                                                     std::min(st0.y, std::min(st1.y, st2.y))),
+                                               Vec2f(std::max(st0.x, std::max(st1.x, st2.x)),
+                                                     std::max(st0.y, std::max(st1.y, st2.y))));
 
                 const Vec3f *nrm0 = nullptr;
                 const Vec3f *nrm1 = nullptr;
                 const Vec3f *nrm2 = nullptr;
                 Vec3f nrmData0, nrmData1, nrmData2;
                 if (nrmResult) {
-                    getTriangleNormal(faceId, faceId,
-                        nrmData0, nrmData1, nrmData2, 0.0f, true);
+                    getTriangleNormal(faceId,
+                                      faceId,
+                                      nrmData0, nrmData1, nrmData2,
+                                      0.0f, true);
+
                     nrm0 = &nrmData0;
                     nrm1 = &nrmData1;
                     nrm2 = &nrmData2;
                 }
-                rasterizeTrianglePos(roiST, width, height, st0, st1, st2,
-                    pos0, pos1, pos2, nrm0, nrm1, nrm2, posResult, nrmResult);
+                rasterizeTrianglePos(roiST,
+                                     width,
+                                     height,
+                                     st0, st1, st2,
+                                     pos0, pos1, pos2,
+                                     nrm0, nrm1, nrm2,
+                                     posResult,
+                                     nrmResult);
             }
         }
     }
@@ -153,14 +195,18 @@ TriMesh::bakePosMap(int width, int height, int udim,
 }
 
 void
-TriMesh::setRequiredAttributes(int primId, float time, float u, float v,
-    float w, bool isFirst, Intersection& intersection) const
+TriMesh::setRequiredAttributes(int primId,
+                               float time,
+                               float u, float v, float w,
+                               bool isFirst,
+                               Intersection& intersection) const
 {
     int tessFaceId = primId;
     int baseFaceId = getBaseFaceId(tessFaceId);
     uint32_t id1, id2, id3, id4;
     uint32_t isecId1, isecId2, isecId3;
     uint32_t varyingId1, varyingId2, varyingId3;
+
     // weights for interpolator
     float varyingW[3];
 
@@ -171,11 +217,13 @@ TriMesh::setRequiredAttributes(int primId, float time, float u, float v,
         id2 = mIndices[sQuadVertexCount * tessFaceId + 1];
         id3 = mIndices[sQuadVertexCount * tessFaceId + 2];
         id4 = mIndices[sQuadVertexCount * tessFaceId + 3];
+
         // the surface uv of intersection point on base face
         Vec2f uv;
         if (isFirst) {
             // Triangle (0,1,3)
             intersection.setIds(id1, id2, id4);
+
             // remap tessellated face barycentric coordinate to
             // base face barycentric coordinate
             uv = w * mFaceVaryingUv[sQuadVertexCount * tessFaceId + 0] +
@@ -184,6 +232,7 @@ TriMesh::setRequiredAttributes(int primId, float time, float u, float v,
         } else {
             // Triangle (2,3,1)
             intersection.setIds(id3, id4, id2);
+
             // remap tessellated face barycentric coordinate to
             // base face barycentric coordinate
             uv = w * mFaceVaryingUv[sQuadVertexCount * tessFaceId + 2] +
@@ -213,13 +262,18 @@ TriMesh::setRequiredAttributes(int primId, float time, float u, float v,
 
     int partId = (mFaceToPart.size() > 0) ? mFaceToPart[baseFaceId] : 0;
     const Attributes* primitiveAttributes = getAttributes();
+
     // interpolate PrimitiveAttribute
     MeshInterpolator interpolator(primitiveAttributes,
-        time, partId, baseFaceId,
-        varyingId1, varyingId2, varyingId3,
-        varyingW[0], varyingW[1], varyingW[2], tessFaceId,
-        isecId1, isecId2, isecId3,
-        w, u, v);
+                                  time,
+                                  partId,
+                                  baseFaceId,
+                                  varyingId1, varyingId2, varyingId3,
+                                  varyingW[0], varyingW[1], varyingW[2],
+                                  tessFaceId,
+                                  isecId1, isecId2, isecId3,
+                                  w, u, v);
+
     intersection.setRequiredAttributes(interpolator);
 
     // Add an interpolated N, dPds, and dPdt to the intersection
@@ -231,7 +285,8 @@ TriMesh::setRequiredAttributes(int primId, float time, float u, float v,
 
 void
 TriMesh::postIntersect(mcrt_common::ThreadLocalState& tls,
-                       const scene_rdl2::rdl2::Layer* pRdlLayer, const mcrt_common::Ray& ray,
+                       const scene_rdl2::rdl2::Layer* pRdlLayer,
+                       const mcrt_common::Ray& ray,
                        Intersection& intersection) const
 {
     int tessFaceId = ray.primID;
@@ -249,10 +304,12 @@ TriMesh::postIntersect(mcrt_common::ThreadLocalState& tls,
     }
 
     const int assignmentId = getFaceAssignmentId(tessFaceId);
-    intersection.setLayerAssignments(assignmentId, pRdlLayer);
+    intersection.setLayerAssignments(assignmentId,
+                                     pRdlLayer);
 
     const AttributeTable *table =
         intersection.getMaterial()->get<shading::RootShader>().getAttributeTable();
+
     intersection.setTable(&tls.mArena, table);
     const Attributes* primitiveAttributes = getAttributes();
 
@@ -272,7 +329,11 @@ TriMesh::postIntersect(mcrt_common::ThreadLocalState& tls,
     // The St value is read from the explicit "surface_st" primitive
     // attribute if it exists.
     Vec2f st1, st2, st3;
-    getTriangleST(baseFaceId, tessFaceId, st1, st2, st3, isFirst);
+    getTriangleST(baseFaceId,
+                  tessFaceId,
+                  st1, st2, st3,
+                  isFirst);
+
     const Vec2f St = w * st1 + u * st2 + v * st3;
 
     const Vec3f Ng = normalize(ray.getNg());
@@ -295,6 +356,7 @@ TriMesh::postIntersect(mcrt_common::ThreadLocalState& tls,
             const Vec3f& p10 = mVertices(isecId1, 0);
             const Vec3f& p20 = mVertices(isecId2, 0);
             const Vec3f& p30 = mVertices(isecId3, 0);
+
             // form a ReferenceFrame and use its tangent/binormal as dpds dpdt
             // if we fail to calculate the st partial derivatives
             Vec3f dp0[2];
@@ -304,12 +366,15 @@ TriMesh::postIntersect(mcrt_common::ThreadLocalState& tls,
                 dp0[0] = frame.getX();
                 dp0[1] = frame.getY();
             }
+
             const Vec3f& p11 = mVertices(isecId1, 1);
             const Vec3f& p21 = mVertices(isecId2, 1);
             const Vec3f& p31 = mVertices(isecId3, 1);
             Vec3f dp1[2];
-            if (!computeTrianglePartialDerivatives(
-                p11, p21, p31, st1, st2, st3, dp1)) {
+            if (!computeTrianglePartialDerivatives(p11, p21, p31,
+                                                   st1, st2, st3,
+                                                   dp1)) {
+
                 scene_rdl2::math::ReferenceFrame frame(N);
                 dp1[0] = frame.getX();
                 dp1[1] = frame.getY();
@@ -323,11 +388,15 @@ TriMesh::postIntersect(mcrt_common::ThreadLocalState& tls,
             // form a ReferenceFrame and use its tangent/binormal as dpds dpdt
             // if we fail to calculate the st partial derivatives
             Vec3f dp[2];
-            if (!computeTrianglePartialDerivatives(p1, p2, p3, st1, st2, st3, dp)) {
+            if (!computeTrianglePartialDerivatives(p1, p2, p3,
+                                                   st1, st2, st3,
+                                                   dp)) {
+
                 scene_rdl2::math::ReferenceFrame frame(N);
                 dp[0] = frame.getX();
                 dp[1] = frame.getY();
             }
+
             dPds = dp[0];
             dPdt = dp[1];
         }
@@ -343,8 +412,13 @@ TriMesh::postIntersect(mcrt_common::ThreadLocalState& tls,
 
     // calculate dfds/dfdt for primitive attributes that request differential
     if (table->requestDerivatives()) {
-        computeAttributesDerivatives(table, st1, st2, st3,
-            baseFaceId, tessFaceId, ray.time, isFirst, intersection);
+        computeAttributesDerivatives(table,
+                                     st1, st2, st3,
+                                     baseFaceId,
+                                     tessFaceId,
+                                     ray.time,
+                                     isFirst,
+                                     intersection);
     }
 
     // fill in ray epsilon to avoid self intersection
@@ -355,48 +429,76 @@ TriMesh::postIntersect(mcrt_common::ThreadLocalState& tls,
     // polygon vertices
     int numVertices = mIsTessellated ? 4 : 3;
     if (table->requests(StandardAttributes::sNumPolyVertices)) {
-        intersection.setAttribute(StandardAttributes::sNumPolyVertices, numVertices);
+        intersection.setAttribute(StandardAttributes::sNumPolyVertices,
+                                  numVertices);
     }
+
     if (table->requests(StandardAttributes::sPolyVertexType)) {
         intersection.setAttribute(StandardAttributes::sPolyVertexType,
-            static_cast<int>(StandardAttributes::POLYVERTEX_TYPE_POLYGON));
+                                  static_cast<int>(StandardAttributes::POLYVERTEX_TYPE_POLYGON));
     }
+
     if (table->requests(StandardAttributes::sReversedNormals)) {
-        intersection.setAttribute(StandardAttributes::sReversedNormals, mIsNormalReversed);
+        intersection.setAttribute(StandardAttributes::sReversedNormals,
+                                  mIsNormalReversed);
     }
+
     for (int iVert = 0; iVert < numVertices; iVert++) {
         if (table->requests(StandardAttributes::sPolyVertices[iVert])) {
             uint32_t id = mIndices[numVertices * tessFaceId + iVert];
+
             // may need to move the vertices to render space
             // for instancing object since they are ray traced in local space
-            const Vec3f v = ray.isInstanceHit() ? transformPoint(ray.ext.l2r, mVertices(id).asVec3f())
-                                                : mVertices(id).asVec3f();
-            intersection.setAttribute(StandardAttributes::sPolyVertices[iVert], v);
+            const Vec3f v = ray.isInstanceHit() ?
+                            transformPoint(ray.ext.l2r, mVertices(id).asVec3f()) :
+                            mVertices(id).asVec3f();
+
+            intersection.setAttribute(StandardAttributes::sPolyVertices[iVert],
+                                      v);
         }
     }
 
     // motion vectors
     if (table->requests(StandardAttributes::sMotion)) {
-        const Vec3f motion = computeMotion(mVertices, isecId1, isecId2, isecId3, w, u, v, ray);
-        intersection.setAttribute(StandardAttributes::sMotion, motion);
+        const Vec3f motion = computeMotion(mVertices,
+                                           isecId1, isecId2, isecId3,
+                                           w, u, v,
+                                           ray);
+
+        intersection.setAttribute(StandardAttributes::sMotion,
+                                  motion);
     }
 }
 
 bool
 TriMesh::computeIntersectCurvature(const mcrt_common::Ray& ray,
-        const Intersection& intersection, Vec3f& dnds, Vec3f& dndt) const
+                                   const Intersection& intersection,
+                                   Vec3f& dnds,
+                                   Vec3f& dndt) const
 {
     int tessFaceId = ray.primID;
     int baseFaceId = getBaseFaceId(tessFaceId);
     uint32_t id1, id2, id3;
     intersection.getIds(id1, id2, id3);
     bool isFirst = ray.u + ray.v <= 1.0f;
+
     Vec2f st1, st2, st3;
-    getTriangleST(baseFaceId, tessFaceId, st1, st2, st3, isFirst);
+    getTriangleST(baseFaceId,
+                  tessFaceId,
+                  st1, st2, st3,
+                  isFirst);
+
     Vec3f n1, n2, n3;
-    getTriangleNormal(baseFaceId, tessFaceId, n1, n2, n3, ray.time, isFirst);
+    getTriangleNormal(baseFaceId,
+                      tessFaceId,
+                      n1, n2, n3,
+                      ray.time,
+                      isFirst);
+
     Vec3f dn[2];
-    if (computeTrianglePartialDerivatives(n1, n2, n3, st1, st2, st3, dn)) {
+    if (computeTrianglePartialDerivatives(n1, n2, n3,
+                                          st1, st2, st3,
+                                          dn)) {
         dnds = dn[0];
         dndt = dn[1];
         return true;
@@ -406,20 +508,27 @@ TriMesh::computeIntersectCurvature(const mcrt_common::Ray& ray,
 }
 
 void
-TriMesh::getST(int tessFaceId, float u, float v, Vec2f& st) const
+TriMesh::getST(int tessFaceId,
+               float u, float v,
+               Vec2f& st) const
 {
     int baseFaceId = getBaseFaceId(tessFaceId);
     bool isFirst = u + v <= 1.0f;
     float w = 1.0f - u - v;
     Vec2f st1, st2, st3;
-    getTriangleST(baseFaceId, tessFaceId, st1, st2, st3, isFirst);
+    getTriangleST(baseFaceId,
+                  tessFaceId,
+                  st1, st2, st3,
+                  isFirst);
     st = w * st1 + u * st2 + v * st3;
 }
 
 void
-TriMesh::getNeighborVertices(int baseFaceId, int tessFaceId,
-        int tessFaceVIndex, int& vid, int& vid1, int& vid2, int& vid3,
-        Vec2f& st, Vec2f& st1, Vec2f& st2, Vec2f& st3) const
+TriMesh::getNeighborVertices(int baseFaceId,
+                             int tessFaceId,
+                             int tessFaceVIndex,
+                             int& vid, int& vid1, int& vid2, int& vid3,
+                             Vec2f& st, Vec2f& st1, Vec2f& st2, Vec2f& st3) const
 {
     if (mIsTessellated) {
         size_t offset = tessFaceId * sQuadVertexCount;
@@ -427,7 +536,10 @@ TriMesh::getNeighborVertices(int baseFaceId, int tessFaceId,
             if (mIndices[offset + 2] == mIndices[offset + 3]) {
                 // the degened quad introduced during tessellation
                 // first triangle on quad (0, 1, 3), which is (0, 1, 2)
-                getTriangleST(baseFaceId, tessFaceId, st1, st2, st3, true);
+                getTriangleST(baseFaceId,
+                              tessFaceId,
+                              st1, st2, st3,
+                              true);
                 vid1 = mIndices[offset + 0];
                 vid2 = mIndices[offset + 1];
                 vid3 = mIndices[offset + 2];
@@ -435,7 +547,10 @@ TriMesh::getNeighborVertices(int baseFaceId, int tessFaceId,
                 st = st3;
             } else {
                 // second triangle on quad (2, 3, 1)
-                getTriangleST(baseFaceId, tessFaceId, st1, st2, st3, false);
+                getTriangleST(baseFaceId,
+                              tessFaceId,
+                              st1, st2, st3,
+                              false);
                 vid1 = mIndices[offset + 2];
                 vid2 = mIndices[offset + 3];
                 vid3 = mIndices[offset + 1];
@@ -444,7 +559,10 @@ TriMesh::getNeighborVertices(int baseFaceId, int tessFaceId,
             }
         } else {
             // first triangle on quad (0, 1, 3)
-            getTriangleST(baseFaceId, tessFaceId, st1, st2, st3, true);
+            getTriangleST(baseFaceId,
+                          tessFaceId,
+                          st1, st2, st3,
+                          true);
             vid1 = mIndices[offset + 0];
             vid2 = mIndices[offset + 1];
             vid3 = mIndices[offset + 3];
@@ -461,7 +579,10 @@ TriMesh::getNeighborVertices(int baseFaceId, int tessFaceId,
         }
     } else {
         size_t offset = tessFaceId * sTriangleVertexCount;
-        getTriangleST(baseFaceId, tessFaceId, st1, st2, st3, true);
+        getTriangleST(baseFaceId,
+                      tessFaceId,
+                      st1, st2, st3,
+                      true);
         vid1 = mIndices[offset + 0];
         vid2 = mIndices[offset + 1];
         vid3 = mIndices[offset + 2];
@@ -641,6 +762,7 @@ TriMesh::splitNGons(size_t outputFaceCount,
     size_t inputIndexOffset = inputIndexCount;
     size_t outputIndexOffset = indices.size() - 1;
     size_t outputF2POffset = faceToPart.size() - 1;
+
     // triangulate indices
     for (int f = inputFaceCount - 1; f >= 0; --f) {
         size_t fvCount = faceVertexCount[f];
@@ -845,13 +967,12 @@ TriMesh::splitNGons(size_t outputFaceCount,
 }
 
 void
-TriMesh::generateIndexBufferAndSurfaceSamples(
-        const std::vector<PolyFaceTopology>& faceTopologies,
-        const PolyTessellatedVertexLookup& tessellatedVertexLookup,
-        PolygonMesh::IndexBuffer& indices,
-        std::vector<PolyMesh::SurfaceSample>& surfaceSamples,
-        std::vector<int>& tessellatedToBaseFace,
-        std::vector<Vec2f>* faceVaryingUv) const
+TriMesh::generateIndexBufferAndSurfaceSamples(const std::vector<PolyFaceTopology>& faceTopologies,
+                                              const PolyTessellatedVertexLookup& tessellatedVertexLookup,
+                                              PolygonMesh::IndexBuffer& indices,
+                                              std::vector<PolyMesh::SurfaceSample>& surfaceSamples,
+                                              std::vector<int>& tessellatedToBaseFace,
+                                              std::vector<Vec2f>* faceVaryingUv) const
 {
     tessellatedToBaseFace.clear();
     // we need to use arena to allocate temporary data structure for
@@ -859,24 +980,21 @@ TriMesh::generateIndexBufferAndSurfaceSamples(
     mcrt_common::ThreadLocalState *tls = mcrt_common::getFrameUpdateTLS();
     scene_rdl2::alloc::Arena *arena = &tls->mArena;
 
-    size_t tessellatedVertexCount =
-        tessellatedVertexLookup.getTessellatedVertexCount();
+    size_t tessellatedVertexCount = tessellatedVertexLookup.getTessellatedVertexCount();
     surfaceSamples.resize(tessellatedVertexCount);
+
     // please refer to OpenGL spec for triangle tessellation detail
     // 11.2.2.1 Triangle Tessellation p371
     // https://www.khronos.org/registry/OpenGL/specs/gl/glspec44.core.pdf
     for (size_t f = 0; f < faceTopologies.size(); ++f) {
         const PolyFaceTopology& faceTopology = faceTopologies[f];
-        int maxEdgeVertexCount =
-            tessellatedVertexLookup.getMaxEdgeVertexCount(faceTopology);
+        int maxEdgeVertexCount = tessellatedVertexLookup.getMaxEdgeVertexCount(faceTopology);
+
         // simplest case
         if (maxEdgeVertexCount == 0) {
-            int vid0 = tessellatedVertexLookup.getTessellatedVertexId(
-                faceTopology.mCornerVertexId[0]);
-            int vid1 = tessellatedVertexLookup.getTessellatedVertexId(
-                faceTopology.mCornerVertexId[1]);
-            int vid2 = tessellatedVertexLookup.getTessellatedVertexId(
-                faceTopology.mCornerVertexId[2]);
+            int vid0 = tessellatedVertexLookup.getTessellatedVertexId(faceTopology.mCornerVertexId[0]);
+            int vid1 = tessellatedVertexLookup.getTessellatedVertexId(faceTopology.mCornerVertexId[1]);
+            int vid2 = tessellatedVertexLookup.getTessellatedVertexId(faceTopology.mCornerVertexId[2]);
             indices.push_back(vid0);
             indices.push_back(vid1);
             indices.push_back(vid2);
@@ -896,10 +1014,11 @@ TriMesh::generateIndexBufferAndSurfaceSamples(
             surfaceSamples[vid2].mUv = Vec2f(0.0f, 1.0f);
             continue;
         }
+
         // TODO handle uniform tessellation in more optimized topology
         // interior region index buffer first.
-        int interiorRingCount =
-            tessellatedVertexLookup.getTriangleRingCount(faceTopology) - 1;
+        int interiorRingCount = tessellatedVertexLookup.getTriangleRingCount(faceTopology) - 1;
+
         // how many rings to pass through from outer vertex to central
         // with barycentric coordinate shifting from 0 to 1/3
         float ringUvDelta = 2.0f / (3.0f * (float)(maxEdgeVertexCount + 1));
@@ -917,63 +1036,80 @@ TriMesh::generateIndexBufferAndSurfaceSamples(
                 Vec2f((r + 1) * ringUvDelta, (r + 1) * ringUvDelta),
                 Vec2f(1.0f - 2 * (r + 1) * ringUvDelta, (r + 1) * ringUvDelta),
                 Vec2f((r + 1) * ringUvDelta, 1.0f - 2 * (r + 1) * ringUvDelta)};
+
             Vec2f cornerUv1[3] = {
                 Vec2f((r + 2) * ringUvDelta, (r + 2) * ringUvDelta),
                 Vec2f(1.0f - 2 * (r + 2) * ringUvDelta, (r + 2) * ringUvDelta),
                 Vec2f((r + 2) * ringUvDelta, 1.0f - 2 * (r + 2) * ringUvDelta)};
+
             int edgeVertexCount = maxEdgeVertexCount - 2 * (r + 1);
             float w0 = 1.0f / (float)(edgeVertexCount + 1);
             float w1 = 1.0f / (float)(edgeVertexCount - 1);
+
             for (size_t c = 0; c < sTriangleVertexCount; ++c) {
                 // corner quad
-                indices.push_back(
-                    tessellatedVertexLookup.getTriangleInteriorVertexId(
-                    f, maxEdgeVertexCount, r, c, 0));
-                indices.push_back(
-                    tessellatedVertexLookup.getTriangleInteriorVertexId(
-                    f, maxEdgeVertexCount, r, c, 1));
-                indices.push_back(
-                    tessellatedVertexLookup.getTriangleInteriorVertexId(
-                    f, maxEdgeVertexCount, r + 1, c, 0));
-                indices.push_back(
-                    tessellatedVertexLookup.getTriangleInteriorVertexId(
-                    f, maxEdgeVertexCount, r, (c + 2) % sTriangleVertexCount,
-                    edgeVertexCount));
+                indices.push_back(tessellatedVertexLookup.getTriangleInteriorVertexId(f,
+                                                                                      maxEdgeVertexCount,
+                                                                                      r, c, 0));
+
+                indices.push_back(tessellatedVertexLookup.getTriangleInteriorVertexId(f,
+                                                                                      maxEdgeVertexCount,
+                                                                                      r, c, 1));
+
+                indices.push_back(tessellatedVertexLookup.getTriangleInteriorVertexId(f,
+                                                                                      maxEdgeVertexCount,
+                                                                                      r + 1, c, 0));
+
+                indices.push_back(tessellatedVertexLookup.getTriangleInteriorVertexId(f, 
+                                                                                      maxEdgeVertexCount,
+                                                                                      r,
+                                                                                      (c + 2) % sTriangleVertexCount,
+                                                                                      edgeVertexCount));
+
                 if (faceVaryingUv) {
                     faceVaryingUv->push_back(cornerUv0[c]);
-                    faceVaryingUv->push_back(
-                        (1.0f - w0) * cornerUv0[c] +
-                        (       w0) * cornerUv0[(c + 1) % sTriangleVertexCount]);
+
+                    faceVaryingUv->push_back((1.0f - w0) * cornerUv0[c] +
+                                             (       w0) * cornerUv0[(c + 1) % sTriangleVertexCount]);
+
                     faceVaryingUv->push_back(cornerUv1[c]);
-                    faceVaryingUv->push_back(
-                        (1.0f - w0) * cornerUv0[c] +
-                        (       w0) * cornerUv0[(c + 2) % sTriangleVertexCount]);
+
+                    faceVaryingUv->push_back((1.0f - w0) * cornerUv0[c] +
+                                              (       w0) * cornerUv0[(c + 2) % sTriangleVertexCount]);
                 }
                 tessellatedToBaseFace.push_back(f);
+
                 // edge quads
                 for (int n = 1; n < edgeVertexCount; ++n) {
-                    indices.push_back(
-                        tessellatedVertexLookup.getTriangleInteriorVertexId(
-                        f, maxEdgeVertexCount, r, c, n));
-                    indices.push_back(
-                        tessellatedVertexLookup.getTriangleInteriorVertexId(
-                        f, maxEdgeVertexCount, r, c, n + 1));
-                    indices.push_back(
-                        tessellatedVertexLookup.getTriangleInteriorVertexId(
-                        f, maxEdgeVertexCount, r + 1, c, n));
-                    indices.push_back(
-                        tessellatedVertexLookup.getTriangleInteriorVertexId(
-                        f, maxEdgeVertexCount, r + 1, c, n - 1));
+                    indices.push_back(tessellatedVertexLookup.getTriangleInteriorVertexId(f,
+                                                                                          maxEdgeVertexCount,
+                                                                                          r, c, n));
+
+                    indices.push_back(tessellatedVertexLookup.getTriangleInteriorVertexId(f,
+                                                                                          maxEdgeVertexCount,
+                                                                                          r, c, n + 1));
+
+                    indices.push_back(tessellatedVertexLookup.getTriangleInteriorVertexId(f,
+                                                                                          maxEdgeVertexCount,
+                                                                                          r + 1, c, n));
+
+                    indices.push_back(tessellatedVertexLookup.getTriangleInteriorVertexId(f,
+                                                                                          maxEdgeVertexCount,
+                                                                                          r + 1, c, n - 1));
+
                     if (faceVaryingUv) {
                         faceVaryingUv->push_back(
                             (1.0f - (n    ) * w0) * cornerUv0[c] +
                             (       (n    ) * w0) * cornerUv0[(c + 1) % sTriangleVertexCount]);
+
                         faceVaryingUv->push_back(
                             (1.0f - (n + 1) * w0) * cornerUv0[c] +
                             (       (n + 1) * w0) * cornerUv0[(c + 1) % sTriangleVertexCount]);
+
                         faceVaryingUv->push_back(
                             (1.0f - (n    ) * w1) * cornerUv1[c] +
                             (       (n    ) * w1) * cornerUv1[(c + 1) % sTriangleVertexCount]);
+
                         faceVaryingUv->push_back(
                             (1.0f - (n - 1) * w1) * cornerUv1[c] +
                             (       (n - 1) * w1) * cornerUv1[(c + 1) % sTriangleVertexCount]);
@@ -981,36 +1117,41 @@ TriMesh::generateIndexBufferAndSurfaceSamples(
                     tessellatedToBaseFace.push_back(f);
                 }
                 for (int n = 0; n < edgeVertexCount + 1; ++n) {
-                    int vid =
-                        tessellatedVertexLookup.getTriangleInteriorVertexId(
-                        f, maxEdgeVertexCount, r, c, n);
+                    int vid = tessellatedVertexLookup.getTriangleInteriorVertexId(f,
+                                                                                  maxEdgeVertexCount,
+                                                                                  r, c, n);
                     surfaceSamples[vid].mFaceId = f;
-                    surfaceSamples[vid].mUv =
-                        (1.0f - n * w0) * cornerUv0[c] +
-                        (       n * w0) * cornerUv0[(c + 1) % sTriangleVertexCount];
+                    surfaceSamples[vid].mUv = (1.0f - n * w0) * cornerUv0[c] +
+                                              (       n * w0) * cornerUv0[(c + 1) % sTriangleVertexCount];
                 }
             }
         }
         // few remaining interior central edge cases
         if (maxEdgeVertexCount % 2 == 0) {
-            int vid0 =
-                tessellatedVertexLookup.getTriangleInteriorVertexId(
-                f, maxEdgeVertexCount, interiorRingCount - 1, 0, 0);
-            int vid1 =
-                tessellatedVertexLookup.getTriangleInteriorVertexId(
-                f, maxEdgeVertexCount, interiorRingCount - 1, 1, 0);
-            int vid2 =
-                tessellatedVertexLookup.getTriangleInteriorVertexId(
-                f, maxEdgeVertexCount, interiorRingCount - 1, 2, 0);
-            Vec2f uv0(
-                interiorRingCount * ringUvDelta,
-                interiorRingCount * ringUvDelta);
-            Vec2f uv1(
-                1.0f - 2 * interiorRingCount * ringUvDelta,
-                interiorRingCount * ringUvDelta);
-            Vec2f uv2(
-                interiorRingCount * ringUvDelta,
-                1.0f - 2 * interiorRingCount * ringUvDelta);
+            int vid0 = tessellatedVertexLookup.getTriangleInteriorVertexId(f,
+                                                                           maxEdgeVertexCount,
+                                                                           interiorRingCount - 1,
+                                                                           0, 0);
+
+            int vid1 = tessellatedVertexLookup.getTriangleInteriorVertexId(f,
+                                                                           maxEdgeVertexCount,
+                                                                           interiorRingCount - 1,
+                                                                           1, 0);
+
+            int vid2 = tessellatedVertexLookup.getTriangleInteriorVertexId(f,
+                                                                           maxEdgeVertexCount,
+                                                                           interiorRingCount - 1,
+                                                                           2, 0);
+
+            Vec2f uv0(interiorRingCount * ringUvDelta,
+                      interiorRingCount * ringUvDelta);
+
+            Vec2f uv1(1.0f - 2 * interiorRingCount * ringUvDelta,
+                      interiorRingCount * ringUvDelta);
+
+            Vec2f uv2(interiorRingCount * ringUvDelta,
+                      1.0f - 2 * interiorRingCount * ringUvDelta);
+
             // one more central triangle
             indices.push_back(vid0);
             indices.push_back(vid1);
@@ -1032,9 +1173,11 @@ TriMesh::generateIndexBufferAndSurfaceSamples(
             surfaceSamples[vid2].mUv = uv2;
         } else {
             // one more central point
-            int vid =
-                tessellatedVertexLookup.getTriangleInteriorVertexId(
-                f, maxEdgeVertexCount, interiorRingCount - 1, 0, 0);
+            int vid = tessellatedVertexLookup.getTriangleInteriorVertexId(f,
+                                                                          maxEdgeVertexCount,
+                                                                          interiorRingCount - 1,
+                                                                          0, 0);
+
             surfaceSamples[vid].mFaceId = f;
             surfaceSamples[vid].mUv = Vec2f(1.0f / 3.0f, 1.0f / 3.0f);
         }
@@ -1043,8 +1186,10 @@ TriMesh::generateIndexBufferAndSurfaceSamples(
         //     *---*--*--*---*
         //    / \ / \ | / \ / \
         //   *---*----*----*---*
-        const Vec2f cornerUv[3] = {
-            Vec2f(0.0f, 0.0f), Vec2f(1.0f, 0.0f), Vec2f(0.0f, 1.0f)};
+        const Vec2f cornerUv[3] = { Vec2f(0.0f, 0.0f),
+                                    Vec2f(1.0f, 0.0f),
+                                    Vec2f(0.0f, 1.0f)};
+
         for (size_t c = 0; c < sTriangleVertexCount; ++c) {
             SCOPED_MEM(arena);
             StitchPoint* innerRing = nullptr;
@@ -1052,46 +1197,61 @@ TriMesh::generateIndexBufferAndSurfaceSamples(
             Vec2f* innerRingUv = nullptr;
             Vec2f* outerRingUv = nullptr;
             int innerRingVertexCount, outerRingVertexCount;
-            generateTriangleStitchRings(arena, faceTopology, f, c,
-                tessellatedVertexLookup,
-                maxEdgeVertexCount, ringUvDelta,
-                innerRing, innerRingUv, innerRingVertexCount,
-                outerRing, outerRingUv, outerRingVertexCount);
-            stitchRings(innerRing, innerRingUv, innerRingVertexCount,
-                outerRing, outerRingUv, outerRingVertexCount, indices,
-                f, &tessellatedToBaseFace, faceVaryingUv);
+
+            generateTriangleStitchRings(arena,
+                                        faceTopology,
+                                        f, c,
+                                        tessellatedVertexLookup,
+                                        maxEdgeVertexCount,
+                                        ringUvDelta,
+                                        innerRing,
+                                        innerRingUv,
+                                        innerRingVertexCount,
+                                        outerRing,
+                                        outerRingUv,
+                                        outerRingVertexCount);
+
+            stitchRings(innerRing,
+                        innerRingUv,
+                        innerRingVertexCount,
+                        outerRing,
+                        outerRingUv,
+                        outerRingVertexCount,
+                        indices,
+                        f,
+                        &tessellatedToBaseFace,
+                        faceVaryingUv);
+
             // surface samples
             float w = 1.0f / (float)(outerRingVertexCount - 1);
             for (int v = 0; v < outerRingVertexCount - 1; ++v) {
                 int vid = outerRing[v].mVertexId;
                 surfaceSamples[vid].mFaceId = f;
-                surfaceSamples[vid].mUv =
-                    (1.0f - v * w) * cornerUv[c] +
-                    (       v * w) * cornerUv[(c + 1) % sTriangleVertexCount];
+                surfaceSamples[vid].mUv = (1.0f - v * w) * cornerUv[c] +
+                                          (       v * w) * cornerUv[(c + 1) % sTriangleVertexCount];
             }
         }
     }
 }
 
 PolygonMesh::VertexBuffer
-TriMesh::generateVertexBuffer(
-        const PolygonMesh::VertexBuffer& baseVertices,
-        const PolygonMesh::IndexBuffer& baseIndices,
-        const std::vector<PolyMesh::SurfaceSample>& surfaceSamples) const
+TriMesh::generateVertexBuffer(const PolygonMesh::VertexBuffer& baseVertices,
+                              const PolygonMesh::IndexBuffer& baseIndices,
+                              const std::vector<PolyMesh::SurfaceSample>& surfaceSamples) const
 {
     // allocate tessellated vertex/index buffer to hold the evaluation result
     size_t tessellatedVertexCount = surfaceSamples.size();
     size_t motionSampleCount = baseVertices.get_time_steps();
-    PolygonMesh::VertexBuffer tessellatedVertices(
-        tessellatedVertexCount, motionSampleCount);
-    tbb::blocked_range<size_t> range =
-        tbb::blocked_range<size_t>(0, tessellatedVertexCount);
+    PolygonMesh::VertexBuffer tessellatedVertices(tessellatedVertexCount,
+                                                  motionSampleCount);
+    tbb::blocked_range<size_t> range = tbb::blocked_range<size_t>(0, tessellatedVertexCount);
     tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
         for (size_t i = r.begin(); i < r.end(); ++i) {
             int fid = surfaceSamples[i].mFaceId;
             int vid0 = baseIndices[sTriangleVertexCount * fid + 0];
             int vid1 = baseIndices[sTriangleVertexCount * fid + 1];
             int vid2 = baseIndices[sTriangleVertexCount * fid + 2];
+
             // bilinear interpolate the new position
             Vec2f uv = surfaceSamples[i].mUv;
             float u = uv[0];
@@ -1109,19 +1269,22 @@ TriMesh::generateVertexBuffer(
 }
 
 void
-TriMesh::fillDisplacementAttributes(int tessFaceId, int vIndex,
-        Intersection& intersection) const
+TriMesh::fillDisplacementAttributes(int tessFaceId,
+                                    int vIndex,
+                                    Intersection& intersection) const
 {
     const AttributeTable* table = intersection.getTable();
     if (table == nullptr) {
         return;
     }
+
     int baseFaceId = getBaseFaceId(tessFaceId);
     const Attributes* attributes = getAttributes();
     for (const auto key : table->getRequiredAttributes()) {
         if (!attributes->isSupported(key)) {
             continue;
         }
+
         switch (key.getType()) {
         case scene_rdl2::rdl2::TYPE_FLOAT:
             {
@@ -1164,28 +1327,40 @@ TriMesh::fillDisplacementAttributes(int tessFaceId, int vIndex,
             {
             TypedAttributeKey<float> typedKey(key);
             intersection.setAttribute(typedKey,
-                getAttribute(typedKey, baseFaceId, tessFaceId, vIndex));
+                                      getAttribute(typedKey,
+                                                   baseFaceId,
+                                                   tessFaceId,
+                                                   vIndex));
             }
             break;
         case scene_rdl2::rdl2::TYPE_RGB:
             {
             TypedAttributeKey<scene_rdl2::math::Color> typedKey(key);
             intersection.setAttribute(typedKey,
-                getAttribute(typedKey, baseFaceId, tessFaceId, vIndex));
+                                      getAttribute(typedKey,
+                                                   baseFaceId,
+                                                   tessFaceId,
+                                                   vIndex));
             }
             break;
         case scene_rdl2::rdl2::TYPE_VEC2F:
             {
             TypedAttributeKey<Vec2f> typedKey(key);
             intersection.setAttribute(typedKey,
-                getAttribute(typedKey, baseFaceId, tessFaceId, vIndex));
+                                      getAttribute(typedKey,
+                                                   baseFaceId,
+                                                   tessFaceId,
+                                                   vIndex));
             }
             break;
         case scene_rdl2::rdl2::TYPE_VEC3F:
             {
             TypedAttributeKey<Vec3f> typedKey(key);
             intersection.setAttribute(typedKey,
-                getAttribute(typedKey, baseFaceId, tessFaceId, vIndex));
+                                      getAttribute(typedKey,
+                                                   baseFaceId,
+                                                   tessFaceId,
+                                                   vIndex));
             }
             break;
         default:
@@ -1196,9 +1371,14 @@ TriMesh::fillDisplacementAttributes(int tessFaceId, int vIndex,
 
 void
 TriMesh::computeAttributesDerivatives(const AttributeTable* table,
-        const Vec2f& st1, const Vec2f& st2, const Vec2f& st3,
-        int baseFaceId, int tessFaceId, float time, bool isFirst,
-        Intersection& intersection) const
+                                      const Vec2f& st1,
+                                      const Vec2f& st2,
+                                      const Vec2f& st3,
+                                      int baseFaceId,
+                                      int tessFaceId,
+                                      float time,
+                                      bool isFirst,
+                                      Intersection& intersection) const
 {
     std::array<float, 4> invA = {1.0f, 0.0f, 0.0f, 1.0f};
     computeStInverse(st1, st2, st3, invA);
@@ -1207,41 +1387,74 @@ TriMesh::computeAttributesDerivatives(const AttributeTable* table,
         if (!attrs->isSupported(key)) {
             continue;
         }
+
         switch (key.getType()) {
         case scene_rdl2::rdl2::TYPE_FLOAT:
             {
             TypedAttributeKey<float> typedKey(key);
             float f1, f2, f3;
-            getTriangleAttributes(typedKey, baseFaceId, tessFaceId,
-                f1, f2, f3, time, isFirst);
-            computeDerivatives(typedKey, f1, f2, f3, invA, intersection);
+            getTriangleAttributes(typedKey,
+                                  baseFaceId,
+                                  tessFaceId,
+                                  f1, f2, f3,
+                                  time,
+                                  isFirst);
+
+            computeDerivatives(typedKey,
+                               f1, f2, f3,
+                               invA,
+                               intersection);
             break;
             }
         case scene_rdl2::rdl2::TYPE_RGB:
             {
             TypedAttributeKey<scene_rdl2::math::Color> typedKey(key);
             scene_rdl2::math::Color f1, f2, f3;
-            getTriangleAttributes(typedKey, baseFaceId, tessFaceId,
-                f1, f2, f3, time, isFirst);
-            computeDerivatives(typedKey, f1, f2, f3, invA, intersection);
+            getTriangleAttributes(typedKey,
+                                  baseFaceId,
+                                  tessFaceId,
+                                  f1, f2, f3,
+                                  time,
+                                  isFirst);
+
+            computeDerivatives(typedKey,
+                               f1, f2, f3,
+                               invA,
+                               intersection);
             break;
             }
         case scene_rdl2::rdl2::TYPE_VEC2F:
             {
             TypedAttributeKey<Vec2f> typedKey(key);
             Vec2f f1, f2, f3;
-            getTriangleAttributes(typedKey, baseFaceId, tessFaceId,
-                f1, f2, f3, time, isFirst);
-            computeDerivatives(typedKey, f1, f2, f3, invA, intersection);
+            getTriangleAttributes(typedKey,
+                                  baseFaceId,
+                                  tessFaceId,
+                                  f1, f2, f3,
+                                  time,
+                                  isFirst);
+
+            computeDerivatives(typedKey,
+                               f1, f2, f3,
+                               invA,
+                               intersection);
             break;
             }
         case scene_rdl2::rdl2::TYPE_VEC3F:
             {
             TypedAttributeKey<Vec3f> typedKey(key);
             Vec3f f1, f2, f3;
-            getTriangleAttributes(typedKey, baseFaceId, tessFaceId,
-                f1, f2, f3, time, isFirst);
-            computeDerivatives(typedKey, f1, f2, f3, invA, intersection);
+            getTriangleAttributes(typedKey,
+                                  baseFaceId,
+                                  tessFaceId,
+                                  f1, f2, f3,
+                                  time,
+                                  isFirst);
+
+            computeDerivatives(typedKey,
+                               f1, f2, f3,
+                               invA,
+                               intersection);
             break;
             }
         default:
@@ -1252,7 +1465,10 @@ TriMesh::computeAttributesDerivatives(const AttributeTable* table,
 
 template <typename T> T
 TriMesh::getAttribute(const TypedAttributeKey<T>& key,
-        int baseFaceId, int tessFaceId, int vIndex, float time) const
+                      int baseFaceId,
+                      int tessFaceId,
+                      int vIndex,
+                      float time) const
 {
     const Attributes* attributes = getAttributes();
     MNRY_ASSERT(attributes->isSupported(key));
@@ -1272,16 +1488,24 @@ TriMesh::getAttribute(const TypedAttributeKey<T>& key,
             size_t offset = sQuadVertexCount * tessFaceId;
             Vec2f uv = mFaceVaryingUv[offset + vIndex];
             size_t baseOffset = sTriangleVertexCount * baseFaceId;
-            T a1 = getVaryingAttribute(
-                key, mBaseIndices[baseOffset + 0], time);
-            T a2 = getVaryingAttribute(
-                key, mBaseIndices[baseOffset + 1], time);
-            T a3 = getVaryingAttribute(
-                key, mBaseIndices[baseOffset + 2], time);
+
+            T a1 = getVaryingAttribute(key,
+                                       mBaseIndices[baseOffset + 0],
+                                       time);
+
+            T a2 = getVaryingAttribute(key,
+                                       mBaseIndices[baseOffset + 1],
+                                       time);
+
+            T a3 = getVaryingAttribute(key,
+                                       mBaseIndices[baseOffset + 2],
+                                       time);
+
             result = (1.0f - uv[0] - uv[1]) * a1 + uv[0] * a2 + uv[1] * a3;
         } else {
-            result = getVaryingAttribute(
-                key, mIndices[sTriangleVertexCount * baseFaceId + vIndex], time);
+            result = getVaryingAttribute(key,
+                                         mIndices[sTriangleVertexCount * baseFaceId + vIndex],
+                                         time);
         }
         }
         break;
@@ -1290,23 +1514,38 @@ TriMesh::getAttribute(const TypedAttributeKey<T>& key,
         if (mIsTessellated) {
             size_t tessOffset = sQuadVertexCount * tessFaceId;
             Vec2f uv = mFaceVaryingUv[tessOffset + vIndex];
-            T a1 = getFaceVaryingAttribute(key, baseFaceId, 0, time);
-            T a2 = getFaceVaryingAttribute(key, baseFaceId, 1, time);
-            T a3 = getFaceVaryingAttribute(key, baseFaceId, 2, time);
+
+            T a1 = getFaceVaryingAttribute(key,
+                                           baseFaceId,
+                                           0, time);
+
+            T a2 = getFaceVaryingAttribute(key,
+                                           baseFaceId,
+                                           1, time);
+
+            T a3 = getFaceVaryingAttribute(key,
+                                           baseFaceId,
+                                           2, time);
+
             result = (1.0f - uv[0] - uv[1]) * a1 + uv[0] * a2 + uv[1] * a3;
         } else {
-            result = getFaceVaryingAttribute(key, baseFaceId, vIndex, time);
+            result = getFaceVaryingAttribute(key,
+                                             baseFaceId,
+                                             vIndex,
+                                             time);
         }
         }
         break;
     case RATE_VERTEX:
         {
         if (mIsTessellated) {
-            result = getVertexAttribute(
-                key, mIndices[sQuadVertexCount * tessFaceId + vIndex], time);
+            result = getVertexAttribute(key,
+                                        mIndices[sQuadVertexCount * tessFaceId + vIndex],
+                                        time);
         } else {
-            result = getVertexAttribute(
-                key, mIndices[sTriangleVertexCount * baseFaceId + vIndex], time);
+            result = getVertexAttribute(key,
+                                        mIndices[sTriangleVertexCount * baseFaceId + vIndex],
+                                        time);
         }
         }
         break;
@@ -1319,8 +1558,11 @@ TriMesh::getAttribute(const TypedAttributeKey<T>& key,
 
 template <typename T> bool
 TriMesh::getTriangleAttributes(const TypedAttributeKey<T>& key,
-        int baseFaceId, int tessFaceId, T& v1, T& v2, T& v3,
-        float time, bool isFirst) const
+                               int baseFaceId,
+                               int tessFaceId,
+                               T& v1, T& v2, T& v3,
+                               float time,
+                               bool isFirst) const
 {
     int index1, index2, index3;
     if (mIsTessellated) {
@@ -1338,15 +1580,19 @@ TriMesh::getTriangleAttributes(const TypedAttributeKey<T>& key,
         index2 = 1;
         index3 = 2;
     }
+
     const Attributes* attributes = getAttributes();
     if (attributes->isSupported(key)) {
         AttributeRate rate = attributes->getRate(key);
         switch (rate) {
         case RATE_CONSTANT:
-            v3 = v2 = v1 = getConstantAttribute(key, time);
+            v3 = v2 = v1 = getConstantAttribute(key,
+                                                time);
             break;
         case RATE_UNIFORM:
-            v3 = v2 = v1 = getUniformAttribute(key, baseFaceId, time);
+            v3 = v2 = v1 = getUniformAttribute(key,
+                                               baseFaceId,
+                                               time);
             break;
         case RATE_VARYING:
             {
@@ -1356,26 +1602,40 @@ TriMesh::getTriangleAttributes(const TypedAttributeKey<T>& key,
                 Vec2f uv2 = mFaceVaryingUv[offset + index2];
                 Vec2f uv3 = mFaceVaryingUv[offset + index3];
                 size_t baseOffset = sTriangleVertexCount * baseFaceId;
-                T a1 = getVaryingAttribute(
-                    key, mBaseIndices[baseOffset + 0], time);
-                T a2 = getVaryingAttribute(
-                    key, mBaseIndices[baseOffset + 1], time);
-                T a3 = getVaryingAttribute(
-                    key, mBaseIndices[baseOffset + 2], time);
+
+                T a1 = getVaryingAttribute(key,
+                                           mBaseIndices[baseOffset + 0],
+                                           time);
+
+                T a2 = getVaryingAttribute(key,
+                                           mBaseIndices[baseOffset + 1],
+                                           time);
+
+                T a3 = getVaryingAttribute(key,
+                                           mBaseIndices[baseOffset + 2],
+                                           time);
+
                 v1 = (1.0f - uv1[0] - uv1[1]) * a1 +
-                    uv1[0] * a2 + uv1[1] * a3;
+                     uv1[0] * a2 + uv1[1] * a3;
+
                 v2 = (1.0f - uv2[0] - uv2[1]) * a1 +
-                    uv2[0] * a2 + uv2[1] * a3;
+                     uv2[0] * a2 + uv2[1] * a3;
+
                 v3 = (1.0f - uv3[0] - uv3[1]) * a1 +
-                    uv3[0] * a2 + uv3[1] * a3;
+                     uv3[0] * a2 + uv3[1] * a3;
             } else {
                 size_t offset = sTriangleVertexCount * baseFaceId;
-                v1 = getVaryingAttribute(
-                    key, mIndices[offset + index1], time);
-                v2 = getVaryingAttribute(
-                    key, mIndices[offset + index2], time);
-                v3 = getVaryingAttribute(
-                    key, mIndices[offset + index3], time);
+                v1 = getVaryingAttribute(key,
+                                         mIndices[offset + index1],
+                                         time);
+
+                v2 = getVaryingAttribute(key,
+                                         mIndices[offset + index2],
+                                         time);
+
+                v3 = getVaryingAttribute(key,
+                                         mIndices[offset + index3],
+                                         time);
             }
             }
             break;
@@ -1386,19 +1646,39 @@ TriMesh::getTriangleAttributes(const TypedAttributeKey<T>& key,
                 Vec2f uv1 = mFaceVaryingUv[tessOffset + index1];
                 Vec2f uv2 = mFaceVaryingUv[tessOffset + index2];
                 Vec2f uv3 = mFaceVaryingUv[tessOffset + index3];
-                T a1 = getFaceVaryingAttribute(key, baseFaceId, 0, time);
-                T a2 = getFaceVaryingAttribute(key, baseFaceId, 1, time);
-                T a3 = getFaceVaryingAttribute(key, baseFaceId, 2, time);
+
+                T a1 = getFaceVaryingAttribute(key,
+                                               baseFaceId,
+                                               0, time);
+
+                T a2 = getFaceVaryingAttribute(key,
+                                               baseFaceId,
+                                               1, time);
+
+                T a3 = getFaceVaryingAttribute(key,
+                                               baseFaceId,
+                                               2, time);
+
                 v1 = (1.0f - uv1[0] - uv1[1]) * a1 +
-                    uv1[0] * a2 + uv1[1] * a3;
+                     uv1[0] * a2 + uv1[1] * a3;
+
                 v2 = (1.0f - uv2[0] - uv2[1]) * a1 +
-                    uv2[0] * a2 + uv2[1] * a3;
+                     uv2[0] * a2 + uv2[1] * a3;
+
                 v3 = (1.0f - uv3[0] - uv3[1]) * a1 +
-                    uv3[0] * a2 + uv3[1] * a3;
+                     uv3[0] * a2 + uv3[1] * a3;
             } else {
-                v1 = getFaceVaryingAttribute(key, baseFaceId, 0, time);
-                v2 = getFaceVaryingAttribute(key, baseFaceId, 1, time);
-                v3 = getFaceVaryingAttribute(key, baseFaceId, 2, time);
+                v1 = getFaceVaryingAttribute(key,
+                                             baseFaceId,
+                                             0, time);
+
+                v2 = getFaceVaryingAttribute(key,
+                                             baseFaceId,
+                                             1, time);
+
+                v3 = getFaceVaryingAttribute(key,
+                                             baseFaceId,
+                                             2, time);
             }
             }
             break;
@@ -1407,9 +1687,18 @@ TriMesh::getTriangleAttributes(const TypedAttributeKey<T>& key,
             size_t offset = mIsTessellated ?
                 sQuadVertexCount * tessFaceId :
                 sTriangleVertexCount * tessFaceId;
-            v1 = getVertexAttribute(key, mIndices[offset + index1], time);
-            v2 = getVertexAttribute(key, mIndices[offset + index2], time);
-            v3 = getVertexAttribute(key, mIndices[offset + index3], time);
+
+            v1 = getVertexAttribute(key,
+                                    mIndices[offset + index1],
+                                    time);
+
+            v2 = getVertexAttribute(key,
+                                    mIndices[offset + index2],
+                                    time);
+
+            v3 = getVertexAttribute(key,
+                                    mIndices[offset + index3],
+                                    time);
             }
             break;
         default:
@@ -1422,15 +1711,28 @@ TriMesh::getTriangleAttributes(const TypedAttributeKey<T>& key,
 }
 
 void
-TriMesh::getTriangleST(int baseFaceId, int tessFaceId,
-        Vec2f& st1, Vec2f& st2, Vec2f& st3, bool isFirst) const
+TriMesh::getTriangleST(int baseFaceId,
+                       int tessFaceId,
+                       Vec2f& st1,
+                       Vec2f& st2,
+                       Vec2f& st3,
+                       bool isFirst) const
 {
     if (!getTriangleAttributes(StandardAttributes::sSurfaceST,
-        baseFaceId, tessFaceId, st1, st2, st3, 0.0f, isFirst)) {
-        if (!getTriangleAttributes(StandardAttributes::sUv,
-            baseFaceId, tessFaceId, st1, st2, st3, 0.0f, isFirst)) {
+                               baseFaceId,
+                               tessFaceId,
+                               st1, st2, st3,
+                               0.0f, isFirst)) {
+        if (!getTriangleAttributes(StandardAttributes::sUv, baseFaceId,
+                                   tessFaceId,
+                                   st1, st2, st3,
+                                   0.0f, isFirst)) {
             if (!getTriangleAttributes(StandardAttributes::sSt,
-                baseFaceId, tessFaceId, st1, st2, st3, 0.0f, isFirst)) {
+                                       baseFaceId,
+                                       tessFaceId,
+                                       st1, st2, st3,
+                                       0.0f, isFirst)) {
+
                 if (mIsTessellated) {
                     if (isFirst) {
                         st1 = Vec2f(0.0f, 0.0f);
@@ -1452,11 +1754,21 @@ TriMesh::getTriangleST(int baseFaceId, int tessFaceId,
 }
 
 void
-TriMesh::getTriangleNormal(int baseFaceId, int tessFaceId,
-        Vec3f &n1, Vec3f &n2, Vec3f &n3, float time, bool isFirst) const
+TriMesh::getTriangleNormal(int baseFaceId,
+                           int tessFaceId,
+                           Vec3f &n1,
+                           Vec3f &n2,
+                           Vec3f &n3,
+                           float time,
+                           bool isFirst) const
 {
     if (!getTriangleAttributes(StandardAttributes::sNormal,
-        baseFaceId, tessFaceId, n1, n2, n3, time, isFirst)) {
+                               baseFaceId,
+                               tessFaceId,
+                               n1, n2, n3,
+                               time,
+                               isFirst)) {
+
         // lacking any better choice, we'll compute a normal using
         // the cross product of the triangle verts
         uint32_t id1, id2, id3;
@@ -1475,10 +1787,13 @@ TriMesh::getTriangleNormal(int baseFaceId, int tessFaceId,
             id2 = mIndices[tessFaceId * sTriangleVertexCount + 1];
             id3 = mIndices[tessFaceId * sTriangleVertexCount + 2];
         }
+
         const Vec3f pos1 = mVertices(id1).asVec3f();
         const Vec3f pos2 = mVertices(id2).asVec3f();
         const Vec3f pos3 = mVertices(id3).asVec3f();
-        n1 = normalize(scene_rdl2::math::cross(pos1 - pos2, pos3 - pos2));
+
+        n1 = normalize(scene_rdl2::math::cross(pos1 - pos2,
+                                               pos3 - pos2));
         n2 = n3 = n1;
     }
 }

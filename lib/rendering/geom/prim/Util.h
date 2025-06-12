@@ -61,11 +61,11 @@ bool computePartialsWithRespect2Texture(const Vec3f &dP_du,
                                               Vec3f &dP_dt);
 
 void writeToObj(const std::string& outputPath,
-        const std::vector<uint32_t>& faceVertexCount,
-        const VertexBuffer<Vec3fa, InterleavedTraits>& vertices,
-        const std::vector<uint32_t>& indices,
-        const shading::Vector<Vec2f>& textureVertices,
-        const std::vector<uint32_t>& textureIndices);
+                const std::vector<uint32_t>& faceVertexCount,
+                const VertexBuffer<Vec3fa, InterleavedTraits>& vertices,
+                const std::vector<uint32_t>& indices,
+                const shading::Vector<Vec2f>& textureVertices,
+                const std::vector<uint32_t>& textureIndices);
 
 // Computes instantaneous motion vector of hit point in render space
 // units per shutter interval.
@@ -80,8 +80,10 @@ void writeToObj(const std::string& outputPath,
 // instance: If not null, apply instancing transform when computing motion.
 //
 // TODO:     this function only works with single-level instancing
-Vec3f computePrimitiveMotion(const Vec3f &pos0, const Vec3f *pos1, float rayTime,
-        const Instance *instance);
+Vec3f computePrimitiveMotion(const Vec3f &pos0,
+                             const Vec3f *pos1,
+                             float rayTime,
+                             const Instance *instance);
 
 // Used when computing motion vectors.  The value is
 // in rayTime and represents how much to the left and how

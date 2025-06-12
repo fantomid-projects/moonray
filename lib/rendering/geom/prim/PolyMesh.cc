@@ -45,7 +45,8 @@ PolyMesh::getMemory() const
 }
 
 void
-PolyMesh::tessellate(const TessellationParams& tessellationParams, TessellationStats& stats)
+PolyMesh::tessellate(const TessellationParams& tessellationParams,
+                     TessellationStats& stats)
 {
     if (mIsMeshFinalized) {
         return;
@@ -53,8 +54,11 @@ PolyMesh::tessellate(const TessellationParams& tessellationParams, TessellationS
 
     MeshIndexType baseFaceType = getBaseFaceType();
     size_t baseFaceVertexCount = baseFaceType == MeshIndexType::QUAD ?
-        sQuadVertexCount : sTriangleVertexCount;
+                                 sQuadVertexCount :
+                                 sTriangleVertexCount;
+
     auto& primitiveAttributeTable = mPolyMeshData->mPrimitiveAttributeTable;
+
     // make input mesh all quads or all triangles
     splitNGons(mPolyMeshData->mEstiFaceCount,
                mVertices,
@@ -64,10 +68,11 @@ PolyMesh::tessellate(const TessellationParams& tessellationParams, TessellationS
                mLayerAssignmentId,
                primitiveAttributeTable);
 
-    MNRY_ASSERT_REQUIRE(!mIndices.empty() &&
-        mIndices.size() % baseFaceVertexCount == 0);
+    MNRY_ASSERT_REQUIRE(!mIndices.empty() && mIndices.size() % baseFaceVertexCount == 0);
     MNRY_ASSERT_REQUIRE(mVertices.size() > 0);
+
     size_t baseFaceCount = mIndices.size() / baseFaceVertexCount;
+
     // varying and vertex are the same thing for polygon mesh if
     // there is no displacement tessellation involved, otherwise
     // vertex rate means "per tessellated vertex" and
@@ -85,47 +90,61 @@ PolyMesh::tessellate(const TessellationParams& tessellationParams, TessellationS
             }
         }
     }
+
     if (mLayerAssignmentId.getType() == LayerAssignmentId::Type::VARYING) {
-        MNRY_ASSERT_REQUIRE(
-            mLayerAssignmentId.getVaryingId().size() == baseFaceCount);
+        MNRY_ASSERT_REQUIRE(mLayerAssignmentId.getVaryingId().size() == baseFaceCount);
     }
+
     size_t baseVertexCount = mVertices.size();
+
     const scene_rdl2::rdl2::Layer* pRdlLayer = tessellationParams.mRdlLayer;
     if (shouldTessellate(tessellationParams.mEnableDisplacement, pRdlLayer)) {
+
         PolyTopologyIdLookup topologyIdLookup(mVertices.size(),
-            baseFaceVertexCount, mIndices);
+                                              baseFaceVertexCount,
+                                              mIndices);
+
         // calculate edge tessellation factor based on either user specified
         // resolution (uniform) or camera frustum info (adaptive)
         std::vector<PolyTessellationFactor> tessellationFactors =
-            computeTessellationFactor(pRdlLayer, tessellationParams.mFrustums, tessellationParams.mFishtums,
+            computeTessellationFactor(pRdlLayer,
+                                      tessellationParams.mFrustums,
+                                      tessellationParams.mFishtums,
                                       topologyIdLookup);
+
         stats.mMemoryUsed += tessellationFactors.size() * sizeof(PolyTessellationFactor);
 
-        std::vector<PolyFaceTopology> faceTopologies =
-            generatePolyFaceTopology(topologyIdLookup);
+        std::vector<PolyFaceTopology> faceTopologies = generatePolyFaceTopology(topologyIdLookup);
+
         stats.mMemoryUsed += faceTopologies.size() * sizeof(PolyFaceTopology);
 
-        MNRY_ASSERT_REQUIRE(
-            tessellationFactors.size() == faceTopologies.size());
+        MNRY_ASSERT_REQUIRE(tessellationFactors.size() == faceTopologies.size());
+
         PolyTessellatedVertexLookup tessellatedVertexLookup(faceTopologies,
-            topologyIdLookup, tessellationFactors, baseFaceVertexCount);
+                                                            topologyIdLookup,
+                                                            tessellationFactors,
+                                                            baseFaceVertexCount);
 
         // generate the tessellated index buffer and
         // sample points for generating tessellated vertex buffer
         std::vector<PolyMesh::SurfaceSample> surfaceSamples;
-        size_t estimatedFaceCount =
-            tessellatedVertexLookup.getEstimatedFaceCount();
+        size_t estimatedFaceCount = tessellatedVertexLookup.getEstimatedFaceCount();
         PolygonMesh::IndexBuffer tessellatedIndices;
         tessellatedIndices.reserve(sQuadVertexCount * estimatedFaceCount);
         std::vector<int> tessellatedToBaseFace;
         tessellatedToBaseFace.reserve(estimatedFaceCount);
         std::vector<Vec2f> faceVaryingUv;
         faceVaryingUv.reserve(sQuadVertexCount * estimatedFaceCount);
+
         generateIndexBufferAndSurfaceSamples(faceTopologies,
-            tessellatedVertexLookup, tessellatedIndices,
-            surfaceSamples, tessellatedToBaseFace, &faceVaryingUv);
-        MNRY_ASSERT_REQUIRE(
-            tessellatedIndices.size() == faceVaryingUv.size());
+                                             tessellatedVertexLookup,
+                                             tessellatedIndices,
+                                             surfaceSamples,
+                                             tessellatedToBaseFace,
+                                             &faceVaryingUv);
+
+        MNRY_ASSERT_REQUIRE(tessellatedIndices.size() == faceVaryingUv.size());
+
         stats.mMemoryUsed += surfaceSamples.size() * sizeof(PolyMesh::SurfaceSample);
         stats.mMemoryUsed += tessellatedIndices.size() * sizeof(MeshIndexType);
         stats.mMemoryUsed += tessellatedToBaseFace.size() * sizeof(int);
@@ -135,8 +154,10 @@ PolyMesh::tessellate(const TessellationParams& tessellationParams, TessellationS
         mFaceVaryingUv = std::move(faceVaryingUv);
 
         // generate tessellated vertex buffer
-        PolygonMesh::VertexBuffer tessellatedVertices =
-            generateVertexBuffer(mVertices, mIndices, surfaceSamples);
+        PolygonMesh::VertexBuffer tessellatedVertices = generateVertexBuffer(mVertices,
+                                                                             mIndices,
+                                                                             surfaceSamples);
+
         stats.mMemoryUsed += tessellatedVertices.size() * sizeof(Vec3fa);
 
         mBaseIndices = std::move(mIndices);
@@ -146,16 +167,24 @@ PolyMesh::tessellate(const TessellationParams& tessellationParams, TessellationS
     } else {
         mIsTessellated = false;
     }
-    initAttributesAndDisplace(pRdlLayer, baseFaceCount,
-        baseVertexCount, tessellationParams.mEnableDisplacement,
-        tessellationParams.mFastGeomUpdate, tessellationParams.mIsBaking,
-        tessellationParams.mWorld2Render);
+
+    initAttributesAndDisplace(pRdlLayer,
+                              baseFaceCount,
+                              baseVertexCount,
+                              tessellationParams.mEnableDisplacement,
+                              tessellationParams.mFastGeomUpdate,
+                              tessellationParams.mIsBaking,
+                              tessellationParams.mWorld2Render);
 
     // reverse normals reverses orientation and negates normals
     if (mIsNormalReversed) {
         size_t faceVertexCount = mIsTessellated ?
-            sQuadVertexCount : baseFaceVertexCount;
-        reverseOrientation(faceVertexCount, mIndices, mAttributes);
+                                 sQuadVertexCount :
+                                 baseFaceVertexCount;
+
+        reverseOrientation(faceVertexCount,
+                           mIndices,
+                           mAttributes);
     }
 
     if (mIsNormalReversed) mAttributes->negateNormal();
@@ -185,16 +214,15 @@ PolyMesh::getTessellatedMesh(TessellatedMesh& tessMesh) const
     if (mIsTessellated) {
         // we always tessellate poly mesh to quads
         tessMesh.mIndexBufferType = MeshIndexType::QUAD;
-        tessMesh.mIndexBufferDesc.mStride =
-            sQuadVertexCount * sizeof(geom::Primitive::IndexType);
+        tessMesh.mIndexBufferDesc.mStride = sQuadVertexCount * sizeof(geom::Primitive::IndexType);
     } else {
         MeshIndexType meshIndexType = getBaseFaceType();
         tessMesh.mIndexBufferType = meshIndexType;
-        tessMesh.mIndexBufferDesc.mStride =
-            meshIndexType == MeshIndexType::QUAD ?
-            sQuadVertexCount * sizeof(geom::Primitive::IndexType) :
-            sTriangleVertexCount * sizeof(geom::Primitive::IndexType);
+        tessMesh.mIndexBufferDesc.mStride = meshIndexType == MeshIndexType::QUAD ?
+                                            sQuadVertexCount * sizeof(geom::Primitive::IndexType) :
+                                            sTriangleVertexCount * sizeof(geom::Primitive::IndexType);
     }
+
     tessMesh.mFaceCount = getTessellatedMeshFaceCount();
     tessMesh.mIndexBufferDesc.mData = static_cast<const void*>(mIndices.data());
     tessMesh.mIndexBufferDesc.mOffset = 0;
@@ -202,10 +230,13 @@ PolyMesh::getTessellatedMesh(TessellatedMesh& tessMesh) const
     size_t motionSampleCount = getMotionSamplesCount();
     size_t vertexSize = sizeof(geom::PolygonMesh::VertexBuffer::value_type);
     size_t vertexStride = motionSampleCount * vertexSize;
+
     const void* data = mVertices.data();
     for (size_t t = 0; t < motionSampleCount; ++t) {
         size_t offset = t * vertexSize;
-        tessMesh.mVertexBufferDesc.emplace_back(data, offset, vertexStride);
+        tessMesh.mVertexBufferDesc.emplace_back(data,
+                                                offset,
+                                                vertexStride);
     }
 }
 
@@ -213,7 +244,8 @@ PolyMesh::getTessellatedMesh(TessellatedMesh& tessMesh) const
 template <typename T>
 T
 bilinearInterpolate(const Vec2f& uv,
-                    const T& a0, const T& a1, const T& a2, const T& a3)
+                    const T& a0, const T& a1,
+                    const T& a2, const T& a3)
 {
     return (1.0f - uv[0]) * (1.0f - uv[1]) * a0 +
            (       uv[0]) * (1.0f - uv[1]) * a1 +
@@ -228,7 +260,9 @@ PolyMesh::getBakedAttributeData(const TypedAttributeKey<T>& key,
                                 AttributeRate &newRate) const
 {
     int vertsPerFace = (mIsTessellated || getBaseFaceType() == MeshIndexType::QUAD) ?
-                        sQuadVertexCount : sTriangleVertexCount;
+                        sQuadVertexCount :
+                        sTriangleVertexCount;
+
     size_t faceCount = getTessellatedMeshFaceCount();
 
     Attributes *attributes = getAttributes();
@@ -390,7 +424,9 @@ PolyMesh::getBakedAttributeData(const TypedAttributeKey<std::string>& key,
                                 AttributeRate &newRate) const
 {
     int vertsPerFace = (mIsTessellated || getBaseFaceType() == MeshIndexType::QUAD) ?
-                        sQuadVertexCount : sTriangleVertexCount;
+                       sQuadVertexCount :
+                       sTriangleVertexCount;
+
     size_t faceCount = getTessellatedMeshFaceCount();
 
     Attributes *attributes = getAttributes();
@@ -498,7 +534,8 @@ std::unique_ptr<BakedAttribute>
 PolyMesh::getBakedAttribute(const AttributeKey& key) const
 {
     int vertsPerFace = (mIsTessellated || getBaseFaceType() == MeshIndexType::QUAD) ?
-                        sQuadVertexCount : sTriangleVertexCount;
+                       sQuadVertexCount :
+                       sTriangleVertexCount;
 
     Attributes *attributes = getAttributes();
     size_t timeSamples = attributes->getTimeSampleCount(key);
@@ -513,56 +550,70 @@ PolyMesh::getBakedAttribute(const AttributeKey& key) const
     switch (battr->mType) {
     case AttributeType::TYPE_BOOL:
         battr->mData = getBakedAttributeData(TypedAttributeKey<bool>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_INT:
         battr->mData = getBakedAttributeData(TypedAttributeKey<int>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_LONG:
         battr->mData = getBakedAttributeData(TypedAttributeKey<long>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_FLOAT:
         battr->mData = getBakedAttributeData(TypedAttributeKey<float>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_DOUBLE:
         battr->mData = getBakedAttributeData(TypedAttributeKey<double>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_STRING:
         battr->mData = getBakedAttributeData(TypedAttributeKey<std::string>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_RGB:
         battr->mData = getBakedAttributeData(TypedAttributeKey<scene_rdl2::math::Color>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_RGBA:
         battr->mData = getBakedAttributeData(TypedAttributeKey<scene_rdl2::math::Color4>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_VEC2F:
         battr->mData = getBakedAttributeData(TypedAttributeKey<Vec2f>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_VEC3F:
         battr->mData = getBakedAttributeData(TypedAttributeKey<Vec3f>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_VEC4F:
         battr->mData = getBakedAttributeData(TypedAttributeKey<Vec4f>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     case AttributeType::TYPE_MAT4F:
         battr->mData = getBakedAttributeData(TypedAttributeKey<scene_rdl2::math::Mat4f>(key),
-                                             battr->mNumElements, battr->mRate);
+                                             battr->mNumElements,
+                                             battr->mRate);
         break;
     default:
-        MNRY_ASSERT(false, (std::string("unsupported attribute type ") +
-            std::string(attributeTypeName(key.getType())) +
-            std::string(" for attribute ") + std::string(key.getName())).c_str());
+        MNRY_ASSERT(false,
+                    (std::string("unsupported attribute type ") +
+                     std::string(attributeTypeName(key.getType())) +
+                     std::string(" for attribute ") +
+                     std::string(key.getName())).c_str());
         break;
     }
 
@@ -575,7 +626,9 @@ PolyMesh::getBakedMesh(BakedMesh& bakedMesh) const
     bakedMesh.mName = mName;
 
     int vertsPerFace = (mIsTessellated || getBaseFaceType() == MeshIndexType::QUAD) ?
-                        sQuadVertexCount : sTriangleVertexCount;
+                       sQuadVertexCount :
+                       sTriangleVertexCount;
+
     bakedMesh.mVertsPerFace = vertsPerFace;
     bakedMesh.mIndexBuffer.resize(mIndices.size());
     for (size_t i = 0; i < mIndices.size(); i++) {
@@ -617,7 +670,7 @@ PolyMesh::getIntersectionAssignmentId(int primID) const
 
 void
 PolyMesh::updateVertexData(const std::vector<float>& vertexData,
-        const XformSamples& prim2render)
+                           const XformSamples& prim2render)
 {
     // TODO the updateVertexData mechanics is an adhoc solution
     // and need to be updated, it doesn't support motion blur
@@ -628,11 +681,12 @@ PolyMesh::updateVertexData(const std::vector<float>& vertexData,
     if (vertexData.size() != 3 * vertexCount) {
         size_t updateVertexCount = vertexData.size() / 3;
         scene_rdl2::logging::Logger::error("PolygonMesh ", getName(), " contains ",
-           vertexCount, " vertices"
-           " while update data contains ", updateVertexCount,
-           " vertices. Mesh topology should remain unchanged"
-           " during geometry update.");
-        vertexCount = std::min(vertexCount, updateVertexCount);
+                                           vertexCount, " vertices"
+                                           " while update data contains ", updateVertexCount,
+                                           " vertices. Mesh topology should remain unchanged"
+                                           " during geometry update.");
+        vertexCount = std::min(vertexCount,
+                               updateVertexCount);
     }
     for (size_t i = 0; i < vertexCount; ++i) {
         Vec3f p(vertexData[3 * i],
@@ -646,17 +700,15 @@ void
 PolyMesh::setupRecomputeVertexNormals(bool fixInvalid)
 {
     if (mIsTessellated) {
-        mPolyMeshCalcNv = std::unique_ptr<QuadMeshCalcNv>(
-            new QuadMeshCalcNv(fixInvalid));
+        mPolyMeshCalcNv = std::unique_ptr<QuadMeshCalcNv>(new QuadMeshCalcNv(fixInvalid));
     } else {
         if (getBaseFaceType() == MeshIndexType::QUAD) {
-            mPolyMeshCalcNv = std::unique_ptr<QuadMeshCalcNv>(
-                new QuadMeshCalcNv(fixInvalid));
+            mPolyMeshCalcNv = std::unique_ptr<QuadMeshCalcNv>(new QuadMeshCalcNv(fixInvalid));
         } else {
-            mPolyMeshCalcNv = std::unique_ptr<TriMeshCalcNv>(
-                new TriMeshCalcNv(fixInvalid));
+            mPolyMeshCalcNv = std::unique_ptr<TriMeshCalcNv>(new TriMeshCalcNv(fixInvalid));
         }
     }
+
     // set new vertex/face info and create vn
     mPolyMeshCalcNv->set(mVertices, mIndices);
     Attributes* primitiveAttributes = getAttributes();
@@ -664,7 +716,8 @@ PolyMesh::setupRecomputeVertexNormals(bool fixInvalid)
     for (size_t vId = 0; vId < mVertices.size(); ++vId) {
         for (size_t t = 0; t < timeSampleCount; ++t) {
             primitiveAttributes->setVertex(StandardAttributes::sNormal,
-                *(const Vec3f*)mPolyMeshCalcNv->getVn(vId, t), vId, t);
+                                           *(const Vec3f*)mPolyMeshCalcNv->getVn(vId, t),
+                                           vId, t);
         }
     }
 }
@@ -679,7 +732,8 @@ PolyMesh::recomputeVertexNormals()
     for (size_t vId = 0; vId < mVertices.size(); ++vId) {
         for (size_t t = 0; t < timeSampleCount; ++t) {
             primitiveAttributes->setVertex(StandardAttributes::sNormal,
-                *(const Vec3f*)mPolyMeshCalcNv->getVn(vId, t), vId, t);
+                                           *(const Vec3f*)mPolyMeshCalcNv->getVn(vId, t),
+                                           vId, t);
         }
     }
 }
@@ -715,38 +769,46 @@ PolyMesh::computeAABBAtTimeStep(int timeStep) const
 }
 
 bool
-PolyMesh::shouldTessellate(bool enableDisplacement, const scene_rdl2::rdl2::Layer* pRdlLayer) const
+PolyMesh::shouldTessellate(bool enableDisplacement,
+                           const scene_rdl2::rdl2::Layer* pRdlLayer) const
 {
-    return enableDisplacement && mMeshResolution > 1 && hasDisplacementAssignment(pRdlLayer);
+    return enableDisplacement &&
+           mMeshResolution > 1 &&
+           hasDisplacementAssignment(pRdlLayer);
 }
 
 std::vector<PolyTessellationFactor>
 PolyMesh::computeTessellationFactor(const scene_rdl2::rdl2::Layer *pRdlLayer,
-        const std::vector<mcrt_common::Frustum>& frustums,
-        const std::vector<mcrt_common::Fishtum>& fishtums,
-        const PolyTopologyIdLookup& topologyIdLookup) const
+                                    const std::vector<mcrt_common::Frustum>& frustums,
+                                    const std::vector<mcrt_common::Fishtum>& fishtums,
+                                    const PolyTopologyIdLookup& topologyIdLookup) const
 {
     size_t faceVertexCount = getBaseFaceType() == MeshIndexType::QUAD ?
-        sQuadVertexCount : sTriangleVertexCount;
+                             sQuadVertexCount :
+                             sTriangleVertexCount;
+
     size_t baseFaceCount = mIndices.size() / faceVertexCount;
 
     const PolygonMesh::VertexBuffer& vertices = mVertices;
     const PolygonMesh::IndexBuffer& indices = mIndices;
     std::vector<PolyTessellationFactor> tessellationFactors;
     tessellationFactors.reserve(baseFaceCount);
+
     // only do adaptive tessellation when adaptiveError > 0
     // and if we either have frustums or a fisheye camera
     bool haveViewInfo = !frustums.empty() || !fishtums.empty();
     if (mAdaptiveError > scene_rdl2::math::sEpsilon && haveViewInfo) {
         float pixelsPerScreenHeight;
         if (!frustums.empty()) {
-            pixelsPerScreenHeight = frustums[0].mViewport[3] - frustums[0].mViewport[1];
+            pixelsPerScreenHeight = frustums[0].mViewport[3] -
+                                    frustums[0].mViewport[1];
         } else {
             MNRY_ASSERT_REQUIRE(!fishtums.empty());
             pixelsPerScreenHeight = fishtums[0].mHeight;
         }
         float pixelsPerEdge = mAdaptiveError;
-        float edgesPerScreenHeight = pixelsPerScreenHeight / pixelsPerEdge;
+        float edgesPerScreenHeight = pixelsPerScreenHeight /
+                                     pixelsPerEdge;
 
         std::unordered_map<int, int> edgeTessellationFactor;
         size_t motionSampleCount = vertices.get_time_steps();
@@ -758,8 +820,7 @@ PolyMesh::computeTessellationFactor(const scene_rdl2::rdl2::Layer *pRdlLayer,
                     bbox.extend(vertices(indices[indexOffset + v], t));
                 }
             }
-            const scene_rdl2::rdl2::Displacement* displacement =
-                pRdlLayer->lookupDisplacement(getFaceAssignmentId(f));
+            const scene_rdl2::rdl2::Displacement* displacement = pRdlLayer->lookupDisplacement(getFaceAssignmentId(f));
             PolyTessellationFactor factor;
             if (displacement == nullptr) {
                 // set tessellation factor to 0 if no displacement
@@ -778,8 +839,7 @@ PolyMesh::computeTessellationFactor(const scene_rdl2::rdl2::Layer *pRdlLayer,
                 // optional user provide displacement bound padding to avoid
                 // case that undisplaced face got culled out unintionally
                 Vec3f pCenter = scene_rdl2::math::center(bbox);
-                float padding = displacement->get(
-                    scene_rdl2::rdl2::Displacement::sBoundPadding);
+                float padding = displacement->get(scene_rdl2::rdl2::Displacement::sBoundPadding);
                 if (padding < 0.0f) {
                     padding = 0.0f;
                 }
@@ -817,16 +877,18 @@ PolyMesh::computeTessellationFactor(const scene_rdl2::rdl2::Layer *pRdlLayer,
                         int edgeFactor = 0;
                         if (inView) {
                             edgeFactor = computeEdgeVertexCount(v0, v1,
-                                edgesPerScreenHeight, c2s, fishtums);
+                                                                edgesPerScreenHeight,
+                                                                c2s, fishtums);
                         }
-                        edgeTessellationFactor[eid] = scene_rdl2::math::max(
-                            edgeFactor, edgeTessellationFactor[eid]);
+                        edgeTessellationFactor[eid] = scene_rdl2::math::max(edgeFactor,
+                                                                            edgeTessellationFactor[eid]);
                     }
                 }
             }
             tessellationFactors.push_back(factor);
             indexOffset += faceVertexCount;
         }
+
         // Clamp the maximum tessellation factor based on user specified
         // mesh resolution. Otherwise the tessellation factor can get out
         // of control when the edge is extremely close to camera near plane
@@ -853,11 +915,12 @@ PolyMesh::computeTessellationFactor(const scene_rdl2::rdl2::Layer *pRdlLayer,
 }
 
 std::vector<PolyFaceTopology>
-PolyMesh::generatePolyFaceTopology(
-        const PolyTopologyIdLookup& topologyIdLookup) const
+PolyMesh::generatePolyFaceTopology(const PolyTopologyIdLookup& topologyIdLookup) const
 {
     size_t faceVertexCount = getBaseFaceType() == MeshIndexType::QUAD ?
-        sQuadVertexCount : sTriangleVertexCount;
+                             sQuadVertexCount :
+                             sTriangleVertexCount;
+
     size_t baseFaceCount = mIndices.size() / faceVertexCount;
     std::vector<PolyFaceTopology> faceTopologies;
     faceTopologies.reserve(baseFaceCount);
@@ -878,16 +941,22 @@ PolyMesh::generatePolyFaceTopology(
 
 void
 PolyMesh::initAttributesAndDisplace(const scene_rdl2::rdl2::Layer *pRdlLayer,
-        size_t baseFaceCount, size_t varyingsCount, bool enableDisplacement,
-        bool realtimeMode, bool isBaking,
-        const scene_rdl2::math::Mat4d& world2render)
+                                    size_t baseFaceCount,
+                                    size_t varyingsCount,
+                                    bool enableDisplacement,
+                                    bool realtimeMode,
+                                    bool isBaking,
+                                    const scene_rdl2::math::Mat4d& world2render)
 {
     auto& primitiveAttributeTable = mPolyMeshData->mPrimitiveAttributeTable;
     MeshIndexType baseFaceType = getBaseFaceType();
     size_t faceVertexCount = baseFaceType == MeshIndexType::QUAD ?
-        sQuadVertexCount : sTriangleVertexCount;
+                             sQuadVertexCount :
+                             sTriangleVertexCount;
+
     std::vector<size_t> faceVaryingsCount(baseFaceCount, faceVertexCount);
     size_t verticesCount = mVertices.size();
+
     // figure out whether we need to calculate smooth shading normal
     bool calculateSmoothNormal = false;
     bool hasDisplacement = false;
@@ -904,6 +973,7 @@ PolyMesh::initAttributesAndDisplace(const scene_rdl2::rdl2::Layer *pRdlLayer,
             calculateSmoothNormal = true;
         }
     }
+
     if (calculateSmoothNormal) {
         // when we decide to calculate the smooth shading normal,
         // the attribute rate need to be explicit to RATE_VERTEX
@@ -921,10 +991,14 @@ PolyMesh::initAttributesAndDisplace(const scene_rdl2::rdl2::Layer *pRdlLayer,
         primitiveAttributeTable.addAttribute(StandardAttributes::sNormal,
             RATE_VERTEX, std::move(shadingNormal));
     }
+
     // interleave PrimitiveAttributeTable
     setAttributes(Attributes::interleave(primitiveAttributeTable,
-        mPartCount, baseFaceCount, varyingsCount,
-        faceVaryingsCount, verticesCount));
+                                         mPartCount,
+                                         baseFaceCount,
+                                         varyingsCount,
+                                         faceVaryingsCount,
+                                         verticesCount));
 
     getAttributes()->transformAttributes(mPolyMeshData->mXforms,
                                          mPolyMeshData->mShutterOpenDelta,
@@ -940,6 +1014,7 @@ PolyMesh::initAttributesAndDisplace(const scene_rdl2::rdl2::Layer *pRdlLayer,
     if (hasDisplacement) {
         displaceMesh(pRdlLayer, world2render);
     }
+
     // if it's not real time mode, we don't need the smooth normal utility
     // after shading normal computation is done
     if (!realtimeMode) {
@@ -967,9 +1042,10 @@ PolyMesh::displaceMesh(const scene_rdl2::rdl2::Layer* pRdlLayer,
     };
 
     MeshIndexType baseFaceType = getBaseFaceType();
-    size_t faceVertexCount =
-        (mIsTessellated || baseFaceType == MeshIndexType::QUAD) ?
-        sQuadVertexCount : sTriangleVertexCount;
+
+    size_t faceVertexCount = (mIsTessellated || baseFaceType == MeshIndexType::QUAD) ?
+                             sQuadVertexCount :
+                             sTriangleVertexCount;
 
     size_t vertexCount = mVertices.size();
     std::vector<VertexToDisplace> toDisplace(vertexCount);
@@ -990,30 +1066,30 @@ PolyMesh::displaceMesh(const scene_rdl2::rdl2::Layer* pRdlLayer,
     }
 
     size_t motionSampleCount = getMotionSamplesCount();
-    PolygonMesh::VertexBuffer displacementResult(vertexCount, motionSampleCount);
+    PolygonMesh::VertexBuffer displacementResult(vertexCount,
+                                                 motionSampleCount);
 
-    tbb::blocked_range<size_t> range =
-        tbb::blocked_range<size_t>(0, vertexCount);
+    tbb::blocked_range<size_t> range = tbb::blocked_range<size_t>(0, vertexCount);
 
     tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
+
         mcrt_common::ThreadLocalState *tls = mcrt_common::getFrameUpdateTLS();
         shading::TLState *shadingTls = MNRY_VERIFY(tls->mShadingTls.get());
         Intersection isect;
+
         for (size_t v = r.begin(); v < r.end(); ++v) {
             int assignmentId = toDisplace[v].mAssignmentId;
             if (assignmentId == -1) {
                 continue;
             }
-            const scene_rdl2::rdl2::Displacement* displacement =
-                pRdlLayer->lookupDisplacement(assignmentId);
-            const scene_rdl2::rdl2::Geometry* geometry =
-                pRdlLayer->lookupGeomAndPart(assignmentId).first;
+
+            const scene_rdl2::rdl2::Displacement* displacement = pRdlLayer->lookupDisplacement(assignmentId);
+            const scene_rdl2::rdl2::Geometry* geometry = pRdlLayer->lookupGeomAndPart(assignmentId).first;
 
             // get primitive attribute table
             const AttributeTable* table = nullptr;
             if (displacement->hasExtension()) {
-                const shading::RootShader& rootShader =
-                    displacement->get<shading::RootShader>();
+                const shading::RootShader& rootShader = displacement->get<shading::RootShader>();
                 table = rootShader.getAttributeTable();
             }
 
@@ -1024,8 +1100,11 @@ PolyMesh::displaceMesh(const scene_rdl2::rdl2::Layer* pRdlLayer,
             Vec2f st, st1, st2, st3;
             // need to pick one of the triangles on quad to calculate
             // dpds/dpdt through positions, st coordinates on three vertices
-            getNeighborVertices(baseFaceId, tessFaceId, vIndex,
-                vid, vid1, vid2, vid3, st, st1, st2, st3);
+            getNeighborVertices(baseFaceId,
+                                tessFaceId,
+                                vIndex,
+                                vid, vid1, vid2, vid3,
+                                st, st1, st2, st3);
 
             for (size_t t = 0; t < motionSampleCount; ++t) {
                 Vec3f position = mVertices(vid, t);
@@ -1034,12 +1113,15 @@ PolyMesh::displaceMesh(const scene_rdl2::rdl2::Layer* pRdlLayer,
                 Vec3f p3 = mVertices(vid3, t);
 
 
-                Vec3f normal = scene_rdl2::math::normalize(scene_rdl2::math::cross(p2 - p1, p3 - p1));
+                Vec3f normal = scene_rdl2::math::normalize(scene_rdl2::math::cross(p2 - p1,
+                                                                                   p3 - p1));
+
                 // degenerated surface, assign a valid but meaningless
                 // value as fallback
                 if (!scene_rdl2::math::isFinite(normal)) {
                     normal = Vec3f(0, 0, 1);
                 }
+
                 Vec3f dpdst[2];
                 if (!computeTrianglePartialDerivatives(
                     p1, p2, p3, st1, st2, st3, dpdst)) {
@@ -1061,13 +1143,28 @@ PolyMesh::displaceMesh(const scene_rdl2::rdl2::Layer* pRdlLayer,
                     dpdst[1] = scene_rdl2::math::transformVector(world2render, dpdst[1]);
                 }
 
-                isect.initDisplacement(tls, table, geometry,
-                    pRdlLayer, assignmentId, position, normal,
-                    dpdst[0], dpdst[1], st, dSt0[0], dSt1[0], dSt0[1], dSt1[1]);
-                fillDisplacementAttributes(tessFaceId, vIndex, isect);
+                isect.initDisplacement(tls,
+                                       table,
+                                       geometry,
+                                       pRdlLayer,
+                                       assignmentId,
+                                       position,
+                                       normal,
+                                       dpdst[0], dpdst[1],
+                                       st,
+                                       dSt0[0], dSt1[0],
+                                       dSt0[1], dSt1[1]);
+
+                fillDisplacementAttributes(tessFaceId,
+                                           vIndex,
+                                           isect);
 
                 Vec3f displace;
-                shading::displace(displacement, shadingTls, shading::State(&isect), &displace);
+                shading::displace(displacement,
+                                  shadingTls,
+                                  shading::State(&isect),
+                                  &displace);
+
                 // can't add this result directly to vertex buffer here...
                 // otherwise it will cause wrong dpds/dpdt calculation since
                 // displacement shaders expect pre-displaced dpds/dpdt values
@@ -1075,6 +1172,7 @@ PolyMesh::displaceMesh(const scene_rdl2::rdl2::Layer* pRdlLayer,
             }
         }
     });
+
     // now add the displacement result back to vertex buffer
     tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
         for (size_t v = r.begin(); v < r.end(); ++v) {
@@ -1082,6 +1180,7 @@ PolyMesh::displaceMesh(const scene_rdl2::rdl2::Layer* pRdlLayer,
             if (assignmentId == -1) {
                 continue;
             }
+
             uint32_t faceId = toDisplace[v].mFaceId;
             uint32_t vIndex = toDisplace[v].mVIndex;
             uint32_t vid = mIndices[faceVertexCount * faceId + vIndex];

@@ -44,7 +44,11 @@ private:
     }
 
     // get weights for each of the 4 control points of a span
-    virtual void evalWeights(const float& t, float& w0, float& w1, float& w2, float& w3) const override
+    virtual void evalWeights(const float& t,
+                             float& w0,
+                             float& w1,
+                             float& w2,
+                             float& w3) const override
     {
         const float s = 1.f - t;
         const float oneSixth(1.0f/6.0f);
@@ -57,7 +61,10 @@ private:
 
     // get weights for the difference of neighboring controls points
     // to scale (p1 - p0), (p2 - p1), and (p3 - p2)
-    virtual void evalDerivWeights(const float& t, float& w0, float& w1, float& w2) const override
+    virtual void evalDerivWeights(const float& t,
+                                  float& w0,
+                                  float& w1,
+                                  float& w2) const override
     {
         const float s = 1.f - t;
         w0 = 0.5f * s * s;

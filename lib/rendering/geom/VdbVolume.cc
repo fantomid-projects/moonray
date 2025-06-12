@@ -19,22 +19,23 @@ namespace geom {
 
 struct VdbVolume::Impl
 {
-    explicit Impl(internal::VdbVolume* vol) : mVdbVolume(vol) {}
+    explicit Impl(internal::VdbVolume* vol) :
+        mVdbVolume(vol) {}
+
     std::unique_ptr<internal::VdbVolume> mVdbVolume;
 };
 
 VdbVolume::VdbVolume(const VdbInitData& vdbInitData,
-        const MotionBlurParams& motionBlurParams,
-        LayerAssignmentId&& layerAssignmentId,
-        shading::PrimitiveAttributeTable&& primitiveAttributeTalble):
-    mImpl(fauxstd::make_unique<Impl>(new internal::VdbVolume(
-        vdbInitData.mVdbFilePath,
-        vdbInitData.mDensityGridName,
-        vdbInitData.mEmissionGridName,
-        vdbInitData.mVelocityGridName,
-        motionBlurParams,
-        std::move(layerAssignmentId),
-        std::move(primitiveAttributeTalble)))) {}
+                     const MotionBlurParams& motionBlurParams,
+                     LayerAssignmentId&& layerAssignmentId,
+                     shading::PrimitiveAttributeTable&& primitiveAttributeTalble) :
+    mImpl(fauxstd::make_unique<Impl>(new internal::VdbVolume(vdbInitData.mVdbFilePath,
+                                                             vdbInitData.mDensityGridName,
+                                                             vdbInitData.mEmissionGridName,
+                                                             vdbInitData.mVelocityGridName,
+                                                             motionBlurParams,
+                                                             std::move(layerAssignmentId),
+                                                             std::move(primitiveAttributeTalble)))) {}
 
 VdbVolume::VdbVolume()
 {
@@ -97,19 +98,23 @@ VdbVolume::setEmissionSampleRate(float emissionSampleRate)
 }
 
 void
-VdbVolume::transformPrimitive(
-        const MotionBlurParams& motionBlurParams,
-        const shading::XformSamples& primToRender)
+VdbVolume::transformPrimitive(const MotionBlurParams& motionBlurParams,
+                              const shading::XformSamples& primToRender)
 {
     shading::XformSamples p2r = primToRender;
     if (p2r.size() == 1) {
         p2r.resize(2, p2r[0]);
     }
+
     float shutterOpenDelta = 0.0f, shutterCloseDelta = 0.0f;
     if (motionBlurParams.isMotionBlurOn()) {
-        motionBlurParams.getMotionBlurDelta(shutterOpenDelta, shutterCloseDelta);
+        motionBlurParams.getMotionBlurDelta(shutterOpenDelta,
+                                            shutterCloseDelta);
     }
-    mImpl->mVdbVolume->setTransform(p2r, shutterOpenDelta, shutterCloseDelta);
+
+    mImpl->mVdbVolume->setTransform(p2r,
+                                    shutterOpenDelta,
+                                    shutterCloseDelta);
 }
 
 internal::Primitive*

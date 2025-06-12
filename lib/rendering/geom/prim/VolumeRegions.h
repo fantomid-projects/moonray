@@ -44,7 +44,8 @@ public:
         return true;
     }
 
-    void turnOn(int volumeId, const Primitive* primitive) {
+    void turnOn(int volumeId,
+                const Primitive* primitive) {
         MNRY_ASSERT(volumeId < (int)getMaxRegionsCount());
         mBitMask[volumeId >> 5] |= 1 << (volumeId & 31);
         mPrimitives[volumeId] = primitive;
@@ -89,6 +90,7 @@ private:
     // production case, we can extend it in the future.
     std::array<uint32_t, 16> mBitMask;
     const Primitive* mPrimitives[512]; // per volumeID
+
     // We don't need to initialize this in the constructor because the values are
     //  set when we turnOn() and aren't read back unless the region is on.
 };

@@ -19,8 +19,16 @@ struct VolumeTransition
 {
     VolumeTransition() {}
 
-    VolumeTransition(const Primitive* primitive, float tIntersect, int volumeId, bool isEntry, float *tRenderSpace = nullptr) :
-        mT(tIntersect), mVolumeId(volumeId), mIsEntry(isEntry), mIsExit(!isEntry), mPrimitive(primitive)
+    VolumeTransition(const Primitive* primitive,
+                     float tIntersect,
+                     int volumeId,
+                     bool isEntry,
+                     float *tRenderSpace = nullptr) :
+        mT(tIntersect),
+        mVolumeId(volumeId),
+        mIsEntry(isEntry),
+        mIsExit(!isEntry),
+        mPrimitive(primitive)
     {
         if (tRenderSpace) {
             mTRenderSpace[0] = tRenderSpace[0];
@@ -47,13 +55,14 @@ struct VolumeTransition
     finline bool isExit()  const { return mIsExit;  }
 };
 
-inline bool operator==(const VolumeTransition& a, const VolumeTransition& b)
+inline bool operator==(const VolumeTransition& a,
+                       const VolumeTransition& b)
 {
     return a.mPrimitive == b.mPrimitive &&
-           a.mT        == b.mT        &&
-           a.mVolumeId == b.mVolumeId &&
-           a.mIsEntry  == b.mIsEntry  &&
-           a.mIsExit   == b.mIsExit;
+           a.mT         == b.mT        &&
+           a.mVolumeId  == b.mVolumeId &&
+           a.mIsEntry   == b.mIsEntry  &&
+           a.mIsExit    == b.mIsExit;
 }
 
 } // namespace internal

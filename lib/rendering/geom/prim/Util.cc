@@ -13,17 +13,15 @@ namespace moonray {
 namespace geom {
 namespace internal {
 
-//analytic solution of SVD based condition number calculation
-float tessCondNumber2x2SVD(
-    float a, float b,
-    float c, float d,
-    float aTolerance
-    )
+// analytic solution of SVD based condition number calculation
+float tessCondNumber2x2SVD(float a, float b,
+                           float c, float d,
+                           float aTolerance)
 {
     MNRY_ASSERT(aTolerance>0.0, "need a positive tolerance");
 
-    //compute AA^T = AAT_j AAT_l
-    //               AAT_l AAT_k
+    // compute AA^T = AAT_j AAT_l
+    //                AAT_l AAT_k
     float AAT_j = a * a + b * b;
     float AAT_l = a * c + b * d;
     float AAT_k = c * c + d * d;
@@ -157,11 +155,11 @@ bool computePartialsWithRespect2Texture(const Vec3f &dP_du,
 }
 
 void writeToObj(const std::string& outputPath,
-        const std::vector<uint32_t>& faceVertexCount,
-        const VertexBuffer<Vec3fa, InterleavedTraits>& vertices,
-        const std::vector<uint32_t>& indices,
-        const shading::Vector<Vec2f>& textureVertices,
-        const std::vector<uint32_t>& textureIndices)
+                const std::vector<uint32_t>& faceVertexCount,
+                const VertexBuffer<Vec3fa, InterleavedTraits>& vertices,
+                const std::vector<uint32_t>& indices,
+                const shading::Vector<Vec2f>& textureVertices,
+                const std::vector<uint32_t>& textureIndices)
 {
     std::ofstream filestream;
     filestream.open(outputPath);
@@ -198,8 +196,10 @@ void writeToObj(const std::string& outputPath,
 }
 
 Vec3f
-computePrimitiveMotion(const Vec3f &pos0, const Vec3f *pos1, float rayTime,
-    const Instance *instance)
+computePrimitiveMotion(const Vec3f &pos0,
+                       const Vec3f *pos1,
+                       float rayTime,
+                       const Instance *instance)
 {
     if (!pos1 && !instance) return Vec3f(0.0f); // no motion
 
@@ -226,7 +226,10 @@ computePrimitiveMotion(const Vec3f &pos0, const Vec3f *pos1, float rayTime,
     return motion;
 }
 
-Vec3f transformPoint(const scene_rdl2::math::Mat4f mat[2], const scene_rdl2::math::Vec3f& point, const float time, bool isMotionBlurOn)
+Vec3f transformPoint(const scene_rdl2::math::Mat4f mat[2],
+                     const scene_rdl2::math::Vec3f& point,
+                     const float time,
+                     bool isMotionBlurOn)
 {
     if (isMotionBlurOn) {
         scene_rdl2::math::Vec3f point0 = scene_rdl2::math::transformPoint(mat[0], point);
@@ -237,7 +240,10 @@ Vec3f transformPoint(const scene_rdl2::math::Mat4f mat[2], const scene_rdl2::mat
     }
 }
 
-Vec3f transformVector(const scene_rdl2::math::Mat4f mat[2], const scene_rdl2::math::Vec3f& vec, const float time, bool isMotionBlurOn)
+Vec3f transformVector(const scene_rdl2::math::Mat4f mat[2],
+                      const scene_rdl2::math::Vec3f& vec,
+                      const float time,
+                      bool isMotionBlurOn)
 {
     if (isMotionBlurOn) {
         scene_rdl2::math::Vec3f vec0 = scene_rdl2::math::transformVector(mat[0], vec);
@@ -274,7 +280,8 @@ bool hasInstanceAttr(shading::AttributeKey key,
            attrIsSupported(ray.ext.instance0OrLight, key);
 }
 
-void overrideInstanceAttrs(const mcrt_common::Ray& ray, shading::Intersection& intersection)
+void overrideInstanceAttrs(const mcrt_common::Ray& ray,
+                           shading::Intersection& intersection)
 {
     // Instance attributes override.  Start with the lowest instance
     // and overwrite attrs as we go up the chain, as higher level
@@ -389,12 +396,11 @@ getAttribute(const shading::Attributes* attributes,
     return true;
 }
 
-template bool getAttribute<scene_rdl2::math::Vec3f>(
-             const shading::Attributes* attributes,
-             const shading::TypedAttributeKey<scene_rdl2::math::Vec3f> key,
-             scene_rdl2::math::Vec3f& value,
-             const int primID,
-             const uint32_t vertex);
+template bool getAttribute<scene_rdl2::math::Vec3f>(const shading::Attributes* attributes,
+                                                    const shading::TypedAttributeKey<scene_rdl2::math::Vec3f> key,
+                                                    scene_rdl2::math::Vec3f& value,
+                                                    const int primID,
+                                                    const uint32_t vertex);
 
 
 } // end namespace internal

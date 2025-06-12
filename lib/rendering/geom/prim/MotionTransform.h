@@ -18,12 +18,15 @@ namespace internal {
 class MotionTransform {
 public:
 
-    MotionTransform(): mUninitializedData({Mat43(scene_rdl2::math::one)}),
+    MotionTransform() :
+        mUninitializedData({Mat43(scene_rdl2::math::one)}),
         mState(State::UNINITIALIZED) {}
 
     MotionTransform(const shading::XformSamples& xformSamples,
-            float t0, float t1) :
-        mUninitializedData(xformSamples), mState(State::UNINITIALIZED),
+                    float t0,
+                    float t1) :
+        mUninitializedData(xformSamples),
+        mState(State::UNINITIALIZED),
         mSampleStart(t0), mSampleDelta(t1 - t0) {}
 
     // The use of union seems causing the default copy constructor and
@@ -67,16 +70,18 @@ public:
     Mat43 eval(float t) const
     {
         MNRY_ASSERT(isMotion());
-        return scene_rdl2::math::slerp(mMotionData.mComponent0, mMotionData.mComponent1,
-            mSampleStart + t * mSampleDelta).combined();
+        return scene_rdl2::math::slerp(mMotionData.mComponent0,
+                                       mMotionData.mComponent1,
+                                       mSampleStart + t * mSampleDelta).combined();
     }
 
     scene_rdl2::math::Xform3fv eval(const simdf& t) const
     {
         MNRY_ASSERT(isMotion());
         simdf time = mSampleStart + t * mSampleDelta;
-        return scene_rdl2::math::slerp(mMotionData.mComponent0, mMotionData.mComponent1,
-            *(reinterpret_cast<scene_rdl2::math::Floatv*>(&time)));
+        return scene_rdl2::math::slerp(mMotionData.mComponent0,
+                                       mMotionData.mComponent1,
+                                       *(reinterpret_cast<scene_rdl2::math::Floatv*>(&time)));
     }
 
     void appendXform(const shading::XformSamples& xformSamples)
@@ -101,6 +106,7 @@ public:
         if (isInitialized()) {
             return;
         }
+
         if ((mUninitializedData.mSample0 == mUninitializedData.mSample1) ||
             (mSampleStart == 0.0f && mSampleDelta == 0.0f)) {
             mState = State::INITIALIZED_STATIC;
@@ -132,7 +138,7 @@ public:
 
 private:
     void correctSlerpAngle(scene_rdl2::math::XformComponent3f& c0,
-            scene_rdl2::math::XformComponent3f& c1) {
+                           scene_rdl2::math::XformComponent3f& c1) {
         // avoid flipping rotation by checking the angle between two transforms
         // (one rotation matrix can be represented by two opposite quaternions)
         if (scene_rdl2::math::dot(c0.r, c1.r) < 0.0f) {
@@ -184,8 +190,9 @@ private:
 
     class StaticData {
     public:
-        StaticData(const Mat43& xform):
-            mXform(xform), mInverseXform(xform.inverse()) {}
+        StaticData(const Mat43& xform) :
+            mXform(xform),
+            mInverseXform(xform.inverse()) {}
     public:
         Mat43 mXform;
         Mat43 mInverseXform;
@@ -194,8 +201,9 @@ private:
     class MotionData {
     public:
         MotionData(const scene_rdl2::math::XformComponent3f& c0,
-                const scene_rdl2::math::XformComponent3f& c1) :
-            mComponent0(c0), mComponent1(c1) {}
+                   const scene_rdl2::math::XformComponent3f& c1) :
+            mComponent0(c0),
+            mComponent1(c1) {}
     public:
         scene_rdl2::math::XformComponent3f mComponent0;
         scene_rdl2::math::XformComponent3f mComponent1;

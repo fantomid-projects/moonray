@@ -22,10 +22,16 @@ struct Box::Impl
     std::unique_ptr<internal::Box> mBox;
 };
 
-Box::Box(float length, float width, float height, LayerAssignmentId&& layerAssignmentId,
-        shading::PrimitiveAttributeTable&& primitiveAttributeTable):
-        mImpl(fauxstd::make_unique<Impl>(new internal::Box(length, width, height,
-        std::move(layerAssignmentId), std::move(primitiveAttributeTable))))
+Box::Box(float length,
+         float width,
+         float height,
+         LayerAssignmentId&& layerAssignmentId,
+         shading::PrimitiveAttributeTable&& primitiveAttributeTable) :
+    mImpl(fauxstd::make_unique<Impl>(new internal::Box(length,
+                                                       width,
+                                                       height,
+                                                       std::move(layerAssignmentId),
+                                                       std::move(primitiveAttributeTable))))
 {
 }
 
@@ -86,9 +92,8 @@ Box::getIsNormalReversed() const
 }
 
 void
-Box::transformPrimitive(
-        const MotionBlurParams& motionBlurParams,
-        const shading::XformSamples& prim2render)
+Box::transformPrimitive(const MotionBlurParams& motionBlurParams,
+                        const shading::XformSamples& prim2render)
 {
     mImpl->mBox->setTransform(prim2render[0]);
 }

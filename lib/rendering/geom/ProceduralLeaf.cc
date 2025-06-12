@@ -34,9 +34,7 @@ public:
     }
 
     void transformToReference() {
-        mSharedPrimitiveGroup = createSharedPrimitive(
-            std::move(mPrimitiveGroup));
-
+        mSharedPrimitiveGroup = createSharedPrimitive(std::move(mPrimitiveGroup));
         mPrimitiveGroup = createPrimitiveGroup();
     }
 
@@ -47,7 +45,8 @@ public:
 
 
 ProceduralLeaf::ProceduralLeaf(const State &state) :
-        Procedural(state), mImpl(new Impl())
+    Procedural(state),
+    mImpl(new Impl())
 {
 }
 
@@ -58,30 +57,34 @@ ProceduralLeaf::~ProceduralLeaf()
 
 void
 ProceduralLeaf::forEachPrimitive(PrimitiveVisitor& visitor,
-        bool parallel)
+                                 bool parallel)
 {
-    mImpl->mPrimitiveGroup->forEachPrimitive(visitor, parallel);
+    mImpl->mPrimitiveGroup->forEachPrimitive(visitor,
+                                             parallel);
 }
 
 void
 ProceduralLeaf::forEachStatic(PrimitiveVisitor& visitor,
-        bool parallel)
+                              bool parallel)
 {
-    mImpl->mPrimitiveGroup->forEachStatic(visitor, parallel);
+    mImpl->mPrimitiveGroup->forEachStatic(visitor,
+                                          parallel);
 }
 
 void
 ProceduralLeaf::forEachDynamic(PrimitiveVisitor& visitor,
-        bool parallel)
+                               bool parallel)
 {
-    mImpl->mPrimitiveGroup->forEachDynamic(visitor, parallel);
+    mImpl->mPrimitiveGroup->forEachDynamic(visitor,
+                                           parallel);
 }
 
 void
 ProceduralLeaf::forEachDeformable(PrimitiveVisitor& visitor,
-        bool parallel)
+                                  bool parallel)
 {
-    mImpl->mPrimitiveGroup->forEachDeformable(visitor, parallel);
+    mImpl->mPrimitiveGroup->forEachDeformable(visitor,
+                                              parallel);
 }
 
 Procedural::size_type
@@ -110,8 +113,8 @@ ProceduralLeaf::getReference() const
 
 void
 ProceduralLeaf::addPrimitive(std::unique_ptr<Primitive> p,
-        const MotionBlurParams& motionBlurParams,
-        const shading::XformSamples& parent2render)
+                             const MotionBlurParams& motionBlurParams,
+                             const shading::XformSamples& parent2render)
 {
     if (p) {
         const Mat43& proc2parent = getState().getProc2Parent();
@@ -119,8 +122,12 @@ ProceduralLeaf::addPrimitive(std::unique_ptr<Primitive> p,
         for (size_t i = 0; i < parent2render.size(); ++i) {
             prim2render.push_back(proc2parent * parent2render[i]);
         }
+
         // transform primitive to rendering space and interpolate it with motion blur info
-        internal::PrimitivePrivateAccess::transformPrimitive(p.get(), motionBlurParams, prim2render);
+        internal::PrimitivePrivateAccess::transformPrimitive(p.get(),
+                                                             motionBlurParams,
+                                                             prim2render);
+
         mImpl->mPrimitiveGroup->addPrimitive(std::move(p));
     }
 }

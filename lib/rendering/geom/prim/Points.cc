@@ -30,7 +30,9 @@ using namespace shading;
 class PointsInterpolator : public shading::Interpolator
 {
 public:
-    PointsInterpolator(const Attributes *attr, float time, int pointID):
+    PointsInterpolator(const Attributes *attr,
+                       float time,
+                       int pointID) :
         shading::Interpolator(attr,
                               time,
                               0,       // part
@@ -49,6 +51,7 @@ public:
         mIndex[0] = pointID;
         mWeight[0] = 1.0f;
     }
+
 private:
     int mIndex[1];
     float mWeight[1];
@@ -56,11 +59,12 @@ private:
 
 
 Points::Points(geom::Points::VertexBuffer&& position,
-        geom::Points::RadiusBuffer&& radius,
-        LayerAssignmentId&& layerAssignmentId,
-        PrimitiveAttributeTable&& primitiveAttributeTable):
+               geom::Points::RadiusBuffer&& radius,
+               LayerAssignmentId&& layerAssignmentId,
+               PrimitiveAttributeTable&& primitiveAttributeTable) :
     NamedPrimitive(std::move(layerAssignmentId)),
-    mPosition(std::move(position)), mRadius(std::move(radius)),
+    mPosition(std::move(position)),
+    mRadius(std::move(radius)),
     mPrimitiveAttributeTable(std::move(primitiveAttributeTable)),
     mCurvedMotionBlurSampleCount(0),
     mMotionBlurType(scene_rdl2::rdl2::MotionBlurType::STATIC)
@@ -68,8 +72,7 @@ Points::Points(geom::Points::VertexBuffer&& position,
     size_t pointsCount = mPosition.size();
     MNRY_ASSERT_REQUIRE(mRadius.size() == pointsCount);
     if (mLayerAssignmentId.getType() == LayerAssignmentId::Type::VARYING) {
-        MNRY_ASSERT_REQUIRE(
-            mLayerAssignmentId.getVaryingId().size() == pointsCount);
+        MNRY_ASSERT_REQUIRE(mLayerAssignmentId.getVaryingId().size() == pointsCount);
     }
 
     // facevarying/varying/vertex are the same thing for Points
@@ -81,17 +84,20 @@ Points::Points(geom::Points::VertexBuffer&& position,
         }
     }
     setAttributes(Attributes::interleave(mPrimitiveAttributeTable,
-        (size_t)0, (size_t)1, pointsCount, std::vector<size_t>(), pointsCount));
+                                         (size_t)0,
+                                         (size_t)1,
+                                         pointsCount,
+                                         std::vector<size_t>(),
+                                         pointsCount));
 }
 
 const scene_rdl2::rdl2::Material*
 Points::getIntersectionMaterial(const scene_rdl2::rdl2::Layer* pRdlLayer,
-        const mcrt_common::Ray& ray) const
+                                const mcrt_common::Ray& ray) const
 {
-    int assignmentId =
-        mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT ?
-        mLayerAssignmentId.getConstId() :
-        mLayerAssignmentId.getVaryingId()[ray.primID];
+    int assignmentId = mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT ?
+                       mLayerAssignmentId.getConstId() :
+                       mLayerAssignmentId.getVaryingId()[ray.primID];
 
     MNRY_ASSERT(assignmentId > -1);
     const scene_rdl2::rdl2::Material* pMaterial = MNRY_VERIFY(pRdlLayer->lookupMaterial(assignmentId));
@@ -101,19 +107,24 @@ Points::getIntersectionMaterial(const scene_rdl2::rdl2::Layer* pRdlLayer,
 
 void
 Points::postIntersect(mcrt_common::ThreadLocalState& tls,
-        const scene_rdl2::rdl2::Layer* pRdlLayer, const mcrt_common::Ray& ray,
-        Intersection& intersection) const
+                      const scene_rdl2::rdl2::Layer* pRdlLayer,
+                      const mcrt_common::Ray& ray,
+                      Intersection& intersection) const
 {
-    int assignmentId =
-        mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT ?
-        mLayerAssignmentId.getConstId() :
-        mLayerAssignmentId.getVaryingId()[ray.primID];
-    intersection.setLayerAssignments(assignmentId, pRdlLayer);
+    int assignmentId = mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT ?
+                       mLayerAssignmentId.getConstId() :
+                       mLayerAssignmentId.getVaryingId()[ray.primID];
 
-    const AttributeTable *table =
-        intersection.getMaterial()->get<shading::RootShader>().getAttributeTable();
-    intersection.setTable(&tls.mArena, table);
+    intersection.setLayerAssignments(assignmentId,
+                                     pRdlLayer);
+
+    const AttributeTable *table = intersection.getMaterial()->get<shading::RootShader>().getAttributeTable();
+
+    intersection.setTable(&tls.mArena,
+                          table);
+
     intersection.setIds(ray.primID, 0, 0);
+
     const Attributes* primitiveAttributes = getAttributes();
 
     PointsInterpolator interpolator(primitiveAttributes,
@@ -129,7 +140,8 @@ Points::postIntersect(mcrt_common::ThreadLocalState& tls,
                                               intersection);
 
     if (ray.isInstanceHit()) {
-        overrideInstanceAttrs(ray, intersection);
+        overrideInstanceAttrs(ray,
+                              intersection);
     }
 
     // The St value is read from the explicit "uv" primitive
@@ -137,10 +149,10 @@ Points::postIntersect(mcrt_common::ThreadLocalState& tls,
     Vec2f St(1.0f, 1.0f);
     if (primitiveAttributes->isSupported(shading::StandardAttributes::sSt)) {
         interpolator.interpolate(shading::StandardAttributes::sSt,
-            reinterpret_cast<char*>(&St));
+                                 reinterpret_cast<char*>(&St));
     } else if (primitiveAttributes->isSupported(shading::StandardAttributes::sUv)) {
         interpolator.interpolate(shading::StandardAttributes::sUv,
-            reinterpret_cast<char*>(&St));
+                                 reinterpret_cast<char*>(&St));
     }
 
     Vec3f N = scene_rdl2::math::zero;
@@ -175,7 +187,7 @@ Points::postIntersect(mcrt_common::ThreadLocalState& tls,
     if (table->requests(StandardAttributes::sNumPolyVertices)) {
         intersection.setAttribute(StandardAttributes::sNumPolyVertices, 0);
         intersection.setAttribute(StandardAttributes::sPolyVertexType,
-                              static_cast<int>(StandardAttributes::POLYVERTEX_TYPE_POLYGON));
+                                  static_cast<int>(StandardAttributes::POLYVERTEX_TYPE_POLYGON));
 
     }
 
@@ -184,8 +196,14 @@ Points::postIntersect(mcrt_common::ThreadLocalState& tls,
         Vec3f pos0, pos1;
         const Vec3f *pos1Ptr = nullptr;
         if (isMotionBlurOn()) {
-            pos0 = lerp(mPosition(ray.primID, 0), mPosition(ray.primID, 1), ray.getTime() - sHalfDt);
-            pos1 = lerp(mPosition(ray.primID, 0), mPosition(ray.primID, 1), ray.getTime() + sHalfDt);
+            pos0 = lerp(mPosition(ray.primID, 0),
+                        mPosition(ray.primID, 1),
+                        ray.getTime() - sHalfDt);
+
+            pos1 = lerp(mPosition(ray.primID, 0),
+                        mPosition(ray.primID, 1),
+                        ray.getTime() + sHalfDt);
+
             pos1Ptr = &pos1;
         } else {
             pos0 = mPosition(ray.primID, 0);
@@ -195,9 +213,16 @@ Points::postIntersect(mcrt_common::ThreadLocalState& tls,
         // Motion vectors only support a single instance level, hence we only care
         // about ray.instance0.
         const Instance *instance = (ray.isInstanceHit())?
-            static_cast<const Instance *>(ray.ext.instance0OrLight) : nullptr;
-        const Vec3f motion = computePrimitiveMotion(pos0, pos1Ptr, ray.getTime(), instance);
-        intersection.setAttribute(StandardAttributes::sMotion, motion);
+                                   static_cast<const Instance *>(ray.ext.instance0OrLight) :
+                                   nullptr;
+
+        const Vec3f motion = computePrimitiveMotion(pos0,
+                                                    pos1Ptr,
+                                                    ray.getTime(),
+                                                    instance);
+
+        intersection.setAttribute(StandardAttributes::sMotion,
+                                  motion);
     }
 }
 
@@ -207,6 +232,7 @@ Points::computeAABB() const
     if (mPosition.empty()) {
         return BBox3f(scene_rdl2::math::zero);
     }
+
     BBox3f result(mPosition(0));
     float maxRadius = 0.0f;
     size_t motionSampleCount = getMotionSamplesCount();
@@ -227,6 +253,7 @@ Points::computeAABBAtTimeStep(int timeStep) const
     if (mPosition.empty()) {
         return BBox3f(scene_rdl2::math::zero);
     }
+
     MNRY_ASSERT(timeStep >= 0 && timeStep < static_cast<int>(getMotionSamplesCount()), "timeStep out of range");
     BBox3f result(scene_rdl2::util::empty);
     float maxRadius = 0.0f;
@@ -434,7 +461,10 @@ intersectFunc(const RTCIntersectFunctionNArguments* args)
         RTCRay& ray = rayhit.ray;
         RTCHit& hit = rayhit.hit;
 
-        Vec3fa p = getPosition(points, primID, ray.time);
+        Vec3fa p = getPosition(points,
+                               primID,
+                               ray.time);
+
         const Vec3fa o(ray.org_x, ray.org_y, ray.org_z, 0.f);
         const Vec3fa d(ray.dir_x, ray.dir_y, ray.dir_z, 0.f);
         const Vec3fa u = p - o;
@@ -442,10 +472,12 @@ intersectFunc(const RTCIntersectFunctionNArguments* args)
             // ray is travelling away from sphere centre
             return;
         }
+
         if (dot(u, u) < r2) {
             // ray origin is inside sphere
             return;
         }
+
         const Vec3fa v = cross(d, u);
         float v2 = dot(v, v);
         float d2 = dot(d, d);
@@ -455,6 +487,7 @@ intersectFunc(const RTCIntersectFunctionNArguments* args)
             // no intersections
             return;
         }
+
         float s = scene_rdl2::math::sqrt(D);
         const Vec3fa w = cross(d, v);
         const Vec3fa rn = (1.0f / d2) * (w - s * d);
@@ -480,27 +513,33 @@ intersectFunc(const RTCIntersectFunctionNArguments* args)
             if (valid[index] == 0) {
                 continue;
             }
-            Vec3fa p = getPosition(points, primID,
-                RTCRayN_time(rays, N, index));
-            const Vec3fa o(
-                RTCRayN_org_x(rays, N, index),
-                RTCRayN_org_y(rays, N, index),
-                RTCRayN_org_z(rays, N, index), 0.f);
-            const Vec3fa d(
-                RTCRayN_dir_x(rays, N, index),
-                RTCRayN_dir_y(rays, N, index),
-                RTCRayN_dir_z(rays, N, index), 0.f);
+
+            Vec3fa p = getPosition(points,
+                                   primID,
+                                   RTCRayN_time(rays, N, index));
+
+            const Vec3fa o(RTCRayN_org_x(rays, N, index),
+                           RTCRayN_org_y(rays, N, index),
+                           RTCRayN_org_z(rays, N, index), 0.f);
+
+            const Vec3fa d(RTCRayN_dir_x(rays, N, index),
+                           RTCRayN_dir_y(rays, N, index),
+                           RTCRayN_dir_z(rays, N, index), 0.f);
+
             float& rayTnear = RTCRayN_tnear(rays, N, index);
             float& rayTfar = RTCRayN_tfar(rays, N, index);
             const Vec3fa u = p - o;
+
             if (dot(d, u) < 0.0f) {
                 // ray is travelling away from sphere centre
                 continue;
             }
+
             if (dot(u, u) < r2) {
                 // ray origin is inside sphere
                 continue;
             }
+
             const Vec3fa v = cross(d, u);
             float v2 = dot(v, v);
             float d2 = dot(d, d);
@@ -510,6 +549,7 @@ intersectFunc(const RTCIntersectFunctionNArguments* args)
                 // no intersections
                 continue;
             }
+
             float s = scene_rdl2::math::sqrt(D);
             const Vec3fa w = cross(d, v);
             const Vec3fa rn = (1.0f / d2) * (w - s * d);
@@ -549,7 +589,11 @@ occludedFunc(const RTCOccludedFunctionNArguments* args)
 
     if (N == 1) {
         RTCRay& ray = *((RTCRay*)args->ray);
-        Vec3fa p = getPosition(points, primID, ray.time);
+
+        Vec3fa p = getPosition(points,
+                               primID,
+                               ray.time);
+
         const Vec3fa o(ray.org_x, ray.org_y, ray.org_z, 0.f);
         const Vec3fa d(ray.dir_x, ray.dir_y, ray.dir_z, 0.f);
         const Vec3fa u = p - o;
@@ -557,10 +601,12 @@ occludedFunc(const RTCOccludedFunctionNArguments* args)
             // ray is travelling away from sphere centre
             return;
         }
+
         if (dot(u, u) < r2) {
             // ray origin is inside sphere
             return;
         }
+
         const Vec3fa v = cross(d, u);
         float v2 = dot(v, v);
         float d2 = dot(d, d);
@@ -570,6 +616,7 @@ occludedFunc(const RTCOccludedFunctionNArguments* args)
             // no intersections
             return;
         }
+
         float s = scene_rdl2::math::sqrt(D);
         const Vec3fa w = cross(d, v);
         const Vec3fa rn = (1.0f / d2) * (w - s * d);
@@ -587,27 +634,33 @@ occludedFunc(const RTCOccludedFunctionNArguments* args)
             if (valid[index] == 0) {
                 continue;
             }
-            Vec3fa p = getPosition(points, primID,
-                RTCRayN_time(rays, N, index));
-            const Vec3fa o(
-                RTCRayN_org_x(rays, N, index),
-                RTCRayN_org_y(rays, N, index),
-                RTCRayN_org_z(rays, N, index), 0.f);
-            const Vec3fa d(
-                RTCRayN_dir_x(rays, N, index),
-                RTCRayN_dir_y(rays, N, index),
-                RTCRayN_dir_z(rays, N, index), 0.f);
+
+            Vec3fa p = getPosition(points,
+                                   primID,
+                                   RTCRayN_time(rays, N, index));
+
+            const Vec3fa o(RTCRayN_org_x(rays, N, index),
+                           RTCRayN_org_y(rays, N, index),
+                           RTCRayN_org_z(rays, N, index), 0.f);
+
+            const Vec3fa d(RTCRayN_dir_x(rays, N, index),
+                           RTCRayN_dir_y(rays, N, index),
+                           RTCRayN_dir_z(rays, N, index), 0.f);
+
             float& rayTnear = RTCRayN_tnear(rays, N, index);
             float& rayTfar = RTCRayN_tfar(rays, N, index);
             const Vec3fa u = p - o;
+
             if (dot(d, u) < 0.0f) {
                 // ray is travelling away from sphere centre
                 continue;
             }
+
             if (dot(u, u) < r2) {
                 // ray origin is inside sphere
                 continue;
             }
+
             const Vec3fa v = cross(d, u);
             float v2 = dot(v, v);
             float d2 = dot(d, d);
@@ -617,6 +670,7 @@ occludedFunc(const RTCOccludedFunctionNArguments* args)
                 // no intersections
                 continue;
             }
+
             float s = scene_rdl2::math::sqrt(D);
             const Vec3fa w = cross(d, v);
             const Vec3fa rn = (1.0f / d2) * (w - s * d);

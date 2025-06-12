@@ -110,6 +110,7 @@ struct SubdQuadTopology
     {
         return mNonQuadParent;
     }
+
     std::array<int, sQuadVertexCount> mCornerVertexId;
     std::array<int, sQuadVertexCount> mEdgeId0;
     // only regular control quad (instead of quads from quadrangulated n-gons)
@@ -152,9 +153,11 @@ struct SubdTessellationFactor
 // this is the same method OpenSubdiv GPU evaluator uses
 // in util function OsdGetTessLevelsAdaptiveLimitPoints()
 finline int
-computeEdgeVertexCount(const Vec3f& v0, const Vec3f& v1,
-        float edgesPerScreenHeight, const scene_rdl2::math::Mat4f& c2s,
-        const std::vector<moonray::mcrt_common::Fishtum>& fishtums)
+computeEdgeVertexCount(const Vec3f& v0,
+                       const Vec3f& v1,
+                       float edgesPerScreenHeight,
+                       const scene_rdl2::math::Mat4f& c2s,
+                       const std::vector<moonray::mcrt_common::Fishtum>& fishtums)
 {
     // calculate the bounding sphere of this edge
     Vec3f pCenter = 0.5f * (v0 + v1);
@@ -182,8 +185,12 @@ computeEdgeVertexCount(const Vec3f& v0, const Vec3f& v1,
 //           midEdgeVertexId
 struct ControlEdge
 {
-    ControlEdge(int edgeId0, int midEdgeVertexId, int edgeId1):
-        mEdgeId0(edgeId0), mMidEdgeVertexId(midEdgeVertexId), mEdgeId1(edgeId1)
+    ControlEdge(int edgeId0,
+                int midEdgeVertexId,
+                int edgeId1) :
+        mEdgeId0(edgeId0),
+        mMidEdgeVertexId(midEdgeVertexId),
+        mEdgeId1(edgeId1)
     {}
 
     int mEdgeId0;
@@ -226,13 +233,15 @@ public:
 protected:
     // TopologyIdLookup is not intended for direct use but holding shared data
     // across subclasses
-    TopologyIdLookup(const int coarseVertexCount):
-        mCoarseVertexCount(coarseVertexCount), mCoarseEdgeCount(0)
+    TopologyIdLookup(const int coarseVertexCount) :
+        mCoarseVertexCount(coarseVertexCount),
+        mCoarseEdgeCount(0)
     {}
 
     virtual ~TopologyIdLookup() = default;
 
-    int64_t getEdgeKey(int64_t v0, int64_t v1) const
+    int64_t getEdgeKey(int64_t v0,
+                       int64_t v1) const
     {
         return v0 < v1 ? (v1 << 32) + v0 : (v0 << 32) + v1;
     }
@@ -246,8 +255,9 @@ protected:
 class PolyTopologyIdLookup : public TopologyIdLookup
 {
 public:
-    PolyTopologyIdLookup(const int vertexCount, const int faceVertexCount,
-            const PolygonMesh::IndexBuffer& indices);
+    PolyTopologyIdLookup(const int vertexCount,
+                         const int faceVertexCount,
+                         const PolygonMesh::IndexBuffer& indices);
 };
 
 // SubdTopologyIdLookup further provides edge/face/vertex id lookup for
@@ -256,15 +266,15 @@ class SubdTopologyIdLookup : public TopologyIdLookup
 {
 public:
     SubdTopologyIdLookup(const int faceVaryingVertexCount,
-            const SubdivisionMesh::FaceVertexCount& faceVertexCount,
-            const SubdivisionMesh::IndexBuffer& faceVaryingIndices,
-            bool noTessellation);
+                         const SubdivisionMesh::FaceVertexCount& faceVertexCount,
+                         const SubdivisionMesh::IndexBuffer& faceVaryingIndices,
+                         bool noTessellation);
 
     SubdTopologyIdLookup(const int faceVaryingVertexCount,
-            const SubdivisionMesh::FaceVertexCount& faceVertexCount,
-            const SubdivisionMesh::IndexBuffer& controlIndices,
-            const SubdivisionMesh::IndexBuffer& faceVaryingIndices,
-            bool noTessellation);
+                         const SubdivisionMesh::FaceVertexCount& faceVertexCount,
+                         const SubdivisionMesh::IndexBuffer& controlIndices,
+                         const SubdivisionMesh::IndexBuffer& faceVaryingIndices,
+                         bool noTessellation);
 
     const FaceVaryingSeams& getFaceVaryingSeams() const
     {
@@ -303,9 +313,12 @@ public:
     }
 
 private:
-    int getEdgeChildEdge(int edgeId, bool firstChild) const
+    int getEdgeChildEdge(int edgeId,
+                         bool firstChild) const
     {
-        return firstChild ? 2 * edgeId : 2 * edgeId + 1;
+        return firstChild ?
+               2 * edgeId :
+               2 * edgeId + 1;
     }
 
 private:
@@ -332,11 +345,12 @@ public:
         return mTotalVertexCount;
     }
 
-    int getInteriorVertexId(int face, int row, int col,
-            int interiorColVertexCount) const
+    int getInteriorVertexId(int face,
+                            int row,
+                            int col,
+                            int interiorColVertexCount) const
     {
-        return mInteriorVertexIdsStart[face] +
-            interiorColVertexCount * row + col;
+        return mInteriorVertexIdsStart[face] + interiorColVertexCount * row + col;
     }
 
     int getTessellatedVertexId(int controlVertexId) const
@@ -366,11 +380,10 @@ protected:
 class PolyTessellatedVertexLookup : public TessellatedVertexLookup
 {
 public:
-    PolyTessellatedVertexLookup(
-            const std::vector<PolyFaceTopology>& faceTopologies,
-            const PolyTopologyIdLookup& topologyIdLookup,
-            const std::vector<PolyTessellationFactor>& tessellationFactors,
-            size_t faceVertexCount);
+    PolyTessellatedVertexLookup(const std::vector<PolyFaceTopology>& faceTopologies,
+                                const PolyTopologyIdLookup& topologyIdLookup,
+                                const std::vector<PolyTessellationFactor>& tessellationFactors,
+                                size_t faceVertexCount);
 
     // the convention for edge tessellation vertex id lookup is:
     // the edge vertex id increase from the cornervertex with smaller vertex id
@@ -388,12 +401,16 @@ public:
     //     getEdgeVertexId(edgeId, 1, reverseEdge) = v1
     //     getEdgeVertexId(edgeId, 2, reverseEdge) = v2
     //
-    int getEdgeVertexId(int edgeId, int n, bool reverseEdge) const
+    int getEdgeVertexId(int edgeId,
+                        int n,
+                        bool reverseEdge) const
     {
         MNRY_ASSERT(n < mOuterEdgeVertexIdsCount[edgeId]);
         int start = mOuterEdgeVertexIdsStart[edgeId];
+
         return reverseEdge ?
-            start + mOuterEdgeVertexIdsCount[edgeId] - 1 - n : start + n;
+               start + mOuterEdgeVertexIdsCount[edgeId] - 1 - n :
+               start + n;
     }
 
     // for quad face usage
@@ -413,8 +430,11 @@ public:
     // return the vertex id on ith interior ring, cth edge, nth vertex
     // i = interiorRingIndex
     // c = cornerIndex
-    int getTriangleInteriorVertexId(int face, int maxEdgeVertexCount,
-            int interiorRingIndex, int cornerIndex, int n) const;
+    int getTriangleInteriorVertexId(int face,
+                                    int maxEdgeVertexCount,
+                                    int interiorRingIndex,
+                                    int cornerIndex,
+                                    int n) const;
 
     // for triangle face usage
     int getTriangleRingCount(const PolyFaceTopology& faceTopology) const;
@@ -428,6 +448,7 @@ public:
 
 private:
     size_t mFaceVertexCount;
+
     // rough estimation of the final tessellated face count
     size_t mEstimatedFaceCount;
 };
@@ -438,11 +459,10 @@ private:
 class SubdTessellatedVertexLookup : public TessellatedVertexLookup
 {
 public:
-    SubdTessellatedVertexLookup(
-            const std::vector<SubdQuadTopology>& quadTopologies,
-            const SubdTopologyIdLookup& topologyIdLookup,
-            const std::vector<SubdTessellationFactor>& tessellationFactors,
-            bool noTessellation);
+    SubdTessellatedVertexLookup(const std::vector<SubdQuadTopology>& quadTopologies,
+                                const SubdTopologyIdLookup& topologyIdLookup,
+                                const std::vector<SubdTessellationFactor>& tessellationFactors,
+                                bool noTessellation);
 
     // the convention for edge tessellation vertex id lookup is:
     // the edge vertex id increase from the end point that is not on the
@@ -465,12 +485,16 @@ public:
     //     getEdgeVertexId(edgeId, 1, endAtEdgeMiddle) = v1
     //     getEdgeVertexId(edgeId, 2, endAtEdgeMiddle) = v0
     //
-    int getEdgeVertexId(int edgeId, int n, bool endAtEdgeMiddle) const
+    int getEdgeVertexId(int edgeId,
+                        int n,
+                        bool endAtEdgeMiddle) const
     {
         MNRY_ASSERT(n < mOuterEdgeVertexIdsCount[edgeId]);
         int start = mOuterEdgeVertexIdsStart[edgeId];
+
         return endAtEdgeMiddle ?
-            start + n : start + mOuterEdgeVertexIdsCount[edgeId] - 1 - n;
+               start + n :
+               start + mOuterEdgeVertexIdsCount[edgeId] - 1 - n;
     }
 
     int getInteriorRowVertexCount(const SubdQuadTopology& quadTopology) const;
@@ -514,19 +538,25 @@ struct StitchPoint
 // By stitching vertex based on slope rate comparison. The idea is similar
 // to Bresenham's line algorithm
 void
-stitchRings(const StitchPoint* innerRing, const Vec2f* innerRingUv,
-        int innerRingVertexCount,
-        const StitchPoint* outerRing, const Vec2f* outerRingUv,
-        int outerRingVertexCount,
-        std::vector<geom::Primitive::IndexType>& indices,
-        const int controlFaceId, std::vector<int>* tessellatedToControlFace,
-        std::vector<Vec2f>* faceVaryingUv);
+stitchRings(const StitchPoint* innerRing,
+            const Vec2f* innerRingUv,
+            int innerRingVertexCount,
+            const StitchPoint* outerRing,
+            const Vec2f* outerRingUv,
+            int outerRingVertexCount,
+            std::vector<geom::Primitive::IndexType>& indices,
+            const int controlFaceId,
+            std::vector<int>* tessellatedToControlFace,
+            std::vector<Vec2f>* faceVaryingUv);
 
 void
-stitchRings(const StitchPoint* innerRing, int innerRingVertexCount,
-        const StitchPoint* outerRing, int outerRingVertexCount,
-        std::vector<geom::Primitive::IndexType>& indices,
-        const int controlFaceId, std::vector<int>* tessellatedToControlFace);
+stitchRings(const StitchPoint* innerRing,
+            int innerRingVertexCount,
+            const StitchPoint* outerRing,
+            int outerRingVertexCount,
+            std::vector<geom::Primitive::IndexType>& indices,
+            const int controlFaceId,
+            std::vector<int>* tessellatedToControlFace);
 
 // output a part of inner ring and outer ring based on cornerIndex
 // 0 for bottom side
@@ -536,22 +566,32 @@ stitchRings(const StitchPoint* innerRing, int innerRingVertexCount,
 // subdivision mesh version
 void
 generateSubdStitchRings(scene_rdl2::alloc::Arena* arena,
-        const SubdQuadTopology& quadTopology, int fid, size_t cornerIndex,
-        const SubdTessellatedVertexLookup& tessellatedVertexLookup,
-        int interiorRowVertexCount, int interiorColVertexCount,
-        StitchPoint* & innerRing, int& innerRingVertexCount,
-        StitchPoint* & outerRing, int& outerRingVertexCount);
+                        const SubdQuadTopology& quadTopology,
+                        int fid,
+                        size_t cornerIndex,
+                        const SubdTessellatedVertexLookup& tessellatedVertexLookup,
+                        int interiorRowVertexCount,
+                        int interiorColVertexCount,
+                        StitchPoint* & innerRing,
+                        int& innerRingVertexCount,
+                        StitchPoint* & outerRing,
+                        int& outerRingVertexCount);
 
 // quad polygon mesh version
 void
 generateQuadStitchRings(scene_rdl2::alloc::Arena* arena,
-        const PolyFaceTopology& quadTopology, int fid, size_t cornerIndex,
-        const PolyTessellatedVertexLookup& tessellatedVertexLookup,
-        int interiorRowVertexCount, int interiorColVertexCount,
-        StitchPoint* & innerRing, Vec2f* & innerRingUv,
-        int& innerRingVertexCount,
-        StitchPoint* & outerRing, Vec2f* & outerRingUv,
-        int& outerRingVertexCount);
+                        const PolyFaceTopology& quadTopology,
+                        int fid,
+                        size_t cornerIndex,
+                        const PolyTessellatedVertexLookup& tessellatedVertexLookup,
+                        int interiorRowVertexCount,
+                        int interiorColVertexCount,
+                        StitchPoint* & innerRing,
+                        Vec2f* & innerRingUv,
+                        int& innerRingVertexCount,
+                        StitchPoint* & outerRing,
+                        Vec2f* & outerRingUv,
+                        int& outerRingVertexCount);
 
 // output a part of inner ring and outer ring based on cornerIndex
 // 0 for v0 -> v1 side
@@ -560,13 +600,18 @@ generateQuadStitchRings(scene_rdl2::alloc::Arena* arena,
 // triangle polygon mesh version
 void
 generateTriangleStitchRings(scene_rdl2::alloc::Arena* arena,
-        const PolyFaceTopology& faceTopology, int fid, size_t cornerIndex,
-        const PolyTessellatedVertexLookup& tessellatedVertexLookup,
-        int maxEdgeVertexCount, float ringUvDelta,
-        StitchPoint* & innerRing, Vec2f* & innerRingUv,
-        int& innerRingVertexCount,
-        StitchPoint* & outerRing, Vec2f* & outerRingUv,
-        int& outerRingVertexCount);
+                            const PolyFaceTopology& faceTopology,
+                            int fid,
+                            size_t cornerIndex,
+                            const PolyTessellatedVertexLookup& tessellatedVertexLookup,
+                            int maxEdgeVertexCount,
+                            float ringUvDelta,
+                            StitchPoint* & innerRing,
+                            Vec2f* & innerRingUv,
+                            int& innerRingVertexCount,
+                            StitchPoint* & outerRing,
+                            Vec2f* & outerRingUv,
+                            int& outerRingVertexCount);
 
 // when the tessellation factors of bottom/up edges are identical and
 // the tessellationfactors of left/right edges are identical, collect
@@ -574,9 +619,12 @@ generateTriangleStitchRings(scene_rdl2::alloc::Arena* arena,
 // which can be used to generate better topology index buffer
 void
 collectUniformTessellatedVertices(scene_rdl2::alloc::Arena *arena,
-        const PolyFaceTopology& faceTopology, int baseFaceId,
-        const PolyTessellatedVertexLookup& tessellatedVertexLookup,
-        int* & vids, int& rowVertexCount, int& colVertexCount);
+                                  const PolyFaceTopology& faceTopology,
+                                  int baseFaceId,
+                                  const PolyTessellatedVertexLookup& tessellatedVertexLookup,
+                                  int* & vids,
+                                  int& rowVertexCount,
+                                  int& colVertexCount);
 
 } // namespace internal
 } // namespace geom

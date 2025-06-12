@@ -35,23 +35,29 @@ public:
     virtual bool canIntersect() const override { return false; }
 
     virtual void postIntersect(mcrt_common::ThreadLocalState& tls,
-            const scene_rdl2::rdl2::Layer* pRdlLayer, const mcrt_common::Ray& ray,
-            shading::Intersection& intersection) const override;
+                               const scene_rdl2::rdl2::Layer* pRdlLayer,
+                               const mcrt_common::Ray& ray,
+                               shading::Intersection& intersection) const override;
 
     virtual bool computeIntersectCurvature(const mcrt_common::Ray& ray,
-            const shading::Intersection& intersection,
-            scene_rdl2::math::Vec3f& dNds, scene_rdl2::math::Vec3f& dNdt) const override;
+                                           const shading::Intersection& intersection,
+                                           scene_rdl2::math::Vec3f& dNds,
+                                           scene_rdl2::math::Vec3f& dNdt) const override;
 
 private:
 
     void computeAttributesDerivatives(const shading::AttributeTable* table,
-            float invDs, int vertexOffset,
-            float time, shading::Intersection& intersection) const;
+                                      float invDs,
+                                      int vertexOffset,
+                                      float time,
+                                      shading::Intersection& intersection) const;
 
     template<typename T> void
     computeVertexAttributeDerivatives(shading::TypedAttributeKey<T> key,
-            float invDs, int vertexOffset,
-            float time, shading::Intersection& intersection) const
+                                      float invDs,
+                                      int vertexOffset,
+                                      float time,
+                                      shading::Intersection& intersection) const
     {
         int vid1 = vertexOffset;
         int vid2 = vertexOffset + 1;

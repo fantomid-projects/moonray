@@ -14,8 +14,12 @@ namespace internal {
 
 class BufferDesc {
 public:
-    explicit BufferDesc(const void* data = nullptr, size_t offset = 0, size_t stride = 0):
-        mData(data), mOffset(offset), mStride(stride) {}
+    explicit BufferDesc(const void* data = nullptr,
+                        size_t offset = 0,
+                        size_t stride = 0) :
+        mData(data),
+        mOffset(offset),
+        mStride(stride) {}
 
     const void* mData;
     size_t mOffset;

@@ -160,7 +160,8 @@ protected:
 
         // Set up aux vertex buffer for Bezier control points
         int numBezierControlPoints = scene_rdl2::math::min(4, numVertexSets + numVelocitySets + numAccelerationSets);
-        VertexBuffer<VecType, InterleavedTraits> bezierControlPoints(numVertices, numBezierControlPoints);
+        VertexBuffer<VecType, InterleavedTraits> bezierControlPoints(numVertices,
+                                                                     numBezierControlPoints);
 
         // We make use of parallel_for to loop over vertices
         tbb::blocked_range<size_t> range = tbb::blocked_range<size_t>(0, numVertices);
@@ -169,11 +170,13 @@ protected:
             // If there's 1 velocity set, we support either linear or quadratic motion.
             const shading::PrimitiveAttribute<Vec3f>& vel =
                 primAttrTab->getAttribute(shading::StandardAttributes::sVelocity, 0);
+
             // Acceleration-based, quadratic motion
             const shading::PrimitiveAttribute<Vec3f>& acc =
                 primAttrTab->hasAttribute(shading::StandardAttributes::sAcceleration)    ?
                 primAttrTab->getAttribute(shading::StandardAttributes::sAcceleration, 0) :
                 primAttrTab->getAttribute(shading::TypedAttributeKey<Vec3f>("accel"));
+
             tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
                 for (size_t i = r.begin(); i < r.end(); i++) {
                     VecType p = vertices(i, 0);
@@ -230,10 +233,8 @@ protected:
             //   pB = p1 - (deltaT/3) * v1
 
             MNRY_ASSERT_REQUIRE(numVertexSets == 2);
-            const shading::PrimitiveAttribute<Vec3f>& vel0 =
-                primAttrTab->getAttribute(shading::StandardAttributes::sVelocity, 0);
-            const shading::PrimitiveAttribute<Vec3f>& vel1 =
-                primAttrTab->getAttribute(shading::StandardAttributes::sVelocity, 1);
+            const shading::PrimitiveAttribute<Vec3f>& vel0 = primAttrTab->getAttribute(shading::StandardAttributes::sVelocity, 0);
+            const shading::PrimitiveAttribute<Vec3f>& vel1 = primAttrTab->getAttribute(shading::StandardAttributes::sVelocity, 1);
             float oneThirdDt = (1.0f / 3.0f) * motionBlurParams.getDt();
             tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
                 for (size_t i = r.begin(); i < r.end(); i++) {
@@ -299,7 +300,8 @@ protected:
 
         // Set up aux vertex buffer for Bezier control points
         int numBezierControlPoints = scene_rdl2::math::min(4, numVertexSets + numVelocitySets + numAccelerationSets);
-        VertexBuffer<Vec3fa, InterleavedTraits> bezierControlPoints(numVertices, numBezierControlPoints);
+        VertexBuffer<Vec3fa, InterleavedTraits> bezierControlPoints(numVertices,
+                                                                    numBezierControlPoints);
 
         // We make use of parallel_for to loop over vertices
         tbb::blocked_range<size_t> range = tbb::blocked_range<size_t>(0, numVertices);
@@ -307,11 +309,13 @@ protected:
         if (numAccelerationSets == 1 && numVelocitySets >= 1) {
             // If there's 1 velocity set, we support either linear or quadratic motion.
             const shading::PrimitiveAttribute<Vec3f>& vel = primAttrTab->getAttribute(shading::StandardAttributes::sVelocity, 0);
+
             // Acceleration-based, quadratic motion
             const shading::PrimitiveAttribute<Vec3f>& acc =
                 primAttrTab->hasAttribute(shading::StandardAttributes::sAcceleration)    ?
                 primAttrTab->getAttribute(shading::StandardAttributes::sAcceleration, 0) :
                 primAttrTab->getAttribute(shading::TypedAttributeKey<Vec3f>("accel"));
+
             tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
                 for (size_t i = r.begin(); i < r.end(); i++) {
                     Vec3fa p = vertices(i, 0);
@@ -381,8 +385,7 @@ protected:
             });
         } else if (numVelocitySets == 1) {
             // Linear motion
-            const shading::PrimitiveAttribute<Vec3f>& vel =
-                primAttrTab->getAttribute(shading::StandardAttributes::sVelocity, 0);
+            const shading::PrimitiveAttribute<Vec3f>& vel = primAttrTab->getAttribute(shading::StandardAttributes::sVelocity, 0);
             tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
                 for (size_t i = r.begin(); i < r.end(); i++) {
                     Vec3fa p = vertices(i, 0);
@@ -399,7 +402,8 @@ protected:
     // Use Bezier control points to generate sufficient time steps;
     // replace vertex buffer with one containing the interpolated positions.
     template <class VecType, template <typename, typename> class Traits>
-    void generateMotionSamples(VertexBuffer<VecType, Traits>& vertices, const MotionBlurParams& motionBlurParams,
+    void generateMotionSamples(VertexBuffer<VecType, Traits>& vertices,
+                               const MotionBlurParams& motionBlurParams,
                                size_t numTimeSteps) {
 
         size_t numVertices = vertices.size();
@@ -492,7 +496,8 @@ protected:
     // Special version for Vec3fa, to preserve & scale curve radius
     template <template <typename, typename> class Traits>
     void applyTransformationToSingleTimeStep(VertexBuffer<Vec3fa, Traits>& vertices,
-                                             const scene_rdl2::math::Xform3f &p2r, int timeStep) {
+                                             const scene_rdl2::math::Xform3f &p2r,
+                                             int timeStep) {
 
         // compute the curve radius scaling that is applied to the w component
         float radiusScale = (length(p2r.l.vx) + length(p2r.l.vy) + length(p2r.l.vz)) / 3.f;
@@ -512,7 +517,8 @@ protected:
     // Generic version for other vector types
     template <class VecType, template <typename, typename> class Traits>
     void applyTransformationToSingleTimeStep(VertexBuffer<VecType, Traits>& vertices,
-                                             const scene_rdl2::math::Xform3f &p2r, int timeStep) {
+                                             const scene_rdl2::math::Xform3f &p2r,
+                                             int timeStep) {
         // Loop over vertices
         tbb::blocked_range<size_t> range = tbb::blocked_range<size_t>(0, vertices.size());
         tbb::parallel_for(range, [&](const tbb::blocked_range<size_t> &r) {
@@ -527,7 +533,8 @@ protected:
     // Apply the prim2render transformation to all positions;
     // if 2 transformations are supplied, lerp between them over the shutter duration.
     template <class VecType, template <typename, typename> class Traits>
-    void applyTransformation(VertexBuffer<VecType, Traits>& vertices, const shading::XformSamples& prim2render,
+    void applyTransformation(VertexBuffer<VecType, Traits>& vertices,
+                             const shading::XformSamples& prim2render,
                              const MotionBlurParams& motionBlurParams) {
  
         // Get shutter interval
@@ -570,11 +577,15 @@ protected:
                     scene_rdl2::math::decompose(prim2render[1], p2rB);
                     p2r = scene_rdl2::math::slerp(p2rA, p2rB, t).combined();
                 } else {
-                    p2r = scene_rdl2::math::Xform3f(scene_rdl2::math::lerp(prim2render[0], prim2render[1], t));
+                    p2r = scene_rdl2::math::Xform3f(scene_rdl2::math::lerp(prim2render[0],
+                                                                           prim2render[1],
+                                                                           t));
                 }
             }
  
-            applyTransformationToSingleTimeStep(vertices, p2r, j);
+            applyTransformationToSingleTimeStep(vertices,
+                                                p2r,
+                                                j);
         }
     }
 
@@ -604,6 +615,7 @@ protected:
             if (primAttrTab && primAttrTab->hasAttribute(shading::StandardAttributes::sVelocity)) {
                 numVelocitySets = primAttrTab->getTimeSampleCount(shading::StandardAttributes::sVelocity);
             }
+
             if (numVertexSets > 2 || (numVertexSets == 2 && numVelocitySets == 1)) {
                 // numVertexSets > 2 catches the case where curved motion blur has been applied
                 // The other case, (numVertexSets == 2 && numVelocitySets == 1), catches the case where
@@ -648,9 +660,8 @@ private:
     /// @param proceduralContext per procedural/layer context that is passed in
     ///     from Procedural::generate()/Procedural::update() method
     /// @param prim2render primitive space to rendering space transform
-    virtual void transformPrimitive(
-            const MotionBlurParams &motionBlurParams,
-            const shading::XformSamples& prim2render) = 0;
+    virtual void transformPrimitive(const MotionBlurParams &motionBlurParams,
+                                    const shading::XformSamples& prim2render) = 0;
 
 private:
     struct Impl;

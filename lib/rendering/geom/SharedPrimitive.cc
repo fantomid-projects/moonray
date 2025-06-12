@@ -15,12 +15,14 @@ namespace geom {
 
 struct SharedPrimitive::Impl {
     explicit Impl(std::unique_ptr<Primitive>&& primitive) :
-        mPrimitive(std::move(primitive)), mBVHScene(nullptr),
-        mHasSurfaceAssignment(true), mHasVolumeAssignment(false) {}
+        mPrimitive(std::move(primitive)),
+        mBVHScene(nullptr),
+        mHasSurfaceAssignment(true),
+        mHasVolumeAssignment(false) {}
 
     ~Impl() {
         mPrimitive.reset();
-       resetBVHScene();
+        resetBVHScene();
     }
 
     void resetBVHScene(RTCScene bvhScene = nullptr) {

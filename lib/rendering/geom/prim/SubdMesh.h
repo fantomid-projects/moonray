@@ -40,10 +40,10 @@ class ControlMeshData
 {
 public:
     ControlMeshData(SubdivisionMesh::Scheme scheme,
-            SubdivisionMesh::FaceVertexCount&& faceVertexCount,
-            SubdivisionMesh::IndexBuffer&& indices,
-            SubdivisionMesh::VertexBuffer&& vertices,
-            shading::PrimitiveAttributeTable&& primitiveAttributeTable):
+                    SubdivisionMesh::FaceVertexCount&& faceVertexCount,
+                    SubdivisionMesh::IndexBuffer&& indices,
+                    SubdivisionMesh::VertexBuffer&& vertices,
+                    shading::PrimitiveAttributeTable&& primitiveAttributeTable):
         mScheme(scheme),
         mVertices(std::move(vertices)),
         mIndices(std::move(indices)),
@@ -68,32 +68,40 @@ public:
                 }
             }
         }
+
         const shading::PrimitiveAttribute<scene_rdl2::math::Vec2f>& textureSt =
             mPrimitiveAttributeTable.getAttribute(stKey);
+
         mTextureVertices.resize(mVertices.size());
         shading::AttributeRate stRate = textureSt.getRate();
+
         switch (stRate) {
         case shading::RATE_UNIFORM:
         //case shading::RATE_PART: // Unsupported as faceToPart(i) not accessible here
-        case shading::RATE_FACE_VARYING: {
+        case shading::RATE_FACE_VARYING:
+        {
             mTextureRate = shading::RATE_FACE_VARYING;
+
             // This is exactly the same operation we did for other face varying
             // attributes during FaceVaryingAttributes::addAttributeBuffer
-            std::vector<std::vector<FVarVertex<scene_rdl2::math::Vec2f>>> textureVertexGroups(
-                mVertices.size());
+            std::vector<std::vector<FVarVertex<scene_rdl2::math::Vec2f>>> textureVertexGroups(mVertices.size());
+
             size_t indexOffset = 0;
             size_t faceCount = mFaceVertexCount.size();
             mTextureIndices.resize(mIndices.size());
+
             for (size_t f = 0; f < faceCount; ++f) {
                 size_t nFv = mFaceVertexCount[f];
                 for (size_t v = 0; v < nFv; ++v) {
                     int vid = mIndices[indexOffset + v];
                     size_t i;
+
                     switch (stRate) {
                     case shading::RATE_UNIFORM: i = f; break;
                     //case shading::RATE_PART: i = faceToPart(f); break;
                     default: i = indexOffset + v; break;
                     }
+
                     const scene_rdl2::math::Vec2f& st = textureSt[i];
                     if (textureVertexGroups[vid].empty()) {
                         int stVid = vid;
@@ -102,11 +110,9 @@ public:
                         mTextureIndices[indexOffset + v] = stVid;
                     } else {
                         bool foundDuplicatedSt = false;
-                        for (const auto& textureVertex :
-                            textureVertexGroups[vid]) {
+                        for (const auto& textureVertex : textureVertexGroups[vid]) {
                             if (scene_rdl2::math::isEqual(textureVertex.mData, st)) {
-                                mTextureIndices[indexOffset + v] =
-                                    textureVertex.mVertexId;
+                                mTextureIndices[indexOffset + v] = textureVertex.mVertexId;
                                 foundDuplicatedSt = true;
                                 break;
                             }
@@ -121,7 +127,8 @@ public:
                 }
                 indexOffset += nFv;
             }
-            break;}
+            break;
+        }
         case shading::RATE_VARYING:
         case shading::RATE_VERTEX:
             mTextureRate = shading::RATE_VERTEX;
@@ -155,7 +162,7 @@ public:
         for (size_t i = 0; i < mFaceVertexCount.size(); ++i) {
             int nFv = mFaceVertexCount[i];
             std::reverse(mTextureIndices.begin() + indexOffset,
-                mTextureIndices.begin() + indexOffset + nFv);
+                         mTextureIndices.begin() + indexOffset + nFv);
             indexOffset += nFv;
         }
     }
@@ -192,15 +199,19 @@ public:
 
     // Vertex buffer for control mesh
     SubdivisionMesh::VertexBuffer mVertices;
+
     // Index buffer for control mesh
     SubdivisionMesh::IndexBuffer mIndices;
+
     // face vertex count for control mesh
     SubdivisionMesh::FaceVertexCount mFaceVertexCount;
 
     // Optional vertex buffer for control mesh texture ST
     shading::Vector<scene_rdl2::math::Vec2f> mTextureVertices;
+
     // Optional index buffer for control mesh texture ST
     SubdivisionMesh::IndexBuffer mTextureIndices;
+
     // Attribute rate for optional control mesh texture ST
     shading::AttributeRate mTextureRate;
     shading::PrimitiveAttributeTable mPrimitiveAttributeTable;
@@ -212,9 +223,11 @@ public:
     // Optional sharpness and index buffers for creases (semi-sharp edges):
     SubdivisionMesh::SharpnessBuffer mCreaseSharpness;
     SubdivisionMesh::IndexBuffer mCreaseIndices;
+
     // Optional sharpness and index buffers for corners (semi-sharp vertices):
     SubdivisionMesh::SharpnessBuffer mCornerSharpness;
     SubdivisionMesh::IndexBuffer mCornerIndices;
+
     // Optional index buffer for face holes:
     SubdivisionMesh::IndexBuffer mHoleIndices;
 
@@ -233,21 +246,20 @@ class SubdMesh : public Mesh
 {
 public:
     /// Constructor / Destructor
-    SubdMesh(
-        SubdivisionMesh::Scheme scheme,
-        SubdivisionMesh::FaceVertexCount&& faceVertexCount,
-        SubdivisionMesh::IndexBuffer&& indices,
-        SubdivisionMesh::VertexBuffer&& vertices,
-        LayerAssignmentId&& layerAssignmentId,
-        shading::PrimitiveAttributeTable&& primitiveAttributeTable):
-            Mesh(std::move(layerAssignmentId)),
-            mMotionBlurType(scene_rdl2::rdl2::MotionBlurType::STATIC),
-            mCurvedMotionBlurSampleCount(0),
-            mControlMeshData(new ControlMeshData(scheme,
-                                                 std::move(faceVertexCount),
-                                                 std::move(indices),
-                                                 std::move(vertices),
-                                                 std::move(primitiveAttributeTable)))
+    SubdMesh(SubdivisionMesh::Scheme scheme,
+             SubdivisionMesh::FaceVertexCount&& faceVertexCount,
+             SubdivisionMesh::IndexBuffer&& indices,
+             SubdivisionMesh::VertexBuffer&& vertices,
+             LayerAssignmentId&& layerAssignmentId,
+             shading::PrimitiveAttributeTable&& primitiveAttributeTable) :
+        Mesh(std::move(layerAssignmentId)),
+        mMotionBlurType(scene_rdl2::rdl2::MotionBlurType::STATIC),
+        mCurvedMotionBlurSampleCount(0),
+        mControlMeshData(new ControlMeshData(scheme,
+                                             std::move(faceVertexCount),
+                                             std::move(indices),
+                                             std::move(vertices),
+                                             std::move(primitiveAttributeTable)))
         {}
 
     virtual ~SubdMesh() = default;
@@ -263,10 +275,11 @@ public:
     virtual size_t getTessellatedMeshVertexCount() const = 0;
 
     virtual void setTransform(const shading::XformSamples& xforms,
-            float shutterOpenDelta, float shutterCloseDelta) = 0;
+                              float shutterOpenDelta,
+                              float shutterCloseDelta) = 0;
 
     virtual void setParts(size_t partCount,
-            SubdivisionMesh::FaceToPartBuffer&& faceToPart) = 0;
+                          SubdivisionMesh::FaceToPartBuffer&& faceToPart) = 0;
 
     /// explicitely disable copy constructor and assignment operator
     SubdMesh(const SubdMesh &other) = delete;
@@ -298,17 +311,17 @@ public:
         return mControlMeshData->mFVarLinearInterpolation;
     }
 
-    void setSubdCreases(SubdivisionMesh::IndexBuffer&&     creaseIndices,
+    void setSubdCreases(SubdivisionMesh::IndexBuffer&& creaseIndices,
                         SubdivisionMesh::SharpnessBuffer&& creaseSharpnesses)
     {
-        mControlMeshData->mCreaseIndices   = std::move(creaseIndices);
+        mControlMeshData->mCreaseIndices = std::move(creaseIndices);
         mControlMeshData->mCreaseSharpness = std::move(creaseSharpnesses);
     }
 
-    void setSubdCorners(SubdivisionMesh::IndexBuffer&&     cornerIndices,
+    void setSubdCorners(SubdivisionMesh::IndexBuffer&& cornerIndices,
                         SubdivisionMesh::SharpnessBuffer&& cornerSharpness)
     {
-        mControlMeshData->mCornerIndices   = std::move(cornerIndices);
+        mControlMeshData->mCornerIndices = std::move(cornerIndices);
         mControlMeshData->mCornerSharpness = std::move(cornerSharpness);
     }
 

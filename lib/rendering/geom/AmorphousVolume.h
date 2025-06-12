@@ -23,9 +23,9 @@ class AmorphousVolume : public VdbVolume
 {
 public:
     AmorphousVolume(const VdbInitData& vdbInitData,
-            const MotionBlurParams& motionBlurParams,
-            LayerAssignmentId&& layerAssignmentId,
-            shading::PrimitiveAttributeTable&& primitiveAttributeTable);
+                    const MotionBlurParams& motionBlurParams,
+                    LayerAssignmentId&& layerAssignmentId,
+                    shading::PrimitiveAttributeTable&& primitiveAttributeTable);
 
     ~AmorphousVolume();
 

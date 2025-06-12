@@ -36,6 +36,7 @@ public:
 private:
     /// @remark For renderer internal use, procedural should never call this
     void setBVHScene(void* bvhScene);
+
     /// @remark For renderer internal use, procedural should never call this
     void* getBVHScene();
 

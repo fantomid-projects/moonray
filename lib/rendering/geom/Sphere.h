@@ -21,8 +21,9 @@ namespace geom {
 class Sphere : public moonray::geom::Primitive
 {
 public:
-    Sphere(float radius, LayerAssignmentId&& layerAssignmentId,
-            shading::PrimitiveAttributeTable&& primitiveAttributeTable);
+    Sphere(float radius,
+           LayerAssignmentId&& layerAssignmentId,
+           shading::PrimitiveAttributeTable&& primitiveAttributeTable);
 
     ~Sphere();
 
@@ -40,7 +41,9 @@ public:
     /// @return name the name of this primitive
     const std::string& getName() const;
 
-    void setClippingRange(float zMin, float zMax, float sweepAngle);
+    void setClippingRange(float zMin,
+                          float zMax,
+                          float sweepAngle);
 
     // set whether the primitive is single sided
     void setIsSingleSided(bool isSingleSided);
@@ -61,9 +64,8 @@ private:
 
     /// @remark For renderer internal use, procedural should never call this
     /// @internal
-    virtual void transformPrimitive(
-            const MotionBlurParams& motionBlurParams,
-            const shading::XformSamples& prim2render) override;
+    virtual void transformPrimitive(const MotionBlurParams& motionBlurParams,
+                                    const shading::XformSamples& prim2render) override;
 
 private:
     struct Impl;

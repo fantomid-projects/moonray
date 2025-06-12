@@ -21,8 +21,10 @@ namespace internal {
 class BVHHandle {
 public:
 
-    BVHHandle(RTCScene& parentScene, uint32_t geomID):
-        mParentScene(parentScene), mGeomID(geomID) {}
+    BVHHandle(RTCScene& parentScene,
+              uint32_t geomID):
+              mParentScene(parentScene),
+              mGeomID(geomID) {}
 
     ~BVHHandle() {
         if (mParentScene != nullptr && mGeomID != RTC_INVALID_GEOMETRY_ID) {
@@ -35,7 +37,8 @@ public:
 
     void update() {
         if (mParentScene != nullptr && mGeomID != RTC_INVALID_GEOMETRY_ID) {
-            rtcCommitGeometry(rtcGetGeometry(mParentScene, mGeomID));
+            rtcCommitGeometry(rtcGetGeometry(mParentScene,
+                                             mGeomID));
         }
     }
 

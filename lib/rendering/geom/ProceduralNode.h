@@ -29,7 +29,7 @@ class ProceduralNode : public Procedural
 {
 public:
     /// Constructor / Destructor
-	explicit ProceduralNode(const State &state);
+    explicit ProceduralNode(const State &state);
 
     ~ProceduralNode();
 
@@ -44,19 +44,19 @@ public:
 
     /// For each Primitive in this procedural, apply a visitor function.
     virtual void forEachPrimitive(PrimitiveVisitor& visitor,
-            bool parallel = true) override;
+            			  bool parallel = true) override;
 
     /// For each static Primitive, apply a visitor function.
     virtual void forEachStatic(PrimitiveVisitor& visitor,
-            bool parallel = true) override;
+            		       bool parallel = true) override;
 
     /// For each dynamic Primitive, apply a visitor function.
     virtual void forEachDynamic(PrimitiveVisitor& visitor,
-            bool parallel = true) override;
+            		        bool parallel = true) override;
 
     /// For each deformative Primitive, apply a visitor function.
     virtual void forEachDeformable(PrimitiveVisitor& visitor,
-            bool parallel = true) override;
+            			   bool parallel = true) override;
 
     /// The count of primitives in this procedural
     virtual Procedural::size_type getPrimitivesCount() const override;

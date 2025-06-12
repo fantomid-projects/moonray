@@ -96,11 +96,14 @@ inline static void moveArraySamples(Allocator& alloc,
     size_type n = 0;
     try {
         for (n = 0; n < size; ++n) {
-            traits::construct(alloc, p + n, std::move_if_noexcept(src[n]));
+            traits::construct(alloc,
+                              p + n,
+                              std::move_if_noexcept(src[n]));
         }
     } catch (...) {
         for (size_type i = 0; i < n; ++i) {
-            traits::destroy(alloc, p + 1);
+            traits::destroy(alloc,
+                            p + 1);
         }
         throw;
     }

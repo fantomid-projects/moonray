@@ -189,8 +189,8 @@ public:
 
 private:
     // Initially, "a" is const, and "b" is varying.
-    static void swapConstVarying(
-            LayerAssignmentId& a, LayerAssignmentId& b) noexcept
+    static void swapConstVarying(LayerAssignmentId& a,
+                                 LayerAssignmentId& b) noexcept
     {
         // Technically, we don't have to destroy an int, but it doesn't hurt.
         // Let's be consistent.
@@ -220,7 +220,7 @@ private:
 namespace std
 {
     inline void swap(moonray::geom::LayerAssignmentId& a,
-            moonray::geom::LayerAssignmentId& b) noexcept
+                     moonray::geom::LayerAssignmentId& b) noexcept
     {
         a.swap(b);
     }

@@ -19,9 +19,11 @@ namespace geom {
 struct TransformedPrimitive::Impl
 {
     explicit Impl(const shading::XformSamples& xform,
-            std::unique_ptr<Primitive> primitive) :
-        mXform(xform), mPrimitive(std::move(primitive)),
-        mHasBeenApplied(false) {
+                  std::unique_ptr<Primitive> primitive) :
+        mXform(xform),
+        mPrimitive(std::move(primitive)),
+        mHasBeenApplied(false)
+    {
         if (mXform.empty()) {
             mXform.push_back(Mat43(scene_rdl2::math::one));
         }
@@ -29,11 +31,13 @@ struct TransformedPrimitive::Impl
 
     Primitive::size_type getMemory() const {
         return sizeof(TransformedPrimitive::Impl) +
-            scene_rdl2::util::getVectorElementsMemory(mXform) + mPrimitive->getMemory();
+                      scene_rdl2::util::getVectorElementsMemory(mXform) +
+                      mPrimitive->getMemory();
     }
 
     shading::XformSamples mXform;
     std::unique_ptr<Primitive> mPrimitive;
+
     // TransformedPrimitive should only apply mXform to mPrimitive once during
     // render prepare stage, flip this flag once transformPrimitive has been called
     bool mHasBeenApplied;
@@ -42,8 +46,9 @@ struct TransformedPrimitive::Impl
 TransformedPrimitive::~TransformedPrimitive() = default;
 
 TransformedPrimitive::TransformedPrimitive(const shading::XformSamples& xform,
-        std::unique_ptr<Primitive> primitive) :
-    mImpl(new Impl(xform, std::move(primitive))) {}
+                                           std::unique_ptr<Primitive> primitive) :
+    mImpl(new Impl(xform,
+                   std::move(primitive))) {}
 
 void
 TransformedPrimitive::accept(PrimitiveVisitor& v)
@@ -76,15 +81,14 @@ TransformedPrimitive::getPrimitive() const
 }
 
 void
-TransformedPrimitive::transformPrimitive(
-        const MotionBlurParams& motionBlurParams,
-        const shading::XformSamples& prim2render)
+TransformedPrimitive::transformPrimitive(const MotionBlurParams& motionBlurParams,
+                                         const shading::XformSamples& prim2render)
 {
     if (!mImpl->mHasBeenApplied) {
         shading::XformSamples local2render = concatenate(mImpl->mXform, prim2render);
-        internal::PrimitivePrivateAccess::transformPrimitive(
-            mImpl->mPrimitive.get(), motionBlurParams,
-            local2render);
+        internal::PrimitivePrivateAccess::transformPrimitive(mImpl->mPrimitive.get(),
+                                                             motionBlurParams,
+                                                             local2render);
         mImpl->mHasBeenApplied = true;
     }
 }
@@ -93,7 +97,7 @@ internal::Primitive*
 TransformedPrimitive::getPrimitiveImpl()
 {
     MNRY_ASSERT_REQUIRE(false, "TransformedPrimitive is an opaque handle wrapper"
-        " that has no internal implementation");
+                        " that has no internal implementation");
     return nullptr;
 }
 

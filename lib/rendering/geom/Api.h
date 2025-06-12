@@ -66,7 +66,8 @@ getPrimitiveType(const Primitive& p);
 ///     that is passed in to each Procedural::generate/update call
 /// @return primitive to render space transform
 finline shading::XformSamples
-computePrim2Render(const State& state, const shading::XformSamples& parent2render)
+computePrim2Render(const State& state,
+                   const shading::XformSamples& parent2render)
 {
     shading::XformSamples prim2render;
     prim2render.reserve(parent2render.size());
@@ -83,7 +84,8 @@ computePrim2Render(const State& state, const shading::XformSamples& parent2rende
 ///     xform sample and the number of sample doesn't match
 /// @return shading::XformSamples that is the concatenation of xformA and xformB
 finline shading::XformSamples
-concatenate(const shading::XformSamples& xformA, const shading::XformSamples& xformB)
+concatenate(const shading::XformSamples& xformA,
+            const shading::XformSamples& xformB)
 {
     MNRY_ASSERT_REQUIRE(!xformA.empty() && !xformB.empty());
     shading::XformSamples result;
@@ -191,7 +193,8 @@ createPrimitiveGroup();
 /// @throws AssertionError if the input primitive attributes are not valid.
 /// @return a unique pointer points to the created Sphere primitive
 std::unique_ptr<Sphere>
-createSphere(float radius, LayerAssignmentId&& layerAssignmentId,
+createSphere(float radius,
+             LayerAssignmentId&& layerAssignmentId,
              shading::PrimitiveAttributeTable&& attributeTable = shading::PrimitiveAttributeTable());
 
 /// @brief create a Box primitive
@@ -205,7 +208,10 @@ createSphere(float radius, LayerAssignmentId&& layerAssignmentId,
 /// @throws AssertionError if the input primitive attributes are not valid.
 /// @return a unique pointer points to the created Box primitive
 std::unique_ptr<Box>
-createBox(float length, float width, float height, LayerAssignmentId&& layerAssignmentId,
+createBox(float length,
+          float width,
+          float height,
+          LayerAssignmentId&& layerAssignmentId,
           shading::PrimitiveAttributeTable&& attributeTable = shading::PrimitiveAttributeTable());
 
 /// @brief create a SubdivisionMesh primitive
@@ -283,7 +289,8 @@ createTransformedPrimitive(const shading::XformSamples& xform,
 // so that it can handle rotation motion blur
 std::unique_ptr<Primitive>
 convertForMotionBlur(const ProceduralContext& context,
-                     std::unique_ptr<Primitive> primitive, bool useRotationMotionBlur);
+                     std::unique_ptr<Primitive> primitive,
+                     bool useRotationMotionBlur);
 
 /// @brief an util method removes unassigned face/facevarying data
 void

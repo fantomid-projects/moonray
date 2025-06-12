@@ -27,7 +27,9 @@ namespace geom {
 class PrimitiveTypeChecker : public PrimitiveVisitor
 {
 public:
-    PrimitiveTypeChecker(const Primitive& p): mType(PrimitiveType::UNKNOWN) {
+    PrimitiveTypeChecker(const Primitive& p) :
+        mType(PrimitiveType::UNKNOWN) {
+
         // we know we are not going to modify the primitive here
         const_cast<Primitive&>(p).accept(*this);
     }
@@ -263,7 +265,9 @@ validateAttr<scene_rdl2::rdl2::Mat4f>(const scene_rdl2::rdl2::Mat4f& attr,
     bool isValid = true;
     for (size_t i = 0; i < 4; ++i) {
         for (size_t j = 0; j < 4; ++j) {
-            if (!validateAttr<scene_rdl2::rdl2::Float>(attr[i][j], attrName, rdlGeometry)) {
+            if (!validateAttr<scene_rdl2::rdl2::Float>(attr[i][j],
+                                                       attrName,
+                                                       rdlGeometry)) {
                 isValid = false;
             }
         }
@@ -278,7 +282,9 @@ validateAttr<scene_rdl2::rdl2::Mat4d>(const scene_rdl2::rdl2::Mat4d& attr,
     bool isValid = true;
     for (size_t i = 0; i < 4; ++i) {
         for (size_t j = 0; j < 4; ++j) {
-            if (!validateAttr<scene_rdl2::rdl2::Double>(attr[i][j], attrName, rdlGeometry)) {
+            if (!validateAttr<scene_rdl2::rdl2::Double>(attr[i][j],
+                                                        attrName,
+                                                        rdlGeometry)) {
                 isValid = false;
             }
         }
@@ -291,10 +297,12 @@ validateAttrs(const shading::PrimitiveAttributeTable& pat,
               const shading::AttributeKey& key,
               const float timeSample,
               const scene_rdl2::rdl2::Geometry* rdlGeometry) {
-    const shading::PrimitiveAttribute<T> &attr =
-        pat.getAttribute(shading::TypedAttributeKey<T>(key), timeSample);
+    const shading::PrimitiveAttribute<T> &attr = pat.getAttribute(shading::TypedAttributeKey<T>(key),
+                                                                  timeSample);
     for (size_t i = 0; i < attr.size(); ++i) {
-        if (!validateAttr<T>(attr[i], key.getName(), rdlGeometry)) {
+        if (!validateAttr<T>(attr[i],
+                             key.getName(),
+                             rdlGeometry)) {
             return false;
         }
     }
@@ -601,8 +609,9 @@ removeUnassignedFaces(const scene_rdl2::rdl2::Layer* layer,
                       shading::PrimitiveAttributeTable* primitiveAttributeTable)
 {
     bool hasValidAssignment = constAssignmentId != -1 &&
-        (layer->lookupMaterial(constAssignmentId) != nullptr ||
-        layer->lookupVolumeShader(constAssignmentId) != nullptr);
+         (layer->lookupMaterial(constAssignmentId) != nullptr ||
+          layer->lookupVolumeShader(constAssignmentId) != nullptr);
+
     // the whole mesh is a part and it's not assigned
     if (!hasValidAssignment) {
         faceToPart.resize(0);
@@ -611,8 +620,7 @@ removeUnassignedFaces(const scene_rdl2::rdl2::Layer* layer,
         if (primitiveAttributeTable) {
             std::vector<shading::AttributeKey> unusedAttributes;
             for (auto& kv : *primitiveAttributeTable) {
-                shading::AttributeRate rate =
-                    primitiveAttributeTable->getRate(kv.first);
+                shading::AttributeRate rate = primitiveAttributeTable->getRate(kv.first);
                 if (rate == shading::RATE_UNIFORM || rate == shading::RATE_FACE_VARYING) {
                     unusedAttributes.push_back(kv.first);
                 }
@@ -634,12 +642,14 @@ removeUnassignedFaces(const scene_rdl2::rdl2::Layer* layer,
 {
     size_t faceCount = faceVertexCount.size();
     MNRY_ASSERT(varyingAssignmentId.size() == faceCount);
-    size_t totalFaceVertices = std::accumulate(
-        faceVertexCount.begin(), faceVertexCount.end(), 0);
+    size_t totalFaceVertices = std::accumulate(faceVertexCount.begin(),
+                                               faceVertexCount.end(),
+                                               0);
     MNRY_ASSERT(indices.size() == totalFaceVertices);
 
     std::vector<int> newFaceIndexes(faceCount, -1);
     std::vector<int> newFaceVertexIndexes(totalFaceVertices, -1);
+
     // calculate index mapping from input face list to shrinked face list
     // and mapping from input face vertex list to shrinked face vertex list
     size_t currentFaceVertex = 0;
@@ -647,8 +657,9 @@ removeUnassignedFaces(const scene_rdl2::rdl2::Layer* layer,
     size_t assignedFaceVertices = 0;
     for (size_t i = 0; i < faceCount; ++i) {
         bool hasValidAssignment = varyingAssignmentId[i] != -1 &&
-            (layer->lookupMaterial(varyingAssignmentId[i]) != nullptr ||
-            layer->lookupVolumeShader(varyingAssignmentId[i]) != nullptr);
+             (layer->lookupMaterial(varyingAssignmentId[i]) != nullptr ||
+              layer->lookupVolumeShader(varyingAssignmentId[i]) != nullptr);
+
         if (hasValidAssignment) {
             newFaceIndexes[i] = assignedFaceCount++;
             for (size_t j = 0; j < faceVertexCount[i]; ++j) {
@@ -658,6 +669,7 @@ removeUnassignedFaces(const scene_rdl2::rdl2::Layer* layer,
         }
         currentFaceVertex += faceVertexCount[i];
     }
+
     // remove the unassigned face
     for (size_t i = 0; i < faceCount; ++i) {
         if (newFaceIndexes[i] != -1) {
@@ -668,11 +680,14 @@ removeUnassignedFaces(const scene_rdl2::rdl2::Layer* layer,
             faceVertexCount[newFaceIndexes[i]] = faceVertexCount[i];
         }
     }
+
     if (faceToPart.size() > 0) {
         faceToPart.resize(assignedFaceCount);
     }
+
     varyingAssignmentId.resize(assignedFaceCount);
     faceVertexCount.resize(assignedFaceCount);
+
     // remove the unassigned face vertex
     for (size_t i = 0; i < totalFaceVertices; ++i) {
         if (newFaceVertexIndexes[i] != -1) {
@@ -680,22 +695,24 @@ removeUnassignedFaces(const scene_rdl2::rdl2::Layer* layer,
         }
     }
     indices.resize(assignedFaceVertices);
+
     // we are done if there is no primitive attributes to process
     if (!primitiveAttributeTable) {
         return;
     }
+
     // collect the uniform/facevarying attributes that need to process
     std::vector<shading::AttributeKey> uniformKeys;
     std::vector<shading::AttributeKey> faceVaryingKeys;
     for (auto& kv : *primitiveAttributeTable) {
-        shading::AttributeRate rate =
-            primitiveAttributeTable->getRate(kv.first);
+        shading::AttributeRate rate = primitiveAttributeTable->getRate(kv.first);
         if (rate == shading::RATE_UNIFORM) {
             uniformKeys.push_back(kv.first);
         } else if (rate == shading::RATE_FACE_VARYING) {
             faceVaryingKeys.push_back(kv.first);
         }
     }
+
     // shrink the uniform primitive attributes
     for (const auto& key : uniformKeys) {
         auto& attribute = primitiveAttributeTable->find(key)->second;
@@ -711,6 +728,7 @@ removeUnassignedFaces(const scene_rdl2::rdl2::Layer* layer,
             attribute[t]->resize(assignedFaceCount);
         }
     }
+
     // shrink the facevarying primitive attributes
     for (const auto& key : faceVaryingKeys) {
         auto& attribute = primitiveAttributeTable->find(key)->second;
@@ -733,11 +751,10 @@ std::unique_ptr<Primitive>
 convertForMotionBlur(const ProceduralContext& context,
                      std::unique_ptr<Primitive> p, bool useRotationMotionBlur)
 {
-    if (context.isMotionBlurOn() && useRotationMotionBlur&&
-        getPrimitiveType(*p) != PrimitiveType::INSTANCE) {
+    if (context.isMotionBlurOn() && useRotationMotionBlur&& getPrimitiveType(*p) != PrimitiveType::INSTANCE) {
         // only instance primitive can handle rotation motion blur well
         return createInstance(Mat43(scene_rdl2::math::one),
-            createSharedPrimitive(std::move(p)));
+                              createSharedPrimitive(std::move(p)));
     } else {
         return p;
     }
@@ -752,22 +769,31 @@ removeUnassignedFaces(const scene_rdl2::rdl2::Layer* layer,
                       shading::PrimitiveAttributeTable* primitiveAttributeTable)
 {
     if (layerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT) {
-        removeUnassignedFaces(layer, layerAssignmentId.getConstId(),
-            faceToPart, faceVertexCount, indices, primitiveAttributeTable);
+        removeUnassignedFaces(layer,
+                              layerAssignmentId.getConstId(),
+                              faceToPart,
+                              faceVertexCount,
+                              indices,
+                              primitiveAttributeTable);
     } else {
-        removeUnassignedFaces(layer, layerAssignmentId.getVaryingId(),
-            faceToPart, faceVertexCount, indices, primitiveAttributeTable);
+        removeUnassignedFaces(layer,
+                              layerAssignmentId.getVaryingId(),
+                              faceToPart,
+                              faceVertexCount,
+                              indices,
+                              primitiveAttributeTable);
     }
 }
 
 bool
-getAssignmentId(const scene_rdl2::rdl2::Layer* layer, const scene_rdl2::rdl2::Geometry* geometry,
+getAssignmentId(const scene_rdl2::rdl2::Layer* layer,
+                const scene_rdl2::rdl2::Geometry* geometry,
                 const std::string& partName, int& assignmentId)
 {
     assignmentId = layer->getAssignmentId(geometry, partName);
     return assignmentId != -1 &&
-        (layer->lookupMaterial(assignmentId) != nullptr ||
-         layer->lookupVolumeShader(assignmentId) != nullptr);
+           (layer->lookupMaterial(assignmentId) != nullptr ||
+            layer->lookupVolumeShader(assignmentId) != nullptr);
 }
 
 bool
@@ -780,10 +806,12 @@ validateExplicitShading(const shading::PrimitiveAttributeTable& pat,
         rdlGeometry->error("Missing normal explicit shading primitive attribute");
         hasExplicitAttributes = false;
     }
+
     if (!pat.hasAttribute(shading::StandardAttributes::sdPds)) {
         rdlGeometry->error("Missing dPds explicit shading primitive attribute");
         hasExplicitAttributes = false;
     }
+
     if (!pat.hasAttribute(shading::StandardAttributes::sdPdt)) {
         rdlGeometry->error("Missing dPdt explicit shading primitive attribute ");
         hasExplicitAttributes = false;
@@ -895,18 +923,45 @@ applyScreenSpaceRadius(const rdl2::Geometry* geometry,
     const size_t numVerts = vertices.size();
     std::vector<float> minDist, maxDist, minDistRadius, maxDistRadius;
     Curves::CurvesVertexCount vertexCounts;
-    getScreenSpaceRadiusAttr(shading::StandardAttributes::sMinDistance, numVerts, vertexCounts, pat, minDist);
-    getScreenSpaceRadiusAttr(shading::StandardAttributes::sMaxDistance, numVerts, vertexCounts, pat, maxDist);
-    getScreenSpaceRadiusAttr(shading::StandardAttributes::sMinDistanceRadius, numVerts, vertexCounts, pat, minDistRadius);
-    getScreenSpaceRadiusAttr(shading::StandardAttributes::sMaxDistanceRadius, numVerts, vertexCounts, pat, maxDistRadius);
+
+    getScreenSpaceRadiusAttr(shading::StandardAttributes::sMinDistance,
+                             numVerts,
+                             vertexCounts,
+                             pat,
+                             minDist);
+
+    getScreenSpaceRadiusAttr(shading::StandardAttributes::sMaxDistance,
+                             numVerts,
+                             vertexCounts,
+                             pat,
+                             maxDist);
+
+    getScreenSpaceRadiusAttr(shading::StandardAttributes::sMinDistanceRadius,
+                             numVerts,
+                             vertexCounts,
+                             pat,
+                             minDistRadius);
+
+    getScreenSpaceRadiusAttr(shading::StandardAttributes::sMaxDistanceRadius,
+                             numVerts,
+                             vertexCounts,
+                             pat,
+                             maxDistRadius);
 
     const math::Mat4f nodeXform = math::toFloat(geometry->get(rdl2::Node::sNodeXformKey,
                                                 rdl2::TIMESTEP_BEGIN));
 
     for (size_t i = 0; i < radiusBuffer.size(); ++i) {
-        math::Vec3f position(vertices(i, 0).x, vertices(i, 0).y, vertices(i, 0).z);
-        position = math::transformPoint(parent2root[0], position);
-        position = math::transformPoint(nodeXform, position);
+        math::Vec3f position(vertices(i, 0).x,
+                             vertices(i, 0).y,
+                             vertices(i, 0).z);
+
+        position = math::transformPoint(parent2root[0],
+                                        position);
+
+        position = math::transformPoint(nodeXform,
+                                        position);
+
         radiusBuffer[i] = applyScreenSpaceRadius(position,
                                                  cameraPosition,
                                                  cameraFocal,
@@ -925,26 +980,55 @@ applyScreenSpaceRadius(const scene_rdl2::rdl2::Geometry* geometry,
 {
     float cameraFocal;
     math::Vec3f cameraPosition;
-    if (!getCameraPositionAndFocal(geometry, cameraPosition, cameraFocal)) {
+    if (!getCameraPositionAndFocal(geometry,
+                                   cameraPosition,
+                                   cameraFocal)) {
         return;
     }
 
     // Get screen space primitive attributes if they exist
     const size_t numVerts = vertices.size();
     std::vector<float> minDist, maxDist, minDistRadius, maxDistRadius;
-    getScreenSpaceRadiusAttr(shading::StandardAttributes::sMinDistance, numVerts, vertexCounts, pat, minDist);
-    getScreenSpaceRadiusAttr(shading::StandardAttributes::sMaxDistance, numVerts, vertexCounts, pat, maxDist);
-    getScreenSpaceRadiusAttr(shading::StandardAttributes::sMinDistanceRadius, numVerts, vertexCounts, pat, minDistRadius);
-    getScreenSpaceRadiusAttr(shading::StandardAttributes::sMaxDistanceRadius, numVerts, vertexCounts, pat, maxDistRadius);
+
+    getScreenSpaceRadiusAttr(shading::StandardAttributes::sMinDistance,
+                             numVerts,
+                             vertexCounts,
+                             pat,
+                             minDist);
+
+    getScreenSpaceRadiusAttr(shading::StandardAttributes::sMaxDistance,
+                             numVerts,
+                             vertexCounts,
+                             pat,
+                             maxDist);
+
+    getScreenSpaceRadiusAttr(shading::StandardAttributes::sMinDistanceRadius,
+                             numVerts,
+                             vertexCounts,
+                             pat,
+                             minDistRadius);
+
+    getScreenSpaceRadiusAttr(shading::StandardAttributes::sMaxDistanceRadius,
+                             numVerts,
+                             vertexCounts,
+                             pat,
+                             maxDistRadius);
 
     const math::Mat4f nodeXform = math::toFloat(geometry->get(rdl2::Node::sNodeXformKey,
                                                 rdl2::TIMESTEP_BEGIN));
 
     for (size_t t = 0; t < vertices.get_time_steps(); ++t) {
         for (size_t i = 0; i < vertices.size(); ++i) {
-            math::Vec3f position(vertices(i, t).x, vertices(i, t).y, vertices(i, t).z);
-            position = math::transformPoint(parent2root[parent2root.size() == 1 ? 0 : t], position);
-            position = math::transformPoint(nodeXform, position);
+            math::Vec3f position(vertices(i, t).x,
+                                 vertices(i, t).y,
+                                 vertices(i, t).z);
+
+            position = math::transformPoint(parent2root[parent2root.size() == 1 ? 0 : t],
+                                            position);
+
+            position = math::transformPoint(nodeXform,
+                                            position);
+
             vertices(i, t).w = applyScreenSpaceRadius(position,
                                                       cameraPosition,
                                                       cameraFocal,

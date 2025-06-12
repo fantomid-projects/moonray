@@ -30,8 +30,8 @@ public:
     typedef std::vector<float> RadiusBuffer;
 
     Points(VertexBuffer&& position, RadiusBuffer&& radius,
-            LayerAssignmentId&& layerAssignmentId,
-            shading::PrimitiveAttributeTable&& primitiveAttributeTable);
+           LayerAssignmentId&& layerAssignmentId,
+           shading::PrimitiveAttributeTable&& primitiveAttributeTable);
 
     ~Points();
 
@@ -58,9 +58,8 @@ private:
 
     /// @remark For renderer internal use, procedural should never call this
     /// @internal
-    virtual void transformPrimitive(
-            const MotionBlurParams& motionBlurParams,
-            const shading::XformSamples& prim2render) override;
+    virtual void transformPrimitive(const MotionBlurParams& motionBlurParams,
+                                    const shading::XformSamples& prim2render) override;
 
 private:
     struct Impl;

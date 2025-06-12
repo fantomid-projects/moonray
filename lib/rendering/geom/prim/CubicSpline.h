@@ -41,12 +41,14 @@ public:
     virtual bool canIntersect() const override { return false; }
 
     virtual void postIntersect(mcrt_common::ThreadLocalState& tls,
-            const scene_rdl2::rdl2::Layer* pRdlLayer, const mcrt_common::Ray& ray,
-            shading::Intersection& intersection) const override;
+                               const scene_rdl2::rdl2::Layer* pRdlLayer,
+                               const mcrt_common::Ray& ray,
+                               shading::Intersection& intersection) const override;
 
     virtual bool computeIntersectCurvature(const mcrt_common::Ray& ray,
-            const shading::Intersection& intersection,
-            scene_rdl2::math::Vec3f& dNds, scene_rdl2::math::Vec3f& dNdt) const override;
+                                           const shading::Intersection& intersection,
+                                           scene_rdl2::math::Vec3f& dNds,
+                                           scene_rdl2::math::Vec3f& dNdt) const override;
 
     static void intersectionFilter(const RTCFilterFunctionNArguments* args);
 
@@ -56,18 +58,18 @@ private:
 
     // get weights for each of the 4 control points of a span
     virtual void evalWeights(const float& t,
-            float& w0, float& w1,
-            float& w2, float& w3) const = 0;
+                             float& w0, float& w1,
+                             float& w2, float& w3) const = 0;
 
     // get weights for the difference of neighboring controls points
     // to scale (p1 - p0), (p2 - p1), and (p3 - p2)
     virtual void evalDerivWeights(const float& t,
-            float& w0, float& w1, float& w2) const = 0;
+                                  float& w0, float& w1, float& w2) const = 0;
 
     template<typename CvType>
     CvType evalCubic(const float& t,
-            const CvType& cv0, const CvType& cv1,
-            const CvType& cv2, const CvType& cv3) const
+                     const CvType& cv0, const CvType& cv1,
+                     const CvType& cv2, const CvType& cv3) const
     {
         float w0, w1, w2, w3;
         evalWeights(t, w0, w1, w2, w3);
@@ -76,8 +78,8 @@ private:
 
     template<typename CvType>
     CvType evalCubicDeriv(const float& t,
-            const CvType& cv0, const CvType& cv1,
-            const CvType& cv2, const CvType& cv3) const
+                          const CvType& cv0, const CvType& cv1,
+                          const CvType& cv2, const CvType& cv3) const
     {
          float w0, w1, w2;
          evalDerivWeights(t, w0, w1, w2);
@@ -85,14 +87,20 @@ private:
     }
 
     void computeAttributesDerivatives(const shading::AttributeTable* table,
-            float u, float invDs, int chain,
-            int varyingOffset, int faceVaryingOffset, int vertexOffset,
-            float time, shading::Intersection& intersection) const;
+                                      float u,
+                                      float invDs,
+                                      int chain,
+                                      int varyingOffset,
+                                      int faceVaryingOffset,
+                                      int vertexOffset,
+                                      float time, shading::Intersection& intersection) const;
 
     template<typename T> void
     computeVaryingAttributeDerivatives(shading::TypedAttributeKey<T> key,
-            float invDs, int varyingOffset, float time,
-            shading::Intersection& intersection) const
+                                       float invDs,
+                                       int varyingOffset,
+                                       float time,
+                                       shading::Intersection& intersection) const
     {
         int vid0 = varyingOffset;
         int vid1 = varyingOffset + 1;
@@ -111,8 +119,11 @@ private:
 
     template<typename T> void
     computeFaceVaryingAttributeDerivatives(shading::TypedAttributeKey<T> key,
-            float invDs, int fid, int faceVaryingOffset, float time,
-            shading::Intersection& intersection) const
+                                           float invDs,
+                                           int fid,
+                                           int faceVaryingOffset,
+                                           float time,
+                                           shading::Intersection& intersection) const
     {
         int fvid0 = faceVaryingOffset;
         int fvid1 = faceVaryingOffset + 1;
@@ -131,8 +142,10 @@ private:
 
     template<typename T> void
     computeVertexAttributeDerivatives(shading::TypedAttributeKey<T> key,
-            float u, int vertexOffset, float time,
-            shading::Intersection& intersection) const
+                                      float u,
+                                      int vertexOffset,
+                                      float time,
+                                      shading::Intersection& intersection) const
     {
         int vid0 = vertexOffset;
         int vid1 = vertexOffset + 1;
@@ -157,28 +170,42 @@ private:
 
     template<typename T> void
     computeAttributeDerivatives(shading::TypedAttributeKey<T> key,
-            float u, float invDs, int chain,
-            int varyingOffset, int faceVaryingOffset, int vertexOffset,
-            float time, shading::Intersection& intersection) const
+                                float u,
+                                float invDs,
+                                int chain,
+                                int varyingOffset,
+                                int faceVaryingOffset,
+                                int vertexOffset,
+                                float time,
+                                shading::Intersection& intersection) const
     {
         switch (getAttributes()->getRate(key)) {
         case shading::RATE_VARYING:
-            computeVaryingAttributeDerivatives(key, invDs, varyingOffset,
-                time, intersection);
+            computeVaryingAttributeDerivatives(key,
+                                               invDs,
+                                               varyingOffset,
+                                               time,
+                                               intersection);
             break;
         case shading::RATE_FACE_VARYING:
-            computeFaceVaryingAttributeDerivatives(key, invDs, chain,
-                faceVaryingOffset, time, intersection);
+            computeFaceVaryingAttributeDerivatives(key,
+                                                   invDs,
+                                                   chain,
+                                                   faceVaryingOffset,
+                                                   time,
+                                                   intersection);
             break;
         case shading::RATE_VERTEX:
-            computeVertexAttributeDerivatives(key, u, vertexOffset,
-                time, intersection);
+            computeVertexAttributeDerivatives(key,
+                                              u,
+                                              vertexOffset,
+                                              time,
+                                              intersection);
             break;
         default:
             break;
         }
     }
-
 };
 
 // CubicSpline is similar to nonperiodic cubic curves in Renderman
@@ -202,12 +229,31 @@ private:
 class CubicSplineInterpolator : public shading::Interpolator
 {
 public:
-    CubicSplineInterpolator(const shading::Attributes *attr, float time,
-            int chain, int varyingOffset, int faceVaryingOffset, float u,
-            int vertexOffset, float w0, float w1, float w2, float w3):
-        shading::Interpolator(attr, time, 0, chain, 2, mVaryingIndex, mLinearWeights,
-        2, mFaceVaryingIndex, mLinearWeights,
-        chain, 4, mCurveVertices, mCurveWeights)
+    CubicSplineInterpolator(const shading::Attributes *attr,
+                            float time,
+                            int chain,
+                            int varyingOffset,
+                            int faceVaryingOffset,
+                            float u,
+                            int vertexOffset,
+                            float w0,
+                            float w1,
+                            float w2,
+                            float w3) :
+        shading::Interpolator(attr,
+                              time,
+                              0,
+                              chain,
+                              2,
+                              mVaryingIndex,
+                              mLinearWeights,
+                              2,
+                              mFaceVaryingIndex,
+                              mLinearWeights,
+                              chain,
+                              4,
+                              mCurveVertices,
+                              mCurveWeights)
         {
 
             mVaryingIndex[0] = varyingOffset;
@@ -224,6 +270,7 @@ public:
             mCurveWeights[2] = w2;
             mCurveWeights[3] = w3;
         }
+
 private:
     int mVaryingIndex[2];
     int mFaceVaryingIndex[2];

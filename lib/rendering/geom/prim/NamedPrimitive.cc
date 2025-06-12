@@ -10,17 +10,24 @@ namespace moonray {
 namespace geom {
 namespace internal {
 
+using namespace scene_rdl2::rdl2;
+
 void
 NamedPrimitive::initVolumeSampleInfo(VolumeSampleInfo* info,
-        const Vec3f& rayOrg, const Vec3f& rayDir, float time,
-        const scene_rdl2::rdl2::VolumeShader* volumeShader,
-        int volumeId) const
+                                     const Vec3f& rayOrg,
+                                     const Vec3f& rayDir,
+                                     float time,
+                                     const VolumeShader* volumeShader,
+                                     int volumeId) const
 {
     // if we have an instance feature id for this volume id, use it
     const float featureSize = getInstanceFeatureSize(volumeId);
-    info->initialize(volumeShader, rayOrg, rayDir, featureSize,
-        (mRdlGeometry->getVisibilityMask() & scene_rdl2::rdl2::SHADOW) != 0,
-        /* isVDB = */ false);
+    info->initialize(volumeShader,
+                     rayOrg,
+                     rayDir,
+                     featureSize,
+                     (mRdlGeometry->getVisibilityMask() & SHADOW) != 0,
+                     false); // isVdb
 }
 
 bool
@@ -40,7 +47,7 @@ NamedPrimitive::hasAssignment(int assignmentId) const
 }
 
 bool
-NamedPrimitive::hasDisplacementAssignment(const scene_rdl2::rdl2::Layer* layer) const
+NamedPrimitive::hasDisplacementAssignment(const Layer* layer) const
 {
     if (mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT) {
         int assignmentId = mLayerAssignmentId.getConstId();
@@ -64,14 +71,14 @@ NamedPrimitive::hasDisplacementAssignment(const scene_rdl2::rdl2::Layer* layer) 
 }
 
 bool
-NamedPrimitive::hasSurfaceAssignment(const scene_rdl2::rdl2::Layer* layer) const
+NamedPrimitive::hasSurfaceAssignment(const Layer* layer) const
 {
     if (mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT) {
         int assignmentId = mLayerAssignmentId.getConstId();
         if (assignmentId == -1) {
             return false;
         }
-        const scene_rdl2::rdl2::Material* material = layer->lookupMaterial(assignmentId);
+        const Material* material = layer->lookupMaterial(assignmentId);
         return (material != nullptr);
     } else {
         const auto& assignmentIds = mLayerAssignmentId.getVaryingId();
@@ -79,7 +86,7 @@ NamedPrimitive::hasSurfaceAssignment(const scene_rdl2::rdl2::Layer* layer) const
             if (id == -1) {
                 continue;
             }
-            const scene_rdl2::rdl2::Material* material = layer->lookupMaterial(id);
+            const Material* material = layer->lookupMaterial(id);
             if (material != nullptr) {
                 return true;
             }
@@ -89,7 +96,7 @@ NamedPrimitive::hasSurfaceAssignment(const scene_rdl2::rdl2::Layer* layer) const
 }
 
 bool
-NamedPrimitive::hasVolumeAssignment(const scene_rdl2::rdl2::Layer* layer) const
+NamedPrimitive::hasVolumeAssignment(const Layer* layer) const
 {
     if (mLayerAssignmentId.getType() == LayerAssignmentId::Type::CONSTANT) {
         int assignmentId = mLayerAssignmentId.getConstId();
@@ -132,7 +139,7 @@ NamedPrimitive::resetShadowLinking()
 }
 
 bool
-NamedPrimitive::hasShadowLinking(const scene_rdl2::rdl2::Layer* layer) const
+NamedPrimitive::hasShadowLinking(const Layer* layer) const
 {
     std::unordered_set<int> casterIds;
     getUniqueAssignmentIds(casterIds);
@@ -140,7 +147,7 @@ NamedPrimitive::hasShadowLinking(const scene_rdl2::rdl2::Layer* layer) const
         if (casterId < 0) {
             continue;
         }
-        const scene_rdl2::rdl2::ShadowSet* shadowSet = layer->lookupShadowSet(casterId);
+        const ShadowSet* shadowSet = layer->lookupShadowSet(casterId);
         if (shadowSet) {
             return true;
         }

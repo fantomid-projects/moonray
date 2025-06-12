@@ -50,7 +50,8 @@ bool sizeCheck(const scene_rdl2::rdl2::SceneObject* object,
 
 /// Convenience function to turn AttributeKey<T> into it's name
 template<typename T>
-const std::string& getName(const scene_rdl2::rdl2::SceneObject* object, const scene_rdl2::rdl2::AttributeKey<T> attributeKey)
+const std::string& getName(const scene_rdl2::rdl2::SceneObject* object,
+                           const scene_rdl2::rdl2::AttributeKey<T> attributeKey)
 {
     return object->getSceneClass().getAttribute(attributeKey)->getName();
 }

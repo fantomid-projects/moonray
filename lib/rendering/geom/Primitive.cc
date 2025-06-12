@@ -15,7 +15,9 @@ namespace geom {
 
 struct Primitive::Impl
 {
-    Impl(): mUpdated(false), mModifiability(Primitive::Modifiability::STATIC) {}
+    Impl() :
+        mUpdated(false),
+        mModifiability(Primitive::Modifiability::STATIC) {}
 
     bool mUpdated;
     Modifiability mModifiability;

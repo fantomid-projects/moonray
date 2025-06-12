@@ -27,7 +27,10 @@ pickRate(const scene_rdl2::rdl2::SceneObject* object,
 {
     switch (explicitRate) {
     case scene_rdl2::rdl2::UserData::Rate::AUTO:
-        return pickRate(object, keyName, size, rates);
+        return pickRate(object,
+                        keyName,
+                        size,
+                        rates);
     case scene_rdl2::rdl2::UserData::Rate::CONSTANT:
         if (size == 1) return AttributeRate::RATE_CONSTANT;
         Logger::warn(object->getName(), '.', keyName, ": size: ", size,
@@ -75,7 +78,12 @@ pickRate(const scene_rdl2::rdl2::SceneObject* object,
         Logger::warn(object->getName(), '.', keyName, ": time samples not equal size, ", size0, " != ", size1);
         if (size1 < size0) size0 = size1;
     }
-    return pickRate(object, explicitRate, keyName, size0, rates);
+
+    return pickRate(object,
+                    explicitRate,
+                    keyName,
+                    size0,
+                    rates);
 }
 
 AttributeRate
@@ -89,7 +97,10 @@ pickRate(const scene_rdl2::rdl2::SceneObject* object,
         Logger::warn(object->getName(), '.', keyName, ": time samples not equal size, ", size0, " != ", size1);
         if (size1 < size0) size0 = size1;
     }
-    return pickRate(object, keyName, size0, rates);
+    return pickRate(object,
+                    keyName,
+                    size0,
+                    rates);
 }
 
 AttributeRate
@@ -114,6 +125,7 @@ pickRate(const scene_rdl2::rdl2::SceneObject* object,
     } else if (size == rates.varyingCount) {
         return AttributeRate::RATE_VARYING;
     }
+
     // Pick one that fits. Tried in assumed largest->smallest order. Some geometry
     // may produce a different order but it is probably ok that the interpolation
     // guess is not the closest one. Also 1 always turns into constant even if others
@@ -139,6 +151,7 @@ pickRate(const scene_rdl2::rdl2::SceneObject* object,
         best = 1;
         rate = AttributeRate::RATE_CONSTANT;
     }
+
     Logger::warn(object->getName(), '.', keyName, ": invalid size ", size, " truncated to ", best);
     return rate;
 }
@@ -154,7 +167,6 @@ bool sizeCheck(const scene_rdl2::rdl2::SceneObject* object,
     }
     return false;
 }
-
 
 void
 processArbitraryData(const scene_rdl2::rdl2::SceneObject* geometry,
@@ -174,22 +186,32 @@ processArbitraryData(const scene_rdl2::rdl2::SceneObject* geometry,
 
         if (userData->hasBoolData()) {
             shading::TypedAttributeKey<scene_rdl2::rdl2::Bool> key(userData->getBoolKey());
+
             // bool vector is a std::deque
             const scene_rdl2::rdl2::BoolVector& constData = userData->getBoolValues();
-            std::vector<scene_rdl2::rdl2::Bool> data(constData.begin(), constData.end());
-            primitiveAttributeTable.addAttribute(
-                key,
-                pickRate(geometry, explicitRate, key.getName(), data.size(), rates),
-                std::move(data));
+            std::vector<scene_rdl2::rdl2::Bool> data(constData.begin(),
+                                                     constData.end());
+
+            primitiveAttributeTable.addAttribute(key,
+                                                 pickRate(geometry,
+                                                          explicitRate,
+                                                          key.getName(),
+                                                          data.size(),
+                                                          rates),
+                                                 std::move(data));
         }
 
         if (userData->hasIntData()) {
             shading::TypedAttributeKey<scene_rdl2::rdl2::Int> key(userData->getIntKey());
             scene_rdl2::rdl2::IntVector data = userData->getIntValues();
-            primitiveAttributeTable.addAttribute(
-                key,
-                pickRate(geometry, explicitRate, key.getName(), data.size(), rates),
-                std::move(data));
+
+            primitiveAttributeTable.addAttribute(key,
+                                                 pickRate(geometry,
+                                                          explicitRate,
+                                                          key.getName(),
+                                                          data.size(),
+                                                          rates),
+                                                 std::move(data));
         }
 
         {
@@ -197,27 +219,39 @@ processArbitraryData(const scene_rdl2::rdl2::SceneObject* geometry,
             if (useFirstFrame && userData->hasFloatData0()) {
                 samples.push_back(userData->getFloatValues0());
             }
+
             if (useSecondFrame && userData->hasFloatData1()) {
                 samples.push_back(userData->getFloatValues1());
             }
+
             if (!samples.empty()) {
                 shading::TypedAttributeKey<float> key(userData->getFloatKey());
                 size_t size0 = samples[0].size();
-                size_t size1 = samples.size() > 1 ? samples[1].size() : size0;
-                primitiveAttributeTable.addAttribute(
-                    key,
-                    pickRate(geometry, explicitRate, key.getName(), size0, size1, rates),
-                    std::move(samples));
+                size_t size1 = samples.size() > 1 ?
+                               samples[1].size() :
+                               size0;
+
+                primitiveAttributeTable.addAttribute(key,
+                                                     pickRate(geometry,
+                                                              explicitRate,
+                                                              key.getName(),
+                                                              size0,
+                                                              size1,
+                                                              rates),
+                                                     std::move(samples));
             }
         }
 
         if (userData->hasStringData()) {
             shading::TypedAttributeKey<std::string> key(userData->getStringKey());
             scene_rdl2::rdl2::StringVector data = userData->getStringValues();
-            primitiveAttributeTable.addAttribute(
-                key,
-                pickRate(geometry, explicitRate, key.getName(), data.size(), rates),
-                std::move(data));
+            primitiveAttributeTable.addAttribute(key,
+                                                 pickRate(geometry,
+                                                          explicitRate,
+                                                          key.getName(),
+                                                          data.size(), 
+                                                          rates),
+                                                 std::move(data));
         }
 
         {
@@ -225,17 +259,26 @@ processArbitraryData(const scene_rdl2::rdl2::SceneObject* geometry,
             if (useFirstFrame && userData->hasColorData0()) {
                 samples.push_back(userData->getColorValues0());
             }
+
             if (useSecondFrame && userData->hasColorData1()) {
                 samples.push_back(userData->getColorValues1());
             }
+
             if (!samples.empty()) {
                 shading::TypedAttributeKey<scene_rdl2::rdl2::Rgb> key(userData->getColorKey());
                 size_t size0 = samples[0].size();
-                size_t size1 = samples.size() > 1 ? samples[1].size() : size0;
-                primitiveAttributeTable.addAttribute(
-                    key,
-                    pickRate(geometry, explicitRate, key.getName(), size0, size1, rates),
-                    std::move(samples));
+                size_t size1 = samples.size() > 1 ?
+                               samples[1].size() :
+                               size0;
+
+                primitiveAttributeTable.addAttribute(key,
+                                                     pickRate(geometry,
+                                                              explicitRate,
+                                                              key.getName(),
+                                                              size0,
+                                                              size1,
+                                                              rates),
+                                                     std::move(samples));
             }
         }
 
@@ -244,17 +287,26 @@ processArbitraryData(const scene_rdl2::rdl2::SceneObject* geometry,
             if (useFirstFrame && userData->hasVec2fData0()) {
                 samples.push_back(userData->getVec2fValues0());
             }
+
             if (useSecondFrame && userData->hasVec2fData1()) {
                 samples.push_back(userData->getVec2fValues1());
             }
+
             if (!samples.empty()) {
                 shading::TypedAttributeKey<scene_rdl2::rdl2::Vec2f> key(userData->getVec2fKey());
                 size_t size0 = samples[0].size();
-                size_t size1 = samples.size() > 1 ? samples[1].size() : size0;
-                primitiveAttributeTable.addAttribute(
-                    key,
-                    pickRate(geometry, explicitRate, key.getName(), size0, size1, rates),
-                    std::move(samples));
+                size_t size1 = samples.size() > 1 ?
+                               samples[1].size() :
+                               size0;
+
+                primitiveAttributeTable.addAttribute(key,
+                                                     pickRate(geometry,
+                                                              explicitRate,
+                                                              key.getName(),
+                                                              size0,
+                                                              size1,
+                                                              rates),
+                                                     std::move(samples));
             }
         }
 
@@ -263,17 +315,26 @@ processArbitraryData(const scene_rdl2::rdl2::SceneObject* geometry,
             if (useFirstFrame && userData->hasVec3fData0()) {
                 samples.push_back(userData->getVec3fValues0());
             }
+
             if (useSecondFrame && userData->hasVec3fData1()) {
                 samples.push_back(userData->getVec3fValues1());
             }
+
             if (!samples.empty()) {
                 shading::TypedAttributeKey<scene_rdl2::rdl2::Vec3f> key(userData->getVec3fKey());
                 size_t size0 = samples[0].size();
-                size_t size1 = samples.size() > 1 ? samples[1].size() : size0;
-                primitiveAttributeTable.addAttribute(
-                    key,
-                    pickRate(geometry, explicitRate, key.getName(), size0, size1, rates),
-                    std::move(samples));
+                size_t size1 = samples.size() > 1 ?
+                               samples[1].size() :
+                               size0;
+
+                primitiveAttributeTable.addAttribute(key,
+                                                     pickRate(geometry,
+                                                              explicitRate,
+                                                              key.getName(),
+                                                              size0,
+                                                              size1,
+                                                              rates),
+                                                     std::move(samples));
             }
         }
 
@@ -282,17 +343,26 @@ processArbitraryData(const scene_rdl2::rdl2::SceneObject* geometry,
             if (useFirstFrame && userData->hasMat4fData0()) {
                 samples.push_back(userData->getMat4fValues0());
             }
+
             if (useSecondFrame && userData->hasMat4fData1()) {
                 samples.push_back(userData->getMat4fValues1());
             }
+
             if (!samples.empty()) {
                 shading::TypedAttributeKey<scene_rdl2::rdl2::Mat4f> key(userData->getMat4fKey());
                 size_t size0 = samples[0].size();
-                size_t size1 = samples.size() > 1 ? samples[1].size() : size0;
-                primitiveAttributeTable.addAttribute(
-                    key,
-                    pickRate(geometry, explicitRate, key.getName(), size0, size1, rates),
-                    std::move(samples));
+                size_t size1 = samples.size() > 1 ?
+                               samples[1].size() :
+                               size0;
+
+                primitiveAttributeTable.addAttribute(key,
+                                                     pickRate(geometry,
+                                                              explicitRate,
+                                                              key.getName(),
+                                                              size0,
+                                                              size1,
+                                                              rates),
+                                                     std::move(samples));
             }
         }
     }

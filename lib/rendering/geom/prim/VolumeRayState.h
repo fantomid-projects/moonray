@@ -26,15 +26,17 @@ public:
     static constexpr int ORIGIN_VOLUME_INIT = -2; // We don't have volume along the ray
     static constexpr int ORIGIN_VOLUME_EMPTY = -1; // We have volume but ray origin is outside volume
 
-    VolumeRayState() : mIntervalCount(0), mVolumeAssignmentTable(nullptr) {}
+    VolumeRayState() :
+        mIntervalCount(0),
+        mVolumeAssignmentTable(nullptr) {}
 
-    finline void initializeVolumeLookup(
-            const VolumeAssignmentTable* volumeAssignmentTable) {
+    finline void initializeVolumeLookup(const VolumeAssignmentTable* volumeAssignmentTable) {
         mVolumeAssignmentTable = volumeAssignmentTable;
         mVolumeSampleInfo.resize(mVolumeAssignmentTable->getVolumeCount());
     }
 
-    finline void resetState(float tEnd, bool estimateInScatter) {
+    finline void resetState(float tEnd,
+                            bool estimateInScatter) {
         mIntervalCount = 0;
         mVolumeRegions.reset();
         mVisitedVolumes.reset();
@@ -43,12 +45,21 @@ public:
         mEstimateInScatter = estimateInScatter;
     }
 
-    finline void addInterval(const Primitive* primitive, float t, int volumeId, bool isEntry, float *tRenderSpace = nullptr) {
+    finline void addInterval(const Primitive* primitive,
+                             float t,
+                             int volumeId,
+                             bool isEntry,
+                             float *tRenderSpace = nullptr) {
+
         MNRY_ASSERT(mIntervalCount < sMaxIntervalCount,
-            "volume intersections along the ray exceeds "
-            "thread local storage capacity");
-        mVolumeIntervals[mIntervalCount++] =
-            VolumeTransition(primitive, t, volumeId, isEntry, tRenderSpace);
+                    "volume intersections along the ray exceeds "
+                    "thread local storage capacity");
+
+        mVolumeIntervals[mIntervalCount++] = VolumeTransition(primitive,
+                                                              t,
+                                                              volumeId,
+                                                              isEntry,
+                                                              tRenderSpace);
     }
 
     finline size_t getIntervalCount() const { return mIntervalCount; }
@@ -57,7 +68,8 @@ public:
         return mVolumeRegions;
     }
 
-    finline void turnOn(int volumeId, const Primitive* primitive) {
+    finline void turnOn(int volumeId,
+                        const Primitive* primitive) {
         mVolumeRegions.turnOn(volumeId, primitive);
     }
 
@@ -77,7 +89,8 @@ public:
         return mVisitedVolumes.isOn(volumeId);
     }
 
-    finline void setVisited(int volumeId, const Primitive* primitive) {
+    finline void setVisited(int volumeId,
+                            const Primitive* primitive) {
         mVisitedVolumes.turnOn(volumeId, primitive);
     }
 
@@ -105,7 +118,8 @@ public:
         return mVolumeSampleInfo[volumeId];
     }
 
-    finline int getVolumeId(int assignmentId, int instanceState) const {
+    finline int getVolumeId(int assignmentId,
+                            int instanceState) const {
         // instancing case
         const VolumeIdFSM &fsm = mVolumeAssignmentTable->getInstanceVolumeIds();
         if (instanceState > 0 && fsm.isLeaf(instanceState)) {
@@ -127,8 +141,15 @@ public:
     finline float getTEnd() const { return mTEnd; }
 
 
-    inline void setOriginVolumeId(int id, float distance) { mOriginVolumeId = id; mOriginVolumeDistance = distance; }
+    inline void setOriginVolumeId(int id,
+                                  float distance)
+    {
+        mOriginVolumeId = id;
+        mOriginVolumeDistance = distance;
+    }
+
     inline int getOriginVolumeId() const { return mOriginVolumeId; }
+
     inline float getOriginVolumeDistance() const { return mOriginVolumeDistance; }
 
     inline bool getEstimateInScatter() const { return mEstimateInScatter; }

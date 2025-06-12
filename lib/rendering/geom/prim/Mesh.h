@@ -46,9 +46,13 @@ public:
     /// Constructor / Destructor
     // Short-term convenience
     explicit Mesh(LayerAssignmentId&& layerAssignmentId):
-        NamedPrimitive(std::move(layerAssignmentId)), mIsSingleSided(true),
-        mIsNormalReversed(false), mIsMeshFinalized(false),
-        mAdaptiveError(0.0f), mMeshResolution(1), mPrimToRender(scene_rdl2::math::one)
+        NamedPrimitive(std::move(layerAssignmentId)),
+                       mIsSingleSided(true),
+        mIsNormalReversed(false),
+        mIsMeshFinalized(false),
+        mAdaptiveError(0.0f),
+        mMeshResolution(1),
+        mPrimToRender(scene_rdl2::math::one)
     {}
 
     Mesh(const Mesh& other) = delete;
@@ -66,7 +70,7 @@ public:
     }
 
     virtual void updateVertexData(const std::vector<float>& pVertexData,
-            const shading::XformSamples& prim2render) = 0;
+                                  const shading::XformSamples& prim2render) = 0;
 
     /// TessellatedMesh object allows primitives to convey a response to the
     /// "tessellate()" request (as an alternative to callbacks)
@@ -77,6 +81,7 @@ public:
     {
         std::vector<BufferDesc> mVertexBufferDesc;
         BufferDesc mIndexBufferDesc;
+
         /// Mesh indexing flag to distinguish between triangle and quad
         MeshIndexType mIndexBufferType;
         size_t mVertexCount;
@@ -84,9 +89,8 @@ public:
         virtual ~TessellatedMesh() = default;
     };
 
-    virtual const scene_rdl2::rdl2::Material* getIntersectionMaterial(
-            const scene_rdl2::rdl2::Layer* pRdlLayer,
-            const mcrt_common::Ray &ray) const override;
+    virtual const scene_rdl2::rdl2::Material* getIntersectionMaterial(const scene_rdl2::rdl2::Layer* pRdlLayer,
+                                                                      const mcrt_common::Ray &ray) const override;
 
     virtual PrimitiveType getType() const override
     {
@@ -111,9 +115,12 @@ public:
     // NrmResult is optional. If non-null it should be of size width * height.
     // For any pixel that has geometry (posResult[p].w != 0.f) nrmResult[p]
     // will contain the normal.
-    virtual bool bakePosMap(int width, int height, int udim,
-            shading::TypedAttributeKey<Vec2f> stKey,
-            scene_rdl2::math::Vec3fa *posResult, scene_rdl2::math::Vec3f *nrmResult) const
+    virtual bool bakePosMap(int width,
+                            int height,
+                            int udim,
+                            shading::TypedAttributeKey<Vec2f> stKey,
+                            scene_rdl2::math::Vec3fa *posResult,
+                            scene_rdl2::math::Vec3f *nrmResult) const
     {
         return false;
     }
@@ -169,11 +176,21 @@ public:
                                     const geom::MotionBlurParams& motionBlurParams,
                                     const std::vector<int>& volumeIds) override;
 
-    virtual void getST(int tessFaceId, float u, float v, Vec2f& st) const = 0;
-    virtual scene_rdl2::math::Vec3f getVelocity(int tessFaceId, int vIndex, float time = 0.0f) const = 0;
+    virtual void getST(int tessFaceId,
+                       float u, float v,
+                       Vec2f& st) const = 0;
+
+    virtual scene_rdl2::math::Vec3f getVelocity(int tessFaceId,
+                                                int vIndex,
+                                                float time = 0.0f) const = 0;
+
     virtual int getFaceAssignmentId(int faceId) const = 0;
-    virtual void setRequiredAttributes(int primId, float time, float u, float v,
-        float w, bool isFirst, shading::Intersection& intersection) const = 0;
+
+    virtual void setRequiredAttributes(int primId,
+                                       float time,
+                                       float u, float v, float w,
+                                       bool isFirst,
+                                       shading::Intersection& intersection) const = 0;
 
 protected:
     // reverse orientation by reversing the order of vertex data on each
@@ -191,17 +208,24 @@ protected:
     // vertexW1, W2, and W3 are the weighting factors of the vertices
     // ray contains additional info about the hit
     scene_rdl2::math::Vec3f computeMotion(const VertexBuffer<scene_rdl2::math::Vec3fa, InterleavedTraits> &vertBuf,
-            uint32_t id1, uint32_t id2, uint32_t id3,
-            float vertexW1, float vertexW2, float vertexW3,
-            const mcrt_common::Ray &ray) const;
+                                          uint32_t id1,
+                                          uint32_t id2,
+                                          uint32_t id3,
+                                          float vertexW1,
+                                          float vertexW2,
+                                          float vertexW3,
+                                          const mcrt_common::Ray &ray) const;
 
     bool faceHasAssignment(uint faceId);
 
     template<typename T> void
     computeVaryingAttributeDerivatives(shading::TypedAttributeKey<T> key,
-            uint32_t vid1, uint32_t vid2, uint32_t vid3, float time,
-            const std::array<float, 4>& invA,
-            shading::Intersection& intersection) const
+                                       uint32_t vid1,
+                                       uint32_t vid2,
+                                       uint32_t vid3,
+                                       float time,
+                                       const std::array<float, 4>& invA,
+                                       shading::Intersection& intersection) const
     {
         if (mAttributes->getTimeSampleCount(key) > 1) {
             T f1 = mAttributes->getMotionBlurVarying(key, vid1, time);
@@ -218,9 +242,13 @@ protected:
 
     template<typename T> void
     computeFaceVaryingAttributeDerivatives(shading::TypedAttributeKey<T> key,
-            uint32_t fid, uint32_t fvid1, uint32_t fvid2, uint32_t fvid3,
-            float time, const std::array<float, 4>& invA,
-            shading::Intersection& intersection) const
+                                           uint32_t fid,
+                                           uint32_t fvid1,
+                                           uint32_t fvid2,
+                                           uint32_t fvid3,
+                                           float time,
+                                           const std::array<float, 4>& invA,
+                                           shading::Intersection& intersection) const
     {
         if (mAttributes->getTimeSampleCount(key) > 1) {
             T f1 = mAttributes->getMotionBlurFaceVarying(key, fid, fvid1, time);
@@ -237,9 +265,12 @@ protected:
 
     template<typename T> void
     computeVertexAttributeDerivatives(shading::TypedAttributeKey<T> key,
-            uint32_t vid1, uint32_t vid2, uint32_t vid3, float time,
-            const std::array<float, 4>& invA,
-            shading::Intersection& intersection) const
+                                      uint32_t vid1,
+                                      uint32_t vid2,
+                                      uint32_t vid3,
+                                      float time,
+                                      const std::array<float, 4>& invA,
+                                      shading::Intersection& intersection) const
     {
         if (mAttributes->getTimeSampleCount(key) > 1) {
             T f1 = mAttributes->getMotionBlurVertex(key, vid1, time);
@@ -256,9 +287,11 @@ protected:
 
     template<typename T> void
     computeDerivatives(shading::TypedAttributeKey<T> key,
-            const T& f1, const T& f2, const T& f3,
-            const std::array<float, 4>& invA,
-            shading::Intersection& intersection) const
+                       const T& f1,
+                       const T& f2,
+                       const T& f3,
+                       const std::array<float, 4>& invA,
+                       shading::Intersection& intersection) const
     {
         T df0 = f2 - f1;
         T df1 = f3 - f1;
@@ -270,11 +303,11 @@ protected:
 
     template<typename T> T
     getConstantAttribute(shading::TypedAttributeKey<T> key,
-            float time = 0.0f) const
+                         float time = 0.0f) const
     {
         const shading::Attributes* attributes = getAttributes();
         MNRY_ASSERT(attributes->isSupported(key) &&
-            attributes->getRate(key) == shading::RATE_CONSTANT);
+                    attributes->getRate(key) == shading::RATE_CONSTANT);
         if (attributes->getTimeSampleCount(key) > 1 && !scene_rdl2::math::isZero(time)) {
             return attributes->getMotionBlurConstant(key, time);
         } else {
@@ -283,12 +316,13 @@ protected:
     }
 
     template <typename T> T
-    getUniformAttribute(shading::TypedAttributeKey<T> key, int fid,
-            float time = 0.0f) const
+    getUniformAttribute(shading::TypedAttributeKey<T> key,
+                        int fid,
+                        float time = 0.0f) const
     {
         const shading::Attributes* attributes = getAttributes();
         MNRY_ASSERT(attributes->isSupported(key) &&
-            attributes->getRate(key) == shading::RATE_UNIFORM);
+                    attributes->getRate(key) == shading::RATE_UNIFORM);
         if (attributes->getTimeSampleCount(key) > 1 && !scene_rdl2::math::isZero(time)) {
             return attributes->getMotionBlurUniform(key, fid, time);
         } else {
@@ -297,12 +331,13 @@ protected:
     }
 
     template <typename T> T
-    getVaryingAttribute(shading::TypedAttributeKey<T> key, int vid,
-            float time = 0.0f) const
+    getVaryingAttribute(shading::TypedAttributeKey<T> key,
+                        int vid,
+                        float time = 0.0f) const
     {
         const shading::Attributes* attributes = getAttributes();
         MNRY_ASSERT(attributes->isSupported(key) &&
-            attributes->getRate(key) == shading::RATE_VARYING);
+                    attributes->getRate(key) == shading::RATE_VARYING);
         if (attributes->getTimeSampleCount(key) > 1 && !scene_rdl2::math::isZero(time)) {
             return attributes->getMotionBlurVarying(key, vid, time);
         } else {
@@ -311,12 +346,13 @@ protected:
     }
 
     template <typename T> T
-    getVertexAttribute(shading::TypedAttributeKey<T> key, int vid,
-            float time = 0.0f) const
+    getVertexAttribute(shading::TypedAttributeKey<T> key,
+                       int vid,
+                       float time = 0.0f) const
     {
         const shading::Attributes* attributes = getAttributes();
         MNRY_ASSERT(attributes->isSupported(key) &&
-            attributes->getRate(key) == shading::RATE_VERTEX);
+                    attributes->getRate(key) == shading::RATE_VERTEX);
         if (attributes->getTimeSampleCount(key) > 1 && !scene_rdl2::math::isZero(time)) {
             return attributes->getMotionBlurVertex(key, vid, time);
         } else {
@@ -325,30 +361,40 @@ protected:
     }
 
     // fill in primitive attributes displacement shader graph requests
-    virtual void fillDisplacementAttributes(int tessFaceId, int vIndex,
-            shading::Intersection& intersection) const {}
+    virtual void fillDisplacementAttributes(int tessFaceId,
+                                            int vIndex,
+                                            shading::Intersection& intersection) const {}
 
     // helper function for baking uv position maps on meshes
     // normal output is optional.
     static void rasterizeTrianglePos(const scene_rdl2::math::BBox2f &roiST,
-            int width, int height,
-            const Vec2f &a, const Vec2f &b, const Vec2f &c,
-            const scene_rdl2::math::Vec3f &posA, const scene_rdl2::math::Vec3f &posB, const scene_rdl2::math::Vec3f &posC,
-            const scene_rdl2::math::Vec3f *nrmA, const scene_rdl2::math::Vec3f *nrmB, const scene_rdl2::math::Vec3f *nrmC,
-            scene_rdl2::math::Vec3fa *posResult, scene_rdl2::math::Vec3f *nrmResult);
+                                     int width, int height,
+                                     const Vec2f &a, const Vec2f &b, const Vec2f &c,
+                                     const scene_rdl2::math::Vec3f &posA,
+                                     const scene_rdl2::math::Vec3f &posB, 
+                                     const scene_rdl2::math::Vec3f &posC,
+                                     const scene_rdl2::math::Vec3f *nrmA,
+                                     const scene_rdl2::math::Vec3f *nrmB,
+                                     const scene_rdl2::math::Vec3f *nrmC,
+                                     scene_rdl2::math::Vec3fa *posResult,
+                                     scene_rdl2::math::Vec3f *nrmResult);
 
     // helper function for converting st coordinates based on udim into
     // a [0,0]x[1,1] range
     // returns false if input st coordinates are outside the udim tile
-    static bool udimxform(int udim, Vec2f &st);
+    static bool udimxform(int udim,
+                          Vec2f &st);
 
     bool mIsSingleSided;
     bool mIsNormalReversed;
     bool mIsMeshFinalized;
+
     // criteria for stopping further tessellation (adaptive tessellation case)
     float mAdaptiveError;
+
     // tessellation resolution
     int mMeshResolution;
+
     // This is the transform used for the baked volume shader grid.  If
     // the mesh is not a shared primitive (i.e not an instancing ref) this
     // is the first motion sample of the primitive's local to render transform.
@@ -358,10 +404,15 @@ protected:
 
 private:
 
-    openvdb::VectorGrid::Ptr createTriMeshVelocityGrid(float interiorBandwidth, const TessellatedMesh& mesh,
-        size_t motionSample, float invFps);
-    openvdb::VectorGrid::Ptr createQuadMeshVelocityGrid(float interiorBandwidth, const TessellatedMesh& mesh,
-        size_t motionSample, float invFps);
+    openvdb::VectorGrid::Ptr createTriMeshVelocityGrid(float interiorBandwidth,
+                                                       const TessellatedMesh& mesh,
+                                                       size_t motionSample,
+                                                       float invFps);
+
+    openvdb::VectorGrid::Ptr createQuadMeshVelocityGrid(float interiorBandwidth,
+                                                        const TessellatedMesh& mesh,
+                                                        size_t motionSample,
+                                                        float invFps);
 };
 
 
@@ -369,19 +420,24 @@ private:
 // x is the differential we are looking for and b is [f2 - f1, f3 - f1]
 // we can reuse the A^-1 for arbitrary attriutes derivatives calculation
 finline bool
-computeStInverse(const Vec2f& st1, const Vec2f& st2, const Vec2f& st3,
-        std::array<float, 4>& invA)
+computeStInverse(const Vec2f& st1,
+                 const Vec2f& st2,
+                 const Vec2f& st3,
+                 std::array<float, 4>& invA)
 {
-    std::array<float , 4> A = {
-        st2[0] - st1[0], st2[1] - st1[1],
-        st3[0] - st1[0], st3[1] - st1[1]};
+    std::array<float , 4> A = { st2[0] - st1[0], st2[1] - st1[1],
+                                st3[0] - st1[0], st3[1] - st1[1]};
+
     float detA = A[0] * A[3] - A[1] * A[2];
+
     if (!std::isnormal(detA)) {
         return false;
     }
+
     float invDet = 1.0f / detA;
     invA = {invDet *  A[3], invDet * -A[1],
             invDet * -A[2], invDet *  A[0]};
+
     return true;
 }
 
@@ -392,15 +448,39 @@ public:
     // quad --(tessellated quads)--> tessellated triangles
     // subdivision is tessellated as quad now,
     // this constructor is currently not in use
-    MeshInterpolator(const shading::Attributes *attr, float time, int part,
-            int coarseFace, int varying0, int varying1, int varying2, int varying3,
-            float varyingW0, float varyingW1, float varyingW2, float varyingW3,
-            int tessellatedFace, int vertex0, int vertex1, int vertex2,
-            float vertexW0, float vertexW1, float vertexW2):
-            shading::Interpolator(attr, time, part, coarseFace, 4,
-            mVaryingIndex, mVaryingWeights,
-            4, mFaceVaryingIndex, mVaryingWeights,
-            tessellatedFace, 3, mVertexIndex, mVertexWeights)
+    MeshInterpolator(const shading::Attributes *attr,
+                     float time,
+                     int part,
+                     int coarseFace,
+                     int varying0,
+                     int varying1,
+                     int varying2,
+                     int varying3,
+                     float varyingW0,
+                     float varyingW1,
+                     float varyingW2,
+                     float varyingW3,
+                     int tessellatedFace,
+                     int vertex0,
+                     int vertex1,
+                     int vertex2,
+                     float vertexW0,
+                     float vertexW1,
+                     float vertexW2):
+        shading::Interpolator(attr,
+                              time,
+                              part,
+                              coarseFace,
+                              4,
+                              mVaryingIndex,
+                              mVaryingWeights,
+                              4,
+                              mFaceVaryingIndex,
+                              mVaryingWeights,
+                              tessellatedFace,
+                              3,
+                              mVertexIndex,
+                              mVertexWeights)
     {
         mVaryingIndex[0] = varying0;
         mVaryingIndex[1] = varying1;
@@ -426,15 +506,41 @@ public:
     // For quad face interpolation in subdivision mesh and polygonal mesh
     // quad -> tessellated quad mesh,
     // and original quad
-    MeshInterpolator(const shading::Attributes *attr, float time, int part,
-            int coarseFace, int varying0, int varying1, int varying2, int varying3,
-            float varyingW0, float varyingW1, float varyingW2, float varyingW3,
-            int quadFace, int vertex0, int vertex1, int vertex2, int vertex3,
-            float vertexW0, float vertexW1, float vertexW2, float vertexW3):
-            shading::Interpolator(attr, time, part, coarseFace, 4,
-            mVaryingIndex, mVaryingWeights,
-            4, mFaceVaryingIndex, mVaryingWeights,
-            quadFace, 4, mVertexIndex, mVertexWeights)
+    MeshInterpolator(const shading::Attributes *attr,
+                     float time,
+                     int part,
+                     int coarseFace,
+                     int varying0,
+                     int varying1,
+                     int varying2,
+                     int varying3,
+                     float varyingW0,
+                     float varyingW1,
+                     float varyingW2,
+                     float varyingW3,
+                     int quadFace,
+                     int vertex0,
+                     int vertex1,
+                     int vertex2,
+                     int vertex3,
+                     float vertexW0,
+                     float vertexW1,
+                     float vertexW2,
+                     float vertexW3):
+        shading::Interpolator(attr,
+                              time,
+                              part,
+                              coarseFace,
+                              4,
+                              mVaryingIndex,
+                              mVaryingWeights,
+                              4,
+                              mFaceVaryingIndex,
+                              mVaryingWeights,
+                              quadFace,
+                              4,
+                              mVertexIndex,
+                              mVertexWeights)
     {
         mVaryingIndex[0] = varying0;
         mVaryingIndex[1] = varying1;
@@ -464,15 +570,37 @@ public:
     // or original triangle.
     // used only for polygonal mesh,
     // subdivision mesh is no longer tessellated as triangles
-    MeshInterpolator(const shading::Attributes *attr, float time, int part,
-            int coarseFace, int varying0, int varying1, int varying2,
-            float varyingW0, float varyingW1, float varyingW2,
-            int tessellatedFace, int vertex0, int vertex1, int vertex2,
-            float vertexW0, float vertexW1, float vertexW2):
-            shading::Interpolator(attr, time, part, coarseFace, 3,
-            mVaryingIndex, mVaryingWeights,
-            3, mFaceVaryingIndex, mVaryingWeights,
-            tessellatedFace, 3, mVertexIndex, mVertexWeights)
+    MeshInterpolator(const shading::Attributes *attr,
+                     float time,
+                     int part,
+                     int coarseFace,
+                     int varying0,
+                     int varying1,
+                     int varying2,
+                     float varyingW0,
+                     float varyingW1,
+                     float varyingW2,
+                     int tessellatedFace,
+                     int vertex0,
+                     int vertex1,
+                     int vertex2,
+                     float vertexW0,
+                     float vertexW1,
+                     float vertexW2):
+        shading::Interpolator(attr,
+                              time,
+                              part,
+                              coarseFace,
+                              3,
+                              mVaryingIndex,
+                              mVaryingWeights,
+                              3,
+                              mFaceVaryingIndex,
+                              mVaryingWeights,
+                              tessellatedFace,
+                              3,
+                              mVertexIndex,
+                              mVertexWeights)
     {
         mVaryingIndex[0] = varying0;
         mVaryingIndex[1] = varying1;
@@ -495,15 +623,39 @@ public:
     // For triangle face interpolation in subdivision mesh
     // triangle -> tessellated quad mesh
     // the coarse face is triangle, but the tessellated faces are quads
-    MeshInterpolator(const shading::Attributes *attr, float time, int part,
-            int coarseFace, int varying0, int varying1, int varying2,
-            float varyingW0, float varyingW1, float varyingW2,
-            int quadFace, int vertex0, int vertex1, int vertex2, int vertex3,
-            float vertexW0, float vertexW1, float vertexW2, float vertexW3):
-            shading::Interpolator(attr, time, part, coarseFace, 3,
-            mVaryingIndex, mVaryingWeights,
-            3, mFaceVaryingIndex, mVaryingWeights,
-            quadFace, 4, mVertexIndex, mVertexWeights)
+    MeshInterpolator(const shading::Attributes *attr,
+                     float time,
+                     int part,
+                     int coarseFace,
+                     int varying0,
+                     int varying1,
+                     int varying2,
+                     float varyingW0,
+                     float varyingW1,
+                     float varyingW2,
+                     int quadFace,
+                     int vertex0,
+                     int vertex1,
+                     int vertex2,
+                     int vertex3,
+                     float vertexW0,
+                     float vertexW1,
+                     float vertexW2,
+                     float vertexW3):
+        shading::Interpolator(attr,
+                              time,
+                              part,
+                              coarseFace,
+                              3,
+                              mVaryingIndex,
+                              mVaryingWeights,
+                              3,
+                              mFaceVaryingIndex,
+                              mVaryingWeights,
+                              quadFace,
+                              4,
+                              mVertexIndex,
+                              mVertexWeights)
     {
         mVaryingIndex[0] = varying0;
         mVaryingIndex[1] = varying1;
@@ -529,6 +681,7 @@ private:
     int mVaryingIndex[4];
     int mFaceVaryingIndex[4];
     float mVaryingWeights[4];
+
     // there can be only triangles or only quads in fully tessellated mesh
     int mVertexIndex[4];
     float mVertexWeights[4];
