@@ -29,6 +29,7 @@ target_sources(${component}
         ImageWriteDriver.cc
         OiioReader.cc
         OiioUtils.cc
+        PathVisualizerManager.cc
         PixelBufferUtils.cc
         PixSampleRuntimeVerify.cc
         ProcKeeper.cc
@@ -68,9 +69,10 @@ set_property(
 
 set_property(TARGET ${component}
     PROPERTY PUBLIC_HEADER
+        PathVisualizerManager.h
         PixelBufferUtils.h
         RenderContext.h
-	RenderContextConsoleDriver.h
+        RenderContextConsoleDriver.h
         RenderPrepExecTracker.h
         RenderProgressEstimation.h
         RenderOptions.h

@@ -18,6 +18,7 @@
 #include <moonray/rendering/pbr/core/Constants.h>
 #include <moonray/rendering/pbr/core/DebugRay.h>
 #include <moonray/rendering/pbr/core/RayState.h>
+#include <moonray/rendering/pbr/core/PathVisualizer.h>
 #include "VolumeTransmittance.h"
 
 // using namespace scene_rdl2::math; // can't use this as it breaks openvdb in clang.
@@ -42,6 +43,7 @@ PathIntegrator::addDirectVisibleBsdfLobeSampleContribution(pbr::TLState *pbrTls,
 
     const Light *light = bsmp.lp.light;
     const shading::BsdfLobe &lobe = *bSampler.getLobe(lobeIndex);
+    const FrameState &fs = *pbrTls->mFs;
 
     // Create a ray using the origin of the parent ray.
     // Note the origin is actually the point on the surface that
@@ -90,7 +92,6 @@ PathIntegrator::addDirectVisibleBsdfLobeSampleContribution(pbr::TLState *pbrTls,
     // LPE
     if (aovs) {
         EXCL_ACCUMULATOR_PROFILE(pbrTls, EXCL_ACCUM_AOVS);
-        const FrameState &fs = *pbrTls->mFs;
         const AovSchema &aovSchema = *fs.mAovSchema;
         const LightAovs &lightAovs = *fs.mLightAovs;
         // transition
@@ -124,6 +125,12 @@ PathIntegrator::addDirectVisibleBsdfLobeSampleContribution(pbr::TLState *pbrTls,
             RAYDB_SET_CONTRIBUTION(pbrTls, scene_rdl2::math::sWhite);
             RAYDB_ADD_TAGS(pbrTls, TAG_ENVLIGHT);
         }
+    }
+
+    /// Record ray for our path visualizer
+    if (fs.mScene->isPathVisualizerOn()) {
+        mcrt_common::Ray debugRay(parentRay.getOrigin(), bsmp.wi, 0.f, tfar, 0.f, rayDepth);
+        fs.mScene->recordOcclusionRay(debugRay, sp.mPixel, sp.mSubpixelIndex, /* isLightSample */ false, isOccluded);
     }
 }
 
@@ -185,7 +192,9 @@ void PathIntegrator::addDirectVisibleLightSampleContributions(pbr::TLState* pbrT
         const FrameState &fs = *pbrTls->mFs;
         const bool hasUnoccludedFlag = fs.mAovSchema->hasLpePrefixFlags(AovSchema::sLpePrefixUnoccluded);
         int32_t assignmentId = isect.getLayerAssignmentId();
-        if (isRayOccluded(pbrTls, light, shadowRay, rayEpsilon, shadowRayEpsilon, sp, sequenceID, pv.pathThroughput, presence, assignmentId)) {
+        bool isOccluded = isRayOccluded(pbrTls, light, shadowRay, rayEpsilon, shadowRayEpsilon, sp, 
+                                        sequenceID, pv.pathThroughput, presence, assignmentId);
+        if (isOccluded) {
             // Calculate clear radius falloff
             // only do extra calculations if clear radius falloff enabled
             if (light->getClearRadiusFalloffDistance() != 0.f && 
@@ -313,6 +322,12 @@ void PathIntegrator::addDirectVisibleLightSampleContributions(pbr::TLState* pbrT
                     RAYDB_ADD_TAGS(pbrTls, TAG_ENVLIGHT);
                 }
             }
+        }
+        
+        /// Record ray for our path visualizer
+        if (fs.mScene->isPathVisualizerOn()) {
+            mcrt_common::Ray debugRay(P, lsmp[i].wi, 0.f, tfar, 0.f, rayDepth);
+            fs.mScene->recordOcclusionRay(debugRay, sp.mPixel, sp.mSubpixelIndex, /* isLightSample */ true, isOccluded);
         }
     }
 }

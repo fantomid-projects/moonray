@@ -60,6 +60,66 @@ Frustum::computeOutcode(const Vec3f& p) const
 
 #define MAX_POINTS 4    // Todo: better handling of max number of input points
 
+bool Frustum::clipLineToPlane(const Vec3f& p1In, const Vec3f& p2In, int plane, Vec3f& p1Out, Vec3f& p2Out) const
+{    
+    // Compute result of plugging points into the plane equation Ax + By + Cz + D
+    float d[2];
+    d[0] = dot((Vec3f)mClipPlanes[plane], p1In) + mClipPlanes[plane][3];
+    d[1] = dot((Vec3f)mClipPlanes[plane], p2In) + mClipPlanes[plane][3];
+
+    // Neither endpoint is inside the frustum
+    if (d[0] < 0.f && d[1] < 0.f) {
+        return false;
+    }
+
+    // if d[1] and d[0] are the same,
+    // p1In and p2In must be the same point
+    if (d[1] == d[0]) {
+        // we've already established at least one endpoint
+        // is inside the frustum, so both must be
+        p1Out = p1In;
+        p2Out = p2In;
+        return true;
+    }
+
+    // If p1 is inside, add as is
+    // Otherwise, p2 must be inside. Clip p1
+    if (d[0] >= 0.f) {
+        p1Out = p1In;
+    } else {
+        float t = d[1] / (d[1] - d[0]);
+        p1Out = p2In + t * (p1In - p2In);
+    }
+
+    // If p2 is inside, add as is
+    // Otherwise, p1 must be inside. Clip p2
+    if (d[1] >= 0.f) {
+        p2Out = p2In;
+    } else {
+        float t = d[0] / (d[0] - d[1]);
+        p2Out = p1In + t * (p2In - p1In);
+    }
+
+    return true;
+}
+
+bool Frustum::clipLine(const Vec3f& p1In, const Vec3f& p2In, Vec3f& p1Out, Vec3f& p2Out) const
+{
+    Vec3f temp1 = p1In;
+    Vec3f temp2 = p2In;
+
+    for (int i = 0; i < 6; i++) {
+        if (!clipLineToPlane(temp1, temp2, i, p1Out, p2Out)) {
+            return false;
+        }
+
+        temp1 = p1Out;
+        temp2 = p2Out;
+    }
+
+    return true;
+}
+
 int
 Frustum::clipPolyToPlane(Vec3f* xyzOut, const Vec3f* xyzIn, int numIn, int planeIdx) const
 {

@@ -60,6 +60,7 @@ struct RenderPrepTimingStats;
 class RenderProgressEstimation;
 class RenderStats;
 class ResumeHistoryMetaData;
+struct PathVisualizerManager;
 
 /// This must be called at program startup before we create any RenderContexts.
 /// It creates a single global render driver which is shared between all future
@@ -543,6 +544,8 @@ public:
 
     Parser& getParser() { return mParser; }
 
+    const std::unique_ptr<PathVisualizerManager>& getPathVisualizerManager() const { return mPathVisualizerManager; }
+
     void setForceCallStartFrame();
     void forceGuiCallStartFrameIfNeed(); // for moonray_gui
 
@@ -749,6 +752,8 @@ private:
     std::mutex mMutexForceCallStartFrame;
     bool mForceCallStartFrame = false;
     Parser mParser;
+
+    std::unique_ptr<PathVisualizerManager> mPathVisualizerManager;
 
     // final rendering execution mode and the reason why
     mcrt_common::ExecutionMode mExecutionMode; // for debugConsole command and McrtNodeInfo update

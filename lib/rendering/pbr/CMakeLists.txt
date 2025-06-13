@@ -330,6 +330,7 @@ target_sources(${component}
         core/DebugRay.cc
         core/DeepBuffer.cc
         core/Distribution.cc
+        core/PathVisualizer.cc
         core/PbrTLState.cc
         core/RayState.cc
         core/Scene.cc
@@ -401,6 +402,7 @@ target_link_libraries(${component}
         embree
         ${PROJECT_NAME}::common_mcrt_macros
         ${PROJECT_NAME}::deepfile
+        ${PROJECT_NAME}::rendering_drawing
         ${PROJECT_NAME}::rendering_geom
         ${PROJECT_NAME}::rendering_lpe
         ${PROJECT_NAME}::rendering_mcrt_common

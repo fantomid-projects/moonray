@@ -18,6 +18,7 @@
 #include <moonray/rendering/pbr/core/Cryptomatte.h>
 #include <moonray/rendering/pbr/core/DebugRay.h>
 #include <moonray/rendering/pbr/core/DeepBuffer.h>
+#include <moonray/rendering/pbr/core/PathVisualizer.h>
 #include <moonray/rendering/pbr/core/RayState.h>
 #include <moonray/rendering/pbr/core/Scene.h>
 #include <moonray/rendering/pbr/core/Util.h>
@@ -411,6 +412,12 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
             }
         }
     }
+
+    /// ---- Record ray for our path visualizer -------------------------------------------------
+    if (hitGeom) {
+        scene->recordRegularRay(ray, sp.mPixel, sp.mSubpixelIndex, lobeType);
+    }
+    /// -----------------------------------------------------------------------------------------
 
     // Prevent aliasing in the visibility aov by accounting for 
     // primary rays that don't hit anything

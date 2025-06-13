@@ -59,6 +59,7 @@ namespace pbr {
 // Forward Decl.
 class Camera;
 class Light;
+class PathVisualizer;
 class TLState;
 
 
@@ -128,6 +129,8 @@ public:
     /// Visibility intersections returns first hit
     bool intersectRay(mcrt_common::ThreadLocalState *tls, mcrt_common::Ray &ray,
             shading::Intersection &isect, const int lobeType) const;
+    
+    bool intersectRay(mcrt_common::Ray &ray) const;
 
     /// Checks whether the given ray intersects the geometry we've marked "is_camera_medium_geometry".
     /// Used to check whether we should add the "medium_material" to the primary ray's material priority list.
@@ -140,6 +143,9 @@ public:
 
     /// Shadow intersections returns whether or not there is any hit
     bool isRayOccluded(mcrt_common::ThreadLocalState *tls, mcrt_common::Ray &ray) const;
+
+    // Occlusion test for when we don't need to increment stats
+    bool isRayOccluded(mcrt_common::Ray &ray) const;
 
     /// Query whether the light with index value lightIndex is active
     /// in the light set associated with layerAssignmentId
@@ -302,6 +308,16 @@ public:
         return mRdlLayer;
     }
 
+    bool isPathVisualizerOn() const;
+
+    void setPathVisualizer(pbr::PathVisualizer* visualizer)
+    {
+        mPathVisualizer = visualizer;
+    }
+
+    void recordOcclusionRay(const mcrt_common::Ray& ray, int pixel, int spIndex, bool isLightSample, bool isOccluded);
+    void recordRegularRay(const mcrt_common::Ray& ray, int pixel, int spIndex, int lobeType);
+
 private:
     /// Copy is disabled
     Scene(const Scene &other);
@@ -417,6 +433,8 @@ private:
 
     // Whether any light filter needs samples (e.g. for blur)
     bool mLightFilterNeedsSamples;
+
+    pbr::PathVisualizer* mPathVisualizer;
 };
 
 

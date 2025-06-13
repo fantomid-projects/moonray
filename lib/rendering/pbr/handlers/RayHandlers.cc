@@ -12,6 +12,7 @@
 #include <moonray/rendering/mcrt_common/Clock.h>
 #include <moonray/rendering/mcrt_common/ProfileAccumulatorHandles.h>
 #include <moonray/rendering/mcrt_common/ThreadLocalState.h>
+#include <moonray/rendering/pbr/core/PathVisualizer.h>
 #include <moonray/rendering/pbr/core/PbrTLState.h>
 #include <moonray/rendering/pbr/core/RayState.h>
 #include <moonray/rendering/pbr/core/Scene.h>
@@ -82,6 +83,12 @@ areSingleRaysOccluded(pbr::TLState *pbrTls, unsigned numEntries, BundledOcclRay 
             EXCL_ACCUMULATOR_PROFILE(pbrTls, EXCL_ACCUM_EMBREE_OCCLUSION);
             isOccluded = accel->occluded(rtRay);
         }
+
+        /// Record ray for our path visualizer
+        rtRay.tfar = occlRay.mMaxT;
+        rtRay.setDepth(occlRay.mDepth);
+        fs.mScene->recordOcclusionRay(rtRay, occlRay.mPixel, occlRay.mSubpixelIndex, 
+                                      /* isLightSample */ true, isOccluded);
 
         if (!isOccluded || disableShadowing) {
             // At this point, we know that the ray is not occluded, but we still need to
@@ -427,6 +434,11 @@ rayBundleHandler(mcrt_common::ThreadLocalState *tls, unsigned numEntries,
             const geom::internal::Primitive* prim = userData->mPrimitive;
             const scene_rdl2::rdl2::Material *rdl2Material = MNRY_VERIFY(prim)->getIntersectionMaterial(layer, ray);
             const shading::Material *material = &rdl2Material->get<const shading::Material>();
+
+            // ---- Record ray for our path visualizer ----------------------------------------------
+            const Subpixel& sp = rayStates[i]->mSubpixel;
+            fs.mScene->recordRegularRay(ray, sp.mPixel, sp.mSubpixelIndex, pv.lobeType);
+            // --------------------------------------------------------------------------------------
 
             if (material) {
                 // perform material substitution if needed

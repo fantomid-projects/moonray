@@ -151,6 +151,10 @@ public:
     /// flags other than boolean unions (i.e. flags other than ALL_*)
     finline bool matchesFlag(Type flag) const  {  return (mType & flag);  }
 
+    finline static bool matchesFlag(int flag1, int flag2) {
+        return (flag1 & flag2);
+    }
+
     /// A bsdf lobe can be scaled by a color (and by a fresnel reflectance).
     /// It is the responsibility of the derived class' implementation to include
     /// the color scaling (and fresnel if any) in the result of eval() and sample()

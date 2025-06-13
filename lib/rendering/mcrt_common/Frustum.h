@@ -63,6 +63,16 @@ struct Frustum
     // If supplied, whichPlanes must be non-zero (otherwise why bother clippng?)
     int clipPoly(scene_rdl2::math::Vec3f* xyzOut, scene_rdl2::math::Vec2f* stOut,
                  const scene_rdl2::math::Vec3f* xyzIn, const scene_rdl2::math::Vec2f* stIn, int numIn, int whichPlanes = 0x3F) const;
+
+    // Clip the line defined by the start point p1In and the endpoint p2In to the specified plane,
+    // outputting results in p1Out and p2Out. Returns whether we were able to successfully clip both points.
+    bool clipLineToPlane(const scene_rdl2::math::Vec3f& p1In, const scene_rdl2::math::Vec3f& p2In, int plane,
+                         scene_rdl2::math::Vec3f& p1Out, scene_rdl2::math::Vec3f& p2Out) const;
+
+    // Clip the line defined by the start point p1In and the endpoint p2In to ALL the planes of the frustum,
+    // outputting results in p1Out and p2Out. Returns whether we were able to successfully clip both points.
+    bool clipLine(const scene_rdl2::math::Vec3f& p1In, const scene_rdl2::math::Vec3f& p2In,
+                  scene_rdl2::math::Vec3f& p1Out, scene_rdl2::math::Vec3f& p2Out) const;
     
     // Transform all of the clipping planes by the given transform
     void transformClipPlanes(const scene_rdl2::math::Mat4d& transform);

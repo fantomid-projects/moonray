@@ -12,6 +12,7 @@
 #include "CheckpointSigIntHandler.h"
 #include "FrameState.h"
 #include "ImageWriteDriver.h"
+#include "PathVisualizerManager.h"
 #include "PixelBufferUtils.h"
 #include "ProcKeeper.h"
 #include "RenderContextConsoleDriver.h"
@@ -247,6 +248,8 @@ RenderContext::RenderContext(RenderOptions& options, std::stringstream* initMess
     mResumeHistoryMetaData->setProcStartTime();
 
     //------------------------------
+
+    mPathVisualizerManager = std::make_unique<PathVisualizerManager>();
 
     // Initialize set of standard attributes
     shading::StandardAttributes::init();
@@ -756,7 +759,6 @@ RenderContext::startFrame()
     // The frame officially starts now! This time includes the update portion
     // of the frame also.
     double frameStartTime = scene_rdl2::util::getSeconds();
-
     const scene_rdl2::rdl2::SceneVariables &vars = mSceneContext->getSceneVariables();
 
     { // renderContext console setup for debug purpose
@@ -1033,6 +1035,10 @@ RenderContext::startFrame()
         mRenderStats->startRenderStats();
     }
 
+    // Initialize the PathVisualizerManager, which will
+    // create a new PathVisualizer object if it's been triggered
+    mPathVisualizerManager->initialize(vars, mPbrScene.get());
+
     // Invoke the render driver.
     mRendering = true;
     mDriver->startFrame(frameState);
@@ -1073,6 +1079,8 @@ RenderContext::stopFrame()
     mDriver->stopFrame();
 
     mRenderPrepTimingStats->recTime(RenderPrepTimingStats::StopFrameTag::MDRIVER_STOPFRAME);
+
+    mPathVisualizerManager->turnOff();
 
     mPbrScene->postFrame();
 

@@ -3,6 +3,7 @@
 
 add_subdirectory(bvh)
 add_subdirectory(displayfilter)
+add_subdirectory(drawing)
 add_subdirectory(lpe)
 add_subdirectory(mcrt_common)
 add_subdirectory(shading)

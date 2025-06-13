@@ -36,6 +36,7 @@
 #include <moonray/rendering/pbr/lightfilter/IntensityLightFilter.h>
 #include <moonray/rendering/pbr/lightfilter/RodLightFilter.h>
 #include <moonray/rendering/pbr/lightfilter/VdbLightFilter.h>
+#include <moonray/rendering/pbr/core/PathVisualizer.h>
 #include <moonray/rendering/pbr/core/Util.h>
 
 #include <moonray/rendering/geom/Instance.h>
@@ -101,7 +102,8 @@ Scene::Scene(
     mHardcodedBsdfLobeCount(hardcodedLobeCount),
     mPropagateVisibilityBounceType(false),
     mHasVolume(false),
-    mLightFilterNeedsSamples(false)
+    mLightFilterNeedsSamples(false),
+    mPathVisualizer(nullptr)
 {
     std::vector<const rdl2::Camera *> cameras = rdlSceneContext->getActiveCameras();
     updateActiveCamera(cameras[0]);
@@ -859,6 +861,19 @@ Scene::intersectRay(mcrt_common::ThreadLocalState *tls, mcrt_common::Ray &ray, s
 }
 
 bool
+Scene::intersectRay(mcrt_common::Ray &ray) const
+{
+    if (ray.getStart() >= ray.getEnd()) {
+        return false;
+    }
+
+    // Intersect with manifold geometry.
+    {
+        mEmbreeAccel->intersect(ray);
+    }
+}
+
+bool
 Scene::intersectPresenceRay(mcrt_common::ThreadLocalState *tls,
                             mcrt_common::Ray &ray,
                             shading::Intersection &isect) const
@@ -916,6 +931,19 @@ Scene::isRayOccluded(mcrt_common::ThreadLocalState *tls, mcrt_common::Ray &ray) 
 
     // Test for occlusion.
     EXCL_ACCUMULATOR_PROFILE(pbrTls, EXCL_ACCUM_EMBREE_OCCLUSION);
+    return mEmbreeAccel->occluded(ray);
+}
+
+bool
+Scene::isRayOccluded(mcrt_common::Ray &ray) const
+{
+    if (ray.getStart() >= ray.getEnd()) {
+        return false;
+    }
+
+    ray.mask = rdl2::SHADOW;
+
+    // Test for occlusion.
     return mEmbreeAccel->occluded(ray);
 }
 
@@ -996,6 +1024,23 @@ Scene::pickVisibleLights(const mcrt_common::Ray &ray, float maxDistance, std::ve
             lightIsects.push_back(currentIsect);
         }
     }
+}
+
+bool Scene::isPathVisualizerOn() const
+{
+    return mPathVisualizer && mPathVisualizer->isOn();
+}
+
+void Scene::recordOcclusionRay(const mcrt_common::Ray& ray, int pixel, int spIndex, bool isLightSample, bool isOccluded)
+{
+    if (!isPathVisualizerOn()) { return; }
+    mPathVisualizer->recordOcclusionRay(ray, *this, pixel, spIndex, isLightSample, isOccluded);
+}
+
+void Scene::recordRegularRay(const mcrt_common::Ray& ray, int pixel, int spIndex, int lobeType)
+{
+    if (!isPathVisualizerOn()) { return; }
+    mPathVisualizer->recordRegularRay(ray, *this, pixel, spIndex, lobeType);
 }
 
 std::ostream& Scene::print(std::ostream& cout,
