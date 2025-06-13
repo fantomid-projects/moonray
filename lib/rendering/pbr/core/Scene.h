@@ -315,8 +315,8 @@ public:
         mPathVisualizer = visualizer;
     }
 
-    void recordOcclusionRay(const mcrt_common::Ray& ray, int pixel, int spIndex, bool isLightSample, bool isOccluded);
-    void recordRegularRay(const mcrt_common::Ray& ray, int pixel, int spIndex, int lobeType);
+    void recordOcclusionRay(const mcrt_common::Ray& ray, int pixel, int spIndex, bool isLightSample, bool isOccluded) const;
+    void recordRegularRay(const mcrt_common::Ray& ray, int pixel, int spIndex, int lobeType) const;
 
 private:
     /// Copy is disabled

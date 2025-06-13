@@ -30,7 +30,7 @@ public:
     ~PathVisualizerManager();
 
     /// Checks if mTrigger is true -- if so, create the PathVisualizer object
-    void initialize(const scene_rdl2::rdl2::SceneVariables& vars, const pbr::Scene* scene);
+    void initialize(const scene_rdl2::rdl2::SceneVariables& vars, pbr::Scene* scene);
 
     /// If the PathVisualizer exists, draws the visualization
     void draw(scene_rdl2::fb_util::RenderBuffer* renderBuffer);

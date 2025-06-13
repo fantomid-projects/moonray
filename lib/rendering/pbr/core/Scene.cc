@@ -871,6 +871,7 @@ Scene::intersectRay(mcrt_common::Ray &ray) const
     {
         mEmbreeAccel->intersect(ray);
     }
+    return true;
 }
 
 bool
@@ -1031,13 +1032,13 @@ bool Scene::isPathVisualizerOn() const
     return mPathVisualizer && mPathVisualizer->isOn();
 }
 
-void Scene::recordOcclusionRay(const mcrt_common::Ray& ray, int pixel, int spIndex, bool isLightSample, bool isOccluded)
+void Scene::recordOcclusionRay(const mcrt_common::Ray& ray, int pixel, int spIndex, bool isLightSample, bool isOccluded) const
 {
     if (!isPathVisualizerOn()) { return; }
     mPathVisualizer->recordOcclusionRay(ray, *this, pixel, spIndex, isLightSample, isOccluded);
 }
 
-void Scene::recordRegularRay(const mcrt_common::Ray& ray, int pixel, int spIndex, int lobeType)
+void Scene::recordRegularRay(const mcrt_common::Ray& ray, int pixel, int spIndex, int lobeType) const
 {
     if (!isPathVisualizerOn()) { return; }
     mPathVisualizer->recordRegularRay(ray, *this, pixel, spIndex, lobeType);

@@ -68,7 +68,7 @@ class PathVisualizer {
 
             // For each pixel, there should be "pixelSamples"
             // number of subpixel arrays allocated
-            for (const Pixel& pixel : mData) {
+            for (Pixel& pixel : mData) {
                 pixel.resize(pixelSamples);
             }
         }
@@ -135,7 +135,7 @@ class PathVisualizer {
         int8_t mDepth;                                  // ray depth
         Flags mFlags;                                   // node type flags
 
-        Node::Node(int rayOriginIndex, int rayEndpointIndex, int rayIsectIndex, int rayDepth, Flags flags)
+        Node(int rayOriginIndex, int rayEndpointIndex, int rayIsectIndex, int rayDepth, Flags flags)
                 : mRayOriginIndex(rayOriginIndex), 
                   mRayEndpointIndex(rayEndpointIndex), 
                   mRayIsectIndex(rayIsectIndex),
@@ -143,7 +143,7 @@ class PathVisualizer {
                   mFlags(flags) {}
 
         // Copy constructor
-        Node::Node(const Node& other)
+        Node(const Node& other)
             : mRayOriginIndex(other.mRayOriginIndex),
               mRayEndpointIndex(other.mRayEndpointIndex),
               mRayIsectIndex(other.mRayIsectIndex),
@@ -152,7 +152,7 @@ class PathVisualizer {
         {}
 
         // Move constructor
-        Node::Node(Node&& other)
+        Node(Node&& other)
             : mRayOriginIndex(other.mRayOriginIndex),
               mRayEndpointIndex(other.mRayEndpointIndex),
               mRayIsectIndex(other.mRayIsectIndex),
@@ -316,7 +316,7 @@ private:
     inline void resetCameraIsectIndex() { mCameraIsectIndex = -1; }
 
     /// Given the writable "flags", set the provided flag
-    inline void setFlag(Flags& flags, const Flags& flag);
+    inline void setFlag(Flags& flags, const Flags& flag) const;
 
     /// Given the writable "flags", set the appropriate flags based on the boolean vars
     inline void setFlags(Flags& flags, bool isDiffuse, bool isSpecular, bool isLightSample) const;

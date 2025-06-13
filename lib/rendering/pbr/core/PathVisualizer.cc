@@ -448,7 +448,8 @@ inline scene_rdl2::math::Color PathVisualizer::getRayColor(int nodeIndex) const
 
 /// -------- Setters --------
 
-inline void PathVisualizer::setFlag(Flags& flags, const Flags& flag) 
+inline void PathVisualizer::setFlag(Flags& flags, const Flags& flag) const
+
 {
     flags = static_cast<Flags>(static_cast<uint8_t>(flags) | static_cast<uint8_t>(flag));
 }

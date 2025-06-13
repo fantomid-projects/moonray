@@ -23,7 +23,7 @@ PathVisualizerManager::~PathVisualizerManager()
     delete mPathVisualizer;
 }
 
-void PathVisualizerManager::initialize(const scene_rdl2::rdl2::SceneVariables& vars, const pbr::Scene* scene)
+void PathVisualizerManager::initialize(const scene_rdl2::rdl2::SceneVariables& vars, pbr::Scene* scene)
 {
     // If not triggered, the user hasn't specified we need to create a new PathVisualizer
     if (!mTriggered) { return; }
