@@ -338,7 +338,7 @@ private:
             const shading::Intersection& isect, const float* lightSelectionPdfs,
             const Rdl2LightSetList& parentLobeLightSets) const;
 
-    void addIndirectOrDirectVisibleContributions(pbr::TLState *pbrTls,
+    void addIndirectAndDirectVisibleContributions(pbr::TLState *pbrTls,
             const Subpixel &sp,
             const PathVertex &parentPv, const BsdfSampler &bSampler,
             const BsdfSample *bsmp, const mcrt_common::RayDifferential &parentRay,

@@ -68,7 +68,7 @@ computeLobeSampleCount(const shading::BsdfLobe *lobe, const shading::BsdfSlice &
 
 //----------------------------------------------------------------------------
 
-BsdfSampler::BsdfSampler(scene_rdl2::alloc::Arena *arena, shading::Bsdf &bsdf, const shading::BsdfSlice &slice,
+BsdfSampler::BsdfSampler(scene_rdl2::alloc::Arena *arena, const shading::Bsdf &bsdf, const shading::BsdfSlice &slice,
         int maxSamplesPerLobe, bool doIndirect) :
     mBsdf(bsdf),
     mSlice(slice),

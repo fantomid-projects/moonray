@@ -735,13 +735,10 @@ CPP_computeMotion(intptr_t scenePtr, float time, const Vec3f *p, const Vec3f *dp
 
 // compute a 2D screen space motion vector from an isect
 static Vec2f
-computeMotion(const shading::Intersection &isect,
-              const mcrt_common::RayDifferential &ray,
-              const Scene &scene)
+computeMotion(const shading::Intersection &isect, const Scene &scene, float time)
 {
     // use CPP_computeMotion, which is shared with ISPC
     intptr_t scenePtr = (intptr_t) &scene;
-    const float time = ray.getTime();
     Vec3f p = isect.getP();
     Vec3f dp;
     Vec3f *dpPtr = nullptr;
@@ -949,7 +946,7 @@ getStateVar(int aovSchemaId, const shading::Intersection &isect, float volumeT,
             }
         case AOV_SCHEMA_ID_STATE_MOTION:
             {
-                const Vec2f v = computeMotion(isect, ray, scene) * pixelWeight;
+                const Vec2f v = computeMotion(isect, scene, ray.getTime()) * pixelWeight;
                 *dest       = v.x;
                 *(dest + 1) = v.y;
             }

@@ -158,7 +158,8 @@ PathIntegrator::addDirectVisibleBsdfSampleContributions(pbr::TLState *pbrTls,
     }
 }
 
-void PathIntegrator::addDirectVisibleLightSampleContributions(pbr::TLState* pbrTls, Subpixel const& sp, 
+void
+PathIntegrator::addDirectVisibleLightSampleContributions(pbr::TLState* pbrTls, Subpixel const& sp, 
         const PathVertex& pv, const LightSetSampler& lSampler, LightSample* lsmp,
         const mcrt_common::RayDifferential& parentRay, float rayEpsilon, float shadowRayEpsilon,
         scene_rdl2::math::Color& radiance, unsigned& sequenceID, float* aovs,
@@ -419,7 +420,7 @@ PathIntegrator::sampleAndAddDirectLightContributions(pbr::TLState* pbrTls,
 
 
 void
-PathIntegrator::addIndirectOrDirectVisibleContributions(
+PathIntegrator::addIndirectAndDirectVisibleContributions(
     pbr::TLState *pbrTls,
     const Subpixel &sp, const PathVertex &parentPv, const BsdfSampler &bSampler,
     const BsdfSample *bsmp, const mcrt_common::RayDifferential &parentRay,
@@ -436,7 +437,7 @@ PathIntegrator::addIndirectOrDirectVisibleContributions(
 
     scene_rdl2::math::Vec3f wo = -parentRay.getDirection();
 
-    // Trace bsdf sample continuation rays. We accumulate either direct or
+    // Trace bsdf sample continuation rays. We accumulate both direct and
     // indirect lighting contributions accordingly
     int s = 0;
     const int lobeCount = bSampler.getLobeCount();
@@ -491,7 +492,7 @@ PathIntegrator::addIndirectOrDirectVisibleContributions(
             // Use previous path pixel weight for aovPathPixelWeight as there's existing logic
             // in vector mode that sometimes assumes that pv.pathPixelWeight = 0.  Thus, we must seperately
             // keep track of the pathPixelWeight for aovs.  See comment in PathIntegratorMultiSampler.ispc::
-            // addIndirectOrDirectVisibleContributionsBundled().
+            // addIndirectAndDirectVisibleContributionsBundled().
             pv.aovPathPixelWeight = parentPv.pathPixelWeight;
             pv.pathDistance = parentPv.pathDistance + parentRay.getEnd();
             pv.minRoughness = minRoughness;
@@ -685,11 +686,7 @@ PathIntegrator::computeRadianceBsdfMultiSampler(pbr::TLState *pbrTls,
 
     scene_rdl2::alloc::Arena *arena = pbrTls->mArena;
 
-    // TODO: I feel that the bsdf is conceptually const at this point
-    // I don't know why or for what reason the bsdf sampler needs a non-const bsdf
-    shading::Bsdf &constCastBsdf = const_cast<shading::Bsdf &>(bsdf);
-
-    BsdfSampler bSampler(arena, constCastBsdf, slice, maxSamplesPerLobe, doIndirect);
+    BsdfSampler bSampler(arena, bsdf, slice, maxSamplesPerLobe, doIndirect);
 
     const int bsdfSampleCount = bSampler.getSampleCount();
     BsdfSample *bsmp = arena->allocArray<BsdfSample>(bsdfSampleCount);
@@ -756,10 +753,10 @@ PathIntegrator::computeRadianceBsdfMultiSampler(pbr::TLState *pbrTls,
 
     if (doIndirect) {
         // Note: This will recurse
-        addIndirectOrDirectVisibleContributions(pbrTls, sp, pv, bSampler, bsmp,
+        addIndirectAndDirectVisibleContributions(pbrTls, sp, pv, bSampler, bsmp,
                 ray, rayEpsilon, shadowRayEpsilon, isect, indirectFlags, newPriorityList, newPriorityListCount,
                 radiance, sequenceID, aovs, reflectedCryptomatteParams, refractedCryptomatteParams, parentLobeLightSets);
-        checkForNan(radiance, "Direct or indirect contributions", sp, pv, ray,
+        checkForNan(radiance, "Indirect and direct contributions", sp, pv, ray,
                 isect);
     } else {
         // TODO: Incorrect transparency if there is no indirect

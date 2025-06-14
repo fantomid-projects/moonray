@@ -79,11 +79,11 @@ class BsdfSampler
 {
 public:
 
-    BsdfSampler(scene_rdl2::alloc::Arena *arena, shading::Bsdf &bsdf, const shading::BsdfSlice &slice,
+    BsdfSampler(scene_rdl2::alloc::Arena *arena, const shading::Bsdf &bsdf, const shading::BsdfSlice &slice,
         int maxSamplesPerLobe, bool doIndirect);
     ~BsdfSampler();
 
-    finline shading::Bsdf &getBsdf() const                  {  return mBsdf;  }
+    finline const shading::Bsdf &getBsdf() const            {  return mBsdf;  }
     finline const shading::BsdfSlice &getBsdfSlice() const  {  return mSlice;  }
 
     // Returns maximum number of samples per lobe
@@ -133,7 +133,7 @@ private:
     BsdfSampler &operator=(const BsdfSampler &other);
 
 
-    shading::Bsdf &mBsdf;
+    const shading::Bsdf &mBsdf;
     const shading::BsdfSlice &mSlice;
     int mMaxSamplesPerLobe;
     bool mDoIndirect;
