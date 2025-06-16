@@ -100,9 +100,6 @@ public:
     finline const shading::BsdfLobe *getLobe(int lobeIndex) const
             {  MNRY_ASSERT(lobeIndex < mLobeCount);
                return mBsdf.getLobe(mLobeIndex[lobeIndex]);  }
-    finline shading::BsdfLobe *getLobe(int lobeIndex)
-            {  MNRY_ASSERT(lobeIndex < mLobeCount);
-               return mBsdf.getLobe(mLobeIndex[lobeIndex]);  }
 
     // Returns total number of samples for all lobes in the sampler
     finline int getSampleCount() const  {  return mSampleCount;  }

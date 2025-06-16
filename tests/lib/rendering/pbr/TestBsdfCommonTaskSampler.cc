@@ -98,7 +98,7 @@ TestBsdfConsistencyTask::testBsdfSampler()
                 // only the mirror lobe contribution and eval() will return all
                 // non-mirror lobes.
                 float checkPdf;
-                shading::BsdfLobe *lobe = sampler.getLobe(lobeIndex);
+                const shading::BsdfLobe *lobe = sampler.getLobe(lobeIndex);
                 Color checkF = lobe->eval(slice, bsmp.wi, &checkPdf);
                 if (checkPdf == 0.0f) {
                     zeroEvalPdfCount++;
@@ -189,7 +189,7 @@ TestBsdfPdfIntegralTask::testBsdfSampler()
         for (int lobeIndex = 0; lobeIndex < sampler.getLobeCount(); ++lobeIndex) {
             for (int i = 0; i < sampler.getLobeSampleCount(lobeIndex); ++i) {
 
-                shading::BsdfLobe *lobe = sampler.getLobe(lobeIndex);
+                const shading::BsdfLobe *lobe = sampler.getLobe(lobeIndex);
 
                 Vec3f wi;
                 if (mResult.mSpherical) {
@@ -244,7 +244,7 @@ TestBsdfEvalIntegralTask::testBsdfSampler()
         for (int lobeIndex = 0; lobeIndex < sampler.getLobeCount(); ++lobeIndex) {
             for (int i = 0; i < sampler.getLobeSampleCount(lobeIndex); ++i) {
 
-                shading::BsdfLobe *lobe = sampler.getLobe(lobeIndex);
+                const shading::BsdfLobe *lobe = sampler.getLobe(lobeIndex);
 
                 const float r1 = random.getNextFloat();
                 const float r2 = random.getNextFloat();
