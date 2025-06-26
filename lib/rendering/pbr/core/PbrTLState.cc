@@ -241,7 +241,7 @@ PoolInfo::init(const size_t poolSize, // Whole poolSize for MoonRay process, not
         //
         std::shared_ptr<mcrt_common::MemoryNode> currMemNode =
             mcrt_common::AffinityManager::get()->getMem()->getMemoryNodeByNumaNodeId(mNumaNodeId);
-        const scene_rdl2::NumaNode* currNumaNode = currMemNode->getNumaNode();
+        const scene_rdl2::grid_util::NumaNode* currNumaNode = currMemNode->getNumaNode();
 
         // We should check the alignment size here. We have limited support for alignment size because
         // we use the simplified high speed operation of NUMA-node based memory allocation.
@@ -340,7 +340,7 @@ PoolInfo::cleanUp()
         //
         std::shared_ptr<mcrt_common::MemoryNode> currMemNode =
             mcrt_common::AffinityManager::get()->getMem()->getMemoryNodeByNumaNodeId(mNumaNodeId);
-        const scene_rdl2::NumaNode* currNumaNode = currMemNode->getNumaNode();
+        const scene_rdl2::grid_util::NumaNode* currNumaNode = currMemNode->getNumaNode();
 
         scene_rdl2::util::alignedFreeDtorBasis<scene_rdl2::alloc::MemBlockManager>
             (mMemBlockManager, [&](const void* ptr) {
@@ -868,7 +868,7 @@ TLState::TLState(mcrt_common::ThreadLocalState *tls,
         //
         std::shared_ptr<mcrt_common::MemoryNode> currMemNode =
             mcrt_common::AffinityManager::get()->getMem()->getMemoryNodeByNumaNodeId(numaNodeId);
-        const scene_rdl2::NumaNode* currNumaNode = currMemNode->getNumaNode();
+        const scene_rdl2::grid_util::NumaNode* currNumaNode = currMemNode->getNumaNode();
         if (!currNumaNode->alignmentSizeCheck(CACHE_LINE_SIZE)) {
             std::ostringstream ostr;
             ostr << "FATAL-ERROR : PbrTLState.cc TLState::TLState() alignmentSizeCheck failed."
@@ -898,7 +898,7 @@ TLState::TLState(mcrt_common::ThreadLocalState *tls,
         }
 
 #ifndef PLATFORM_APPLE
-        const scene_rdl2::NumaNode* currNumaNode = nullptr;
+        const scene_rdl2::grid_util::NumaNode* currNumaNode = nullptr;
         if (numaNodeId != ~0) {
             //
             // Memory Affinity enabled
@@ -1045,7 +1045,7 @@ TLState::~TLState()
         //
         std::shared_ptr<mcrt_common::MemoryNode> currMemNode =
             mcrt_common::AffinityManager::get()->getMem()->getMemoryNodeByNumaNodeId(numaNodeId);
-        const scene_rdl2::NumaNode* currNumaNode = currMemNode->getNumaNode();
+        const scene_rdl2::grid_util::NumaNode* currNumaNode = currMemNode->getNumaNode();
 
         scene_rdl2::util::alignedFreeDtorBasis<RadianceQueue>
             (mRadianceQueue,

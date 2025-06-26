@@ -3,10 +3,10 @@
 #include "AffinityManager.h"
 
 #include <scene_rdl2/common/except/exceptions.h>
+#include <scene_rdl2/common/grid_util/CpuSocketUtil.h>
 #ifndef PLATFORM_APPLE
-#include <scene_rdl2/render/util/CpuSocketUtil.h>
 #include <scene_rdl2/render/util/ProcCpuAffinity.h>
-#endif
+#endif // end of PLATFORM_APPLE
 #include <scene_rdl2/render/util/StrUtil.h>
 
 #include <numeric> // std::iota
@@ -50,7 +50,7 @@ MemoryNode::MemoryNode(const unsigned activeThreadCount)
 #ifndef PLATFORM_APPLE
     
 MemoryNode::MemoryNode(const unsigned numaNodeId,
-                       const scene_rdl2::NumaNode* numaNode,
+                       const scene_rdl2::grid_util::NumaNode* numaNode,
                        const unsigned activeThreadCount)
     : mNumaNodeId {numaNodeId}
     , mNumaNode {numaNode}
@@ -177,7 +177,7 @@ MemoryAffinityManager::init(const std::shared_ptr<const CpuAffinityManager>& cpu
         //
 
         // we have to construct NumaUtil before execute calcActiveNumaNodeIdTbl()
-        mNumaUtil = std::make_shared<scene_rdl2::NumaUtil>();
+        mNumaUtil = std::make_shared<scene_rdl2::grid_util::NumaUtil>();
 
         setupMcrtThreadIdToMemNodeIdTbl(cpuAff);
 
@@ -192,7 +192,7 @@ MemoryAffinityManager::init(const std::shared_ptr<const CpuAffinityManager>& cpu
         mMemNodeTbl.resize(mNumaUtil->getTotalNumaNode());
         for (auto numaNodeId : activeNumaNodeIdTbl) {
             if (numaNodeId < mMemNodeTbl.size()) {
-                const scene_rdl2::NumaNode* numaNode = mNumaUtil->getNumaNode(numaNodeId);
+                const scene_rdl2::grid_util::NumaNode* numaNode = mNumaUtil->getNumaNode(numaNodeId);
                 const unsigned activeThreadCount = calcThreadCountOnActiveNumaNode(numaNodeId);
                 mMemNodeTbl[numaNodeId] =
                     std::make_shared<MemoryNode>(numaNodeId, numaNode, activeThreadCount);
@@ -587,9 +587,9 @@ CpuAffinityManager::configureCpuAffinity()
             //
             // pick CpuAffinity info
             //
-            if (!scene_rdl2::CpuSocketUtil::cpuIdDefToCpuIdTbl(mCpuAffinityDef,
-                                                               mCpuIdTbl,
-                                                               errMsg)) {
+            if (!scene_rdl2::grid_util::CpuSocketUtil::cpuIdDefToCpuIdTbl(mCpuAffinityDef,
+                                                                          mCpuIdTbl,
+                                                                          errMsg)) {
                 ostr << "CPU-affinity definition failed. " << errMsg
                      << " RenderPrep CPU-affinity control skipped";
                 mCpuIdTbl.clear();
@@ -603,7 +603,7 @@ CpuAffinityManager::configureCpuAffinity()
         }
     } else if (!mSocketAffinityDef.empty()) {
         try {
-            scene_rdl2::CpuSocketUtil cpuSocketUtil;
+            scene_rdl2::grid_util::CpuSocketUtil cpuSocketUtil;
             if (mSocketAffinityDef == "all") {
                 //
                 // use entire CPUs
@@ -795,35 +795,9 @@ AffinityManager::show() const
 std::string
 AffinityManager::showTbl(const std::string& msg, const std::vector<unsigned>& tbl)
 {
-    std::vector<unsigned> workTbl = tbl;
-    std::sort(workTbl.begin(), workTbl.end());
-
-    auto showIds = [&] {
-        std::string idString;
-        int startId {-1}; // initial condition
-        int endId {-1}; // initial condition
-        auto initRange = [&](const unsigned id) { startId = endId = static_cast<int>(id); };
-        auto extendRange = [&](const unsigned id) { endId = static_cast<int>(id); };
-        auto flushRangeId = [&] {
-            if (!idString.empty()) idString += ',';
-            idString += std::to_string(startId);
-            if (startId != endId) idString += ('-' + std::to_string(endId));
-        };
-        for (size_t i = 0; i < workTbl.size(); ++i) {
-            if (startId < 0) initRange(workTbl[i]); 
-            else if (workTbl[i] == endId + 1) extendRange(workTbl[i]);
-            else {
-                flushRangeId();
-                initRange(workTbl[i]);
-            }
-        }
-        if (startId >= 0) flushRangeId();
-        return idString;
-    };
-
     std::ostringstream ostr;
     if (!msg.empty()) ostr << msg << ' ';
-    ostr << "(total:" << tbl.size() << ") {" << showIds() << '}';
+    ostr << "(total:" << tbl.size() << ") {" << scene_rdl2::grid_util::CpuSocketUtil::idTblToDefStr(tbl) << '}';
     return ostr.str();
 }
 

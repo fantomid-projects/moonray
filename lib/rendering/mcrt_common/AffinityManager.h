@@ -6,7 +6,7 @@
 #include <scene_rdl2/common/grid_util/Parser.h>
 #include <scene_rdl2/render/util/Arena.h>
 #ifndef PLATFORM_APPLE
-#include <scene_rdl2/render/util/NumaUtil.h>
+#include <scene_rdl2/common/grid_util/NumaUtil.h>
 #endif // end of Not PLATFORM_APPLE
 
 #include <memory> // shared_ptr
@@ -31,13 +31,13 @@ public:
     // numaNodeId : ~0        : Memory Affinity Off
     //              otherwise : Memory Affinity On
     MemoryNode(const unsigned numaNodeId,
-               const scene_rdl2::NumaNode* numaNode,
+               const scene_rdl2::grid_util::NumaNode* numaNode,
                const unsigned activeThreadCount);
 #endif // end of Non PLATFORM_APPLE
 
 #ifndef PLATFORM_APPLE
     unsigned getNumaNodeId() const { return mNumaNodeId; }
-    const scene_rdl2::NumaNode* getNumaNode() const { return mNumaNode; }
+    const scene_rdl2::grid_util::NumaNode* getNumaNode() const { return mNumaNode; }
 #endif // end of Non PLATFORM_APPLE
 
     // Return the active thread count of this NUMA-node.
@@ -53,7 +53,7 @@ public:
 private:
     unsigned mNumaNodeId {~static_cast<unsigned>(0)};
 #ifndef PLATFORM_APPLE
-    const scene_rdl2::NumaNode* mNumaNode {nullptr};
+    const scene_rdl2::grid_util::NumaNode* mNumaNode {nullptr};
 #endif // end PLATFORM_APPLE
     unsigned mActiveThreadCount {0}; // Memory is shared with this number of threads
 
@@ -123,7 +123,7 @@ private:
     unsigned mMaxThreadId {0};
 
 #ifndef PLATFORM_APPLE
-    std::shared_ptr<scene_rdl2::NumaUtil> mNumaUtil;
+    std::shared_ptr<scene_rdl2::grid_util::NumaUtil> mNumaUtil;
 #endif // end PLATFORM_APPLE
 
     std::shared_ptr<MemoryNode> mMemGlobal; // for non memory affinity configuration and GUI TLS

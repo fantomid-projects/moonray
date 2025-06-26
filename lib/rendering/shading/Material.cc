@@ -131,7 +131,7 @@ ShadeQueueInfo::ShadeQueueInfo(const unsigned numaNodeId,
         const float scale = 1.0f;
 
         const unsigned currShadeQueueSize = shadeQueueSize * scale;
-        const scene_rdl2::NumaNode* currNumaNode = currMemNode->getNumaNode();
+        const scene_rdl2::grid_util::NumaNode* currNumaNode = currMemNode->getNumaNode();
 
         // We should check the alignment size here. We have limited support for alignment size because
         // we use the simplified high speed operation of NUMA-node based memory allocation.
@@ -206,7 +206,7 @@ ShadeQueueInfo::~ShadeQueueInfo()
         //
         std::shared_ptr<mcrt_common::MemoryNode> currMemNode =
             mcrt_common::AffinityManager::get()->getMem()->getMemoryNodeByNumaNodeId(mNumaNodeId);
-        const scene_rdl2::NumaNode* currNumaNode = currMemNode->getNumaNode();
+        const scene_rdl2::grid_util::NumaNode* currNumaNode = currMemNode->getNumaNode();
 
         scene_rdl2::util::alignedFreeArrayBasis<ShadeQueue::EntryType>
             (mShadeEntries, [&](const void* ptr) {
