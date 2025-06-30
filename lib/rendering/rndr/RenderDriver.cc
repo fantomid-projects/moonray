@@ -23,6 +23,7 @@
 #include <moonray/rendering/pbr/handlers/XPURayHandlers.h>
 #include <moonray/rendering/rt/gpu/GPUAccelerator.h>
 #include <scene_rdl2/common/fb_util/VariablePixelBuffer.h>
+#include "PathVisualizerManager.h"
 
 #include <scene_rdl2/render/util/Memory.h>
 
@@ -738,21 +739,23 @@ RenderDriver::startFrame(const FrameState &fs)
                                                   .getSceneVariables()
                                                   .get(scene_rdl2::rdl2::SceneVariables::sCryptomatteMultiPresence);
 
-        mFilm->init(w, h,
-                    mFs.mViewport,
-                    filmFlags,
-                    mFs.mDeepFormat,
-                    mFs.mDeepCurvatureTolerance,
-                    mFs.mDeepZTolerance,
-                    mFs.mDeepVolCompressionRes,
-                    *(mFs.mDeepIDChannelNames),
-                    mFs.mNumRenderThreads,
-                    *mFs.mAovSchema,
-                    mFs.mDisplayFilterCount,
-                    &mTileExtrapolation,
-                    mFs.mMaxSamplesPerPixel,
-                    mFs.mTargetAdaptiveError,
-                    cryptomatteMultiPresence);
+        if (!mFs.mSimulationMode) {
+            mFilm->init(w, h,
+                        mFs.mViewport,
+                        filmFlags,
+                        mFs.mDeepFormat,
+                        mFs.mDeepCurvatureTolerance,
+                        mFs.mDeepZTolerance,
+                        mFs.mDeepVolCompressionRes,
+                        *(mFs.mDeepIDChannelNames),
+                        mFs.mNumRenderThreads,
+                        *mFs.mAovSchema,
+                        mFs.mDisplayFilterCount,
+                        &mTileExtrapolation,
+                        mFs.mMaxSamplesPerPixel,
+                        mFs.mTargetAdaptiveError,
+                        cryptomatteMultiPresence);
+        }
 
         updated = true;
     }
@@ -911,24 +914,26 @@ RenderDriver::startFrame(const FrameState &fs)
     }
 
     // Update all cached data.
-    mUnalignedW = w;
-    mUnalignedH = h;
-    mCachedSamplesPerPixel = mFs.mMaxSamplesPerPixel;
-    mCachedRenderMode = mFs.mRenderMode;
-    mCachedRequiresDeepBuffer = mFs.mRequiresDeepBuffer;
-    mCachedRequiresCryptomatteBuffer = mFs.mRequiresCryptomatteBuffer;
-    mCachedGeneratePixelInfo = mFs.mGeneratePixelInfo;
-    mCachedAovChannels = std::move(aovChannels);
-    mCachedRequiresHeatMap = mFs.mRequiresHeatMap;
-    mCachedDeepFormat = mFs.mDeepFormat;
-    mCachedDeepCurvatureTolerance = mFs.mDeepCurvatureTolerance;
-    mCachedDeepZTolerance = mFs.mDeepZTolerance;
-    mCachedTargetAdaptiveError = mFs.mTargetAdaptiveError;
-    mCachedDeepVolCompressionRes = mFs.mDeepVolCompressionRes;
-    mCachedDeepIDChannelNames = *(mFs.mDeepIDChannelNames);
-    mCachedViewport = mFs.mViewport;
-    mCachedSamplingMode = mFs.mSamplingMode;
-    mCachedDisplayFilterCount = mFs.mDisplayFilterCount;
+    if (!mFs.mSimulationMode) {
+        mUnalignedW = w;
+        mUnalignedH = h;
+        mCachedSamplesPerPixel = mFs.mMaxSamplesPerPixel;
+        mCachedRenderMode = mFs.mRenderMode;
+        mCachedRequiresDeepBuffer = mFs.mRequiresDeepBuffer;
+        mCachedRequiresCryptomatteBuffer = mFs.mRequiresCryptomatteBuffer;
+        mCachedGeneratePixelInfo = mFs.mGeneratePixelInfo;
+        mCachedAovChannels = std::move(aovChannels);
+        mCachedRequiresHeatMap = mFs.mRequiresHeatMap;
+        mCachedDeepFormat = mFs.mDeepFormat;
+        mCachedDeepCurvatureTolerance = mFs.mDeepCurvatureTolerance;
+        mCachedDeepZTolerance = mFs.mDeepZTolerance;
+        mCachedTargetAdaptiveError = mFs.mTargetAdaptiveError;
+        mCachedDeepVolCompressionRes = mFs.mDeepVolCompressionRes;
+        mCachedDeepIDChannelNames = *(mFs.mDeepIDChannelNames);
+        mCachedViewport = mFs.mViewport;
+        mCachedSamplingMode = mFs.mSamplingMode;
+        mCachedDisplayFilterCount = mFs.mDisplayFilterCount;
+    }
 
     // Kick off the frame.
     mRenderThreadState.set(RenderThreadState::READY_TO_RENDER, RenderThreadState::REQUEST_RENDER, std::memory_order_release);
@@ -1328,7 +1333,8 @@ RenderDriver::snapshotRenderBufferSub(scene_rdl2::fb_util::RenderBuffer *outputB
     // extrapolation code path, the resultant buffer will be normalized also.
     if (extrapolate) {
 
-        const bool viewportActive = (mCachedViewport.mMinX != 0 ||
+        const bool viewportActive = !mFs.mSimulationMode &&
+                                    (mCachedViewport.mMinX != 0 ||
                                      mCachedViewport.mMaxX != mUnalignedW - 1 ||
                                      mCachedViewport.mMinY != 0 ||
                                      mCachedViewport.mMaxY != mUnalignedH - 1);

@@ -414,7 +414,7 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
     }
 
     /// ---- Record ray for our path visualizer -------------------------------------------------
-    if (hitGeom) {
+    if (hitGeom && fs.mSimulationMode) {
         scene->recordRegularRay(ray, sp.mPixel, sp.mSubpixelIndex, lobeType);
     }
     /// -----------------------------------------------------------------------------------------

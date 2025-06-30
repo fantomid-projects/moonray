@@ -24,6 +24,7 @@
 #include "RenderDriver.h"
 #include "ResumeHistoryMetaData.h"
 #include "TileSampleSpecialEvent.h"
+#include "PathVisualizerManager.h"
 
 #include <moonray/rendering/bvh/shading/ShadingTLState.h>
 #include <moonray/rendering/pbr/core/DebugRay.h>
@@ -165,7 +166,9 @@ RenderDriver::renderFrame(RenderDriver *driver, const FrameState &fs)
     MNRY_ASSERT(verifyNoBundledLeaks(fs));
 
     // We are guaranteed to have copied the previous frame buffer by this point if we needed it.
-    film->clearAllBuffers();
+    if (!fs.mSimulationMode) { 
+        film->clearAllBuffers();
+    }
 
     // Disable adjust adaptive tree update timing logic at this moment. we will enable later for checkpoint
     film->disableAdjustAdaptiveTreeUpdateTiming();
@@ -297,6 +300,10 @@ RenderDriver::renderFrame(RenderDriver *driver, const FrameState &fs)
             tls->mRayVertexStack.clear();
         });
         driver->switchDebugRayState(RECORDING, RECORDING_COMPLETE);
+    }
+
+    if (fs.mSimulationMode) {
+        fs.mRenderContext->getPathVisualizerManager()->stopSimulation();
     }
 
     // Reset all TLS objects.

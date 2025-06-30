@@ -308,15 +308,18 @@ public:
         return mRdlLayer;
     }
 
-    bool isPathVisualizerOn() const;
-
     void setPathVisualizer(pbr::PathVisualizer* visualizer)
     {
         mPathVisualizer = visualizer;
     }
 
+    // Record an occlusion ray for the path visualizer
     void recordOcclusionRay(const mcrt_common::Ray& ray, int pixel, int spIndex, bool isLightSample, bool isOccluded) const;
+    // Record a regular ray for the path visualizer
     void recordRegularRay(const mcrt_common::Ray& ray, int pixel, int spIndex, int lobeType) const;
+    // Given an input 'samples', sets it to the appropriate number based on user selections in the path visualizer gui
+    void setLightSamples(int& samples) const;
+    void setBsdfSamples(int& samples) const;
 
 private:
     /// Copy is disabled

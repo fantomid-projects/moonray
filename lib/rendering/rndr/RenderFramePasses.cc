@@ -1052,7 +1052,7 @@ RenderDriver::renderPixelScalarSamples(pbr::TLState *pbrTls,
         }  // if (params->mAovNumFloats) {
     }  // end sample loop
 
-    if (numAccSamples) {
+    if (numAccSamples && fs.mSimulationMode == false) {
         // Update frame buffer. Scale the weights so that they are in
         // the same space as radiance.
         {
@@ -1183,7 +1183,7 @@ RenderDriver::renderPixelScalarSamplesFast(pbr::TLState *pbrTls,
         }  // if (alpha >= 0.f)
     }  // end sample loop
 
-    if (numAccSamples) {
+    if (numAccSamples && fs.mSimulationMode == false) {
         // Update frame buffer. Scale the weights so that they are in
         // the same space as radiance.
         {

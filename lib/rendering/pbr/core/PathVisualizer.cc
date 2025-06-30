@@ -21,27 +21,32 @@ using RenderTimer = moonray::time::RAIITimerAverageDouble;
 namespace moonray {
 namespace pbr {
 
-PathVisualizer::PathVisualizer(int width, int height, int pixelSamplesSqrt, 
-                               const PathVisualizerParams* params, float sceneSize) 
-    : mOn(true), 
+PathVisualizer::PathVisualizer() 
+    : mState(State::OFF), 
       mCameraIsectIndex(-1), 
-      mMaxRayLength(sceneSize),
-      mPixelBuffer(width, height, pixelSamplesSqrt * pixelSamplesSqrt)
-{
-    // Initialize the parameters pointer (PathVisualizerManager manages these)
-    mParams = params;
-
-    // Reserve enough space for all pixels
-    int pixelSamples = pixelSamplesSqrt * pixelSamplesSqrt;
-
-    // Reserve a minimum amount of space for the nodes and vertices
-    mNodes.reserve(width * height * pixelSamples);
-    mVertexBuffer.reserve(width * height * pixelSamples);
-}
+      mMaxRayLength(-1.f), 
+      mWidth(-1), 
+      mHeight(-1), 
+      mParams(nullptr)
+{}
 
 PathVisualizer::~PathVisualizer() {}
 
+void PathVisualizer::initialize(int width, int height, const PathVisualizerParams* params, float sceneSize) 
+{
+    mWidth = width;
+    mHeight = height;
+    mParams = params;
+    mMaxRayLength = sceneSize;
+    mState = State::READY;
+}
+
 // -------------------------------------------- BUILDING ---------------------------------------------------------------
+
+void PathVisualizer::reset()
+{
+    mNodes.clear();
+}
 
 bool PathVisualizer::setUpFrustum(const Camera& cam)
 {
@@ -70,15 +75,16 @@ void PathVisualizer::recordRegularRay(const mcrt_common::Ray& ray, const Scene& 
 void PathVisualizer::recordRay(const mcrt_common::Ray& ray, const Scene& scene, int pixel, int spIndex,
                                int lobeType, bool lightSampleFlag, bool occlusionFlag)
 {
-    // If we already generated all the ray info, we don't need to record
-    // any more rays, unless the user specifies that we should do it again
-    if (!mOn) { return; }
-
+    MNRY_ASSERT(mState == State::RECORD);
     RenderTimer timer(mInRenderingTime);
-    MNRY_ASSERT(mPixelBuffer.mWidth != -1 && mPixelBuffer.mHeight != -1);
+
+    // Only record the ray if it matches the user parameters
+    if (!matchesParams(pixel, lobeType, lightSampleFlag, ray.getDepth())) {
+        return;
+    }
 
     // Calculate the pixel ID
-    int pixelID = uint32ToPixelY(pixel) * mPixelBuffer.mWidth + uint32ToPixelX(pixel);
+    int pixelID = uint32ToPixelY(pixel) * mWidth + uint32ToPixelX(pixel);
 
     // Calculate ray endpoints (render space)
     float tfar = std::min(ray.tfar, mMaxRayLength);
@@ -89,60 +95,36 @@ void PathVisualizer::recordRay(const mcrt_common::Ray& ray, const Scene& scene, 
     scene_rdl2::math::Vec3f rayOriginWorld = transformPoint(scene.getRender2World(), rayOrigin);
     scene_rdl2::math::Vec3f rayEndWorld    = transformPoint(scene.getRender2World(), rayEnd);
 
-    // Add vertex to our vertex list (or find it, if it already exists) and return the index
-    int rayOriginIndex  = addVertex(rayOriginWorld);
-    int rayEndIndex     = addVertex(rayEndWorld);
-
     // Set the flags
     Flags flags;
     bool diffuseFlag  = lobeType & shading::BsdfLobe::DIFFUSE;
     bool specularFlag = (lobeType & shading::BsdfLobe::GLOSSY) | (lobeType & shading::BsdfLobe::MIRROR);
     setFlags(flags, diffuseFlag, specularFlag, lightSampleFlag);
 
-    int rayIsectIndex = -1;
-    if (occlusionFlag) { 
-        // If a shadow ray is occluded, we want to find the first object it intersects
-        scene_rdl2::math::Vec3f isectPt = findSceneIsect(ray, scene);
-        rayIsectIndex = addVertex(isectPt);
+    {
+        std::lock_guard<std::mutex> lock(mWriteLock);
+        // Add vertex to our vertex list (or find it, if it already exists) and return the index
+        int rayOriginIndex  = addVertex(rayOriginWorld);
+        int rayEndIndex     = addVertex(rayEndWorld);
+
+        int rayIsectIndex = -1;
+        if (occlusionFlag) { 
+            // If a shadow ray is occluded, we want to find the first object it intersects
+            scene_rdl2::math::Vec3f isectPt = findSceneIsect(ray, scene);
+            rayIsectIndex = addVertex(isectPt);
+        }
+        addNode(pixelID, rayOriginIndex, rayEndIndex, rayIsectIndex, ray.getDepth(), spIndex, flags);
     }
-    addNode(pixelID, rayOriginIndex, rayEndIndex, rayIsectIndex, ray.getDepth(), spIndex, flags);
 }
 
 // ---------------------------------------------- FILTERING ------------------------------------------------------------
 
-void PathVisualizer::filter(std::vector<int>& filteredNodes) const
+bool PathVisualizer::matchesParams(int pixel, int lobeType, bool lightSampleFlag, int depth) const
 {
-    if (mNodes.size() == 0) {
-        return;
-    }
-
-    RenderTimer timer(mPostRenderingTime);
-
-    /// TODO: Change to pixel range
-    for (int px = mParams->mMinPixelX; px <= mParams->mMinPixelX; ++px) {
-        for (int py = mParams->mMinPixelY; py <= mParams->mMinPixelY; ++py) {
-            // Each pixel contains a collection of subpixel paths
-            const Pixel& pixel = mPixelBuffer.getPixelAt(px, py);
-
-            for (const SubpixelPath& path : pixel) {
-                /// TODO: check if subpixel index matches user parameter
-                // Each subpixel path is a collection of node indices
-                for (int nodeIndex : path) {
-                    MNRY_ASSERT(nodeIndex >= 0 && nodeIndex < mNodes.size());
-
-                    /// Show ray if less than specified max depth
-                    bool showRay = getRayDepth(nodeIndex) <= mParams->mMaxDepth;
-                    /// Show ray if it matches the flags
-                    showRay = showRay && matchesFlags(nodeIndex);
-
-                    // If ray matches all the user parameters, add to list
-                    if (showRay) {
-                        filteredNodes.push_back(nodeIndex);
-                    }
-                }
-            }
-        }
-    }
+    bool recordRay = uint32ToPixelX(pixel) == mParams->mPixelX && uint32ToPixelY(pixel) == mParams->mPixelY;
+    recordRay = recordRay && depth <= mParams->mMaxDepth;
+    recordRay = recordRay && matchesFlags(lobeType, lightSampleFlag, depth);
+    return recordRay;
 }
 
 // -------------------------------------- DRAWING ----------------------------------------------------------------------
@@ -190,7 +172,7 @@ uint8_t PathVisualizer::clipPoints(int nodeIndex, scene_rdl2::math::Vec3f* outPo
     // If the ray is an occlusion ray that's failed the occlusion test,
     // we found the world-space closest intersection in recordRay()
     // We now need to convert it to screen space for drawing.
-    bool hasIsect = getNode(nodeIndex).mRayIsectIndex != -1;
+    bool hasIsect = mNodes[nodeIndex].mRayIsectIndex != -1;
     if (hasIsect) { 
         outPoints[numPoints++] = getRayIsect(nodeIndex) ; 
     }
@@ -229,7 +211,7 @@ void PathVisualizer::drawLine(const std::function<void(int, int, scene_rdl2::mat
 
     /// ---- Save the position of the pixel focus ----------------------
     if (isCameraRay(nodeIndex) && mCameraIsectIndex == -1) {
-        mCameraIsectIndex = getNode(nodeIndex).mRayEndpointIndex;
+        mCameraIsectIndex = mNodes[nodeIndex].mRayEndpointIndex;
     }
 
     /// ---- Clip the world-space points using the viewing frustum ------
@@ -291,7 +273,7 @@ void PathVisualizer::drawPixelFocus(
     if (mCameraIsectIndex == -1) { return; }
 
     /// ------ Get the world-space scene intersection and transform into screen space ---------------
-    scene_rdl2::math::Vec2f p = transformPointWorld2Screen(getVert(mCameraIsectIndex), cam);
+    scene_rdl2::math::Vec2f p = transformPointWorld2Screen(mVertexBuffer[mCameraIsectIndex], cam);
 
     /// ------ Draw a square around the chosen pixel ----------------------
     p.x = std::round(p.x);
@@ -313,11 +295,7 @@ void PathVisualizer::draw(scene_rdl2::fb_util::RenderBuffer* renderBuffer, const
         return;
     }
 
-    /// ---- Filter Nodes based on given debug parameters ----
-    std::vector<int> nodeIndices;
-    filter(nodeIndices);
-
-    if (nodeIndices.size() == 0) {
+    if (mNodes.size() == 0) {
         return; 
     }
 
@@ -336,7 +314,7 @@ void PathVisualizer::draw(scene_rdl2::fb_util::RenderBuffer* renderBuffer, const
     resetCameraIsectIndex();
 
     /// ---- For each node, draw a line on the render buffer ---------------
-    for (int nodeIndex : nodeIndices) {
+    for (int nodeIndex = 0; nodeIndex < mNodes.size(); ++nodeIndex) {
         drawLine(writeToRenderBuffer, nodeIndex, scene);
     }
 
@@ -368,20 +346,26 @@ PathVisualizer::transformPointWorld2Screen(const scene_rdl2::math::Vec3f& p, con
 
 inline bool PathVisualizer::matchesFlag(int nodeIndex, const Flags& flag) const 
 {
-    return static_cast<uint8_t>(getNode(nodeIndex).mFlags) & static_cast<uint8_t>(flag);
+    return static_cast<uint8_t>(mNodes[nodeIndex].mFlags) & static_cast<uint8_t>(flag);
 }
 
-inline bool PathVisualizer::matchesFlags(int nodeIndex) const
+inline bool PathVisualizer::matchesFlag(int lobeType, int flag) const 
+{
+    return static_cast<uint8_t>(lobeType) & static_cast<uint8_t>(flag);
+}
+
+inline bool PathVisualizer::matchesFlags(int lobeType, int lightSampleFlag, int depth) const
 {
     bool matches = true;
-    if (matchesFlag(nodeIndex, Flags::SPECULAR)) {
+    if (matchesFlag(lobeType, shading::BsdfLobe::GLOSSY) || 
+        matchesFlag(lobeType, shading::BsdfLobe::MIRROR)) {
         matches = matches && mParams->mSpecularRaysOn;
-    } else if (matchesFlag(nodeIndex, Flags::DIFFUSE)) {
+    } else if (matchesFlag(lobeType, shading::BsdfLobe::DIFFUSE)) {
         matches = matches && mParams->mDiffuseRaysOn;
-    } else if (matchesFlag(nodeIndex, Flags::LIGHT_SAMPLE)) {
+    } else if (lightSampleFlag) {
         matches = matches && mParams->mLightSamplesOn && mParams->mOcclusionRaysOn;
     } else {
-        if (!isCameraRay(nodeIndex)) {
+        if (depth != 0 /*camera ray*/) {
             matches = matches && mParams->mBsdfSamplesOn && mParams->mOcclusionRaysOn;
         }
     }
@@ -390,7 +374,7 @@ inline bool PathVisualizer::matchesFlags(int nodeIndex) const
 
 inline int PathVisualizer::getRayDepth(int nodeIndex) const
 {
-    return getNode(nodeIndex).mDepth;
+    return mNodes[nodeIndex].mDepth;
 }
 
 inline bool PathVisualizer::isCameraRay(int nodeIndex) const
@@ -400,28 +384,28 @@ inline bool PathVisualizer::isCameraRay(int nodeIndex) const
 
 inline scene_rdl2::math::Vec3f PathVisualizer::getRayOrigin(int nodeIndex) const
 {
-    int rayOriginIndex = getNode(nodeIndex).mRayOriginIndex;
+    int rayOriginIndex = mNodes[nodeIndex].mRayOriginIndex;
 
     MNRY_ASSERT(rayOriginIndex >= 0 && rayOriginIndex < mVertexBuffer.size());
-    return getVert(rayOriginIndex);
+    return mVertexBuffer[rayOriginIndex];
 }
 
 inline scene_rdl2::math::Vec3f PathVisualizer::getRayEndpoint(int nodeIndex) const
 {
-    int rayEndpointIndex = getNode(nodeIndex).mRayEndpointIndex;
+    int rayEndpointIndex = mNodes[nodeIndex].mRayEndpointIndex;
 
     MNRY_ASSERT(rayEndpointIndex >= 0 && rayEndpointIndex < mVertexBuffer.size());
-    return getVert(rayEndpointIndex);
+    return mVertexBuffer[rayEndpointIndex];
 }
 
 inline scene_rdl2::math::Vec3f PathVisualizer::getRayIsect(int nodeIndex) const
 {
-    int rayIsectIndex = getNode(nodeIndex).mRayIsectIndex;
+    int rayIsectIndex = mNodes[nodeIndex].mRayIsectIndex;
 
     if (rayIsectIndex == -1) { return scene_rdl2::math::Vec3f(0.f); }
 
     MNRY_ASSERT(rayIsectIndex >= 0 && rayIsectIndex < mVertexBuffer.size());
-    return getVert(rayIsectIndex);
+    return mVertexBuffer[rayIsectIndex];
 }
 
 inline scene_rdl2::math::Color PathVisualizer::getRayColor(int nodeIndex) const
@@ -448,8 +432,13 @@ inline scene_rdl2::math::Color PathVisualizer::getRayColor(int nodeIndex) const
 
 /// -------- Setters --------
 
-inline void PathVisualizer::setFlag(Flags& flags, const Flags& flag) const
+void PathVisualizer::setState(State state)
+{
+    std::lock_guard<std::mutex> lock(mWriteLock);
+    mState = state;
+}
 
+inline void PathVisualizer::setFlag(Flags& flags, const Flags& flag) const
 {
     flags = static_cast<Flags>(static_cast<uint8_t>(flags) | static_cast<uint8_t>(flag));
 }
@@ -474,7 +463,6 @@ inline void PathVisualizer::setFlags(Flags& flags, bool isDiffuse, bool isSpecul
 
 inline int PathVisualizer::addVertex(const scene_rdl2::math::Vec3f& v)
 {
-    std::scoped_lock<std::mutex> lock(mVertexBufferLock);
     // Check the most recent vertex added. If it's the same, don't add again
     if (mVertexBuffer.size() == 0 || !isEqual(v, mVertexBuffer.back())) {
         // If the search fails, add the vertex
@@ -487,15 +475,24 @@ inline int PathVisualizer::addVertex(const scene_rdl2::math::Vec3f& v)
 inline void PathVisualizer::addNode(int pixelID, int originIndex, int endpointIndex, int isectIndex, 
                                     int depth, int sp, Flags& flags)
 {
-    std::scoped_lock<std::mutex> lock(mNodesLock);
     MNRY_ASSERT(originIndex >= 0 && originIndex < mVertexBuffer.size());
     MNRY_ASSERT(endpointIndex >= 0 && endpointIndex < mVertexBuffer.size());
     MNRY_ASSERT(isectIndex == -1 || (isectIndex >= 0 && isectIndex < mVertexBuffer.size()));
 
     mNodes.emplace_back(originIndex, endpointIndex, isectIndex, depth, flags);
+}
 
-    // Add node to pixel data structure for easier finding later
-    mPixelBuffer.addNode(pixelID, sp, mNodes.size() - 1);
+void PathVisualizer::setLightSamples(int& samples) const
+{
+    if (!mParams->mUseSceneSamples) {
+        samples = mParams->mLightSamples;
+    }
+}
+void PathVisualizer::setBsdfSamples(int& samples) const
+{
+    if (!mParams->mUseSceneSamples) {
+        samples = mParams->mBsdfSamples;
+    }
 }
 
 /// -------- Statistics helpers --------
@@ -504,17 +501,17 @@ int PathVisualizer::getMemoryFootprint() const
 {
     int nodesSize = sizeof(mNodes) + sizeof(Node) * mNodes.size();
     int vertsSize = sizeof(mVertexBuffer) + sizeof(scene_rdl2::math::Vec3f) * mVertexBuffer.size();
-    int pixelsSize = mPixelBuffer.getSize();
 
     int totalSize = nodesSize                           + /* mNodes */
                     vertsSize                           + /* mVertexBuffer */
-                    pixelsSize                          + /* mPixelBuffer */
                     sizeof(PathVisualizerParams*)       + /* mParams */
-                    sizeof(bool)                        + /* mOn */
+                    sizeof(State)                       + /* mState */
+                    sizeof(int) * 2                     + /* mWidth, mHeight */
+                    sizeof(bool)                        + /* mNeedRenderRefresh */
                     sizeof(int)                         + /* mCameraIsectIndex */
                     sizeof(mcrt_common::Frustum)        + /* mFrustum */
                     sizeof(float)                       + /* mMaxRayLength */
-                    sizeof(std::mutex) * 3              + /* mLock, mNodesLock, mVertexBufferLock */
+                    sizeof(std::mutex)                  + /* mWriteLock */
                     sizeof(moonray::util::AverageDouble)+ /* mInRenderingTime */
                     sizeof(moonray::util::AverageDouble)  /* mPostRenderingTime */
                     ;
@@ -536,7 +533,7 @@ void PathVisualizer::printNodes(std::vector<int>& filteredList)
     std::cout << "-------- Printing out nodes ---------\n";
     /// TODO: change this pointer list to an index list
     for (int nodeIndex : filteredList) {
-        const Node& node = getNode(nodeIndex);
+        const Node& node = mNodes[nodeIndex];
         
         std::cout << "{ depth: " << node.mDepth;
         std::cout << ", rayOrigin: " << getRayOrigin(nodeIndex);

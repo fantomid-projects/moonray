@@ -281,7 +281,8 @@ enum BundledOcclRayDataFlags
     HUD_PTR(const float *, mSamples1D);                                     \
     HUD_PTR(const Sample2D *, mSamples2D);                                  \
     HUD_MEMBER(HUD_NAMESPACE(shading, ShadowTerminatorFix), mShadowTerminatorFix);  \
-    HUD_MEMBER(int, mLightSamplingMode)
+    HUD_MEMBER(int, mLightSamplingMode);                                    \
+    HUD_MEMBER(bool, mSimulationMode)
 
 #define FRAME_STATE_VALIDATION                                  \
     HUD_BEGIN_VALIDATION(FrameState);                           \
@@ -309,6 +310,7 @@ enum BundledOcclRayDataFlags
     HUD_VALIDATE(FrameState, mSamples2D);                       \
     HUD_VALIDATE(FrameState, mShadowTerminatorFix);             \
     HUD_VALIDATE(FrameState, mLightSamplingMode);               \
+    HUD_VALIDATE(FrameState, mSimulationMode);                       \
     HUD_END_VALIDATION
 
 

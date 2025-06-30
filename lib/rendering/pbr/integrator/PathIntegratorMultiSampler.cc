@@ -128,7 +128,7 @@ PathIntegrator::addDirectVisibleBsdfLobeSampleContribution(pbr::TLState *pbrTls,
     }
 
     /// Record ray for our path visualizer
-    if (fs.mScene->isPathVisualizerOn()) {
+    if (fs.mSimulationMode) {
         mcrt_common::Ray debugRay(parentRay.getOrigin(), bsmp.wi, 0.f, tfar, 0.f, rayDepth);
         fs.mScene->recordOcclusionRay(debugRay, sp.mPixel, sp.mSubpixelIndex, /* isLightSample */ false, isOccluded);
     }
@@ -326,7 +326,7 @@ PathIntegrator::addDirectVisibleLightSampleContributions(pbr::TLState* pbrTls, S
         }
         
         /// Record ray for our path visualizer
-        if (fs.mScene->isPathVisualizerOn()) {
+        if (fs.mSimulationMode) {
             mcrt_common::Ray debugRay(P, lsmp[i].wi, 0.f, tfar, 0.f, rayDepth);
             fs.mScene->recordOcclusionRay(debugRay, sp.mPixel, sp.mSubpixelIndex, /* isLightSample */ true, isOccluded);
         }
@@ -681,8 +681,12 @@ PathIntegrator::computeRadianceBsdfMultiSampler(pbr::TLState *pbrTls,
     // sample budget per lobe.
     // We only want to split on the first scattering event seen from the
     // camera (either directly, either through one or many mirror bounces)
-    const int maxSamplesPerLobe = (pv.nonMirrorDepth == 0  ?  mBsdfSamples  :
-            scene_rdl2::math::min(mBsdfSamples, 1));
+    int bsdfMaxSamples = mBsdfSamples;
+    if (pbrTls->mFs->mSimulationMode) {
+        pbrTls->mFs->mScene->setBsdfSamples(bsdfMaxSamples);
+    }
+    const int maxSamplesPerLobe = (pv.nonMirrorDepth == 0  ?  bsdfMaxSamples  :
+            scene_rdl2::math::min(bsdfMaxSamples, 1));
 
     scene_rdl2::alloc::Arena *arena = pbrTls->mArena;
 
@@ -694,8 +698,12 @@ PathIntegrator::computeRadianceBsdfMultiSampler(pbr::TLState *pbrTls,
     // We use a LightSetSampler object to keep track of sampling strategies and
     // sample budget per light.
     // We use the same splitting strategy as for lobes above.
-    const int maxSamplesPerLight = (pv.nonMirrorDepth == 0  ?  mLightSamples  :
-            scene_rdl2::math::min(mLightSamples, 1));
+    int lightSampleCount = mLightSamples;
+    if (pbrTls->mFs->mSimulationMode) {
+        pbrTls->mFs->mScene->setLightSamples(lightSampleCount);
+    }
+    const int maxSamplesPerLight = (pv.nonMirrorDepth == 0  ?  lightSampleCount  :
+            scene_rdl2::math::min(lightSampleCount, 1));
     LightSetSampler lSampler(arena, activeLightSet, bsdf, isect.getP(), maxSamplesPerLight);
 
     LightSample *lsmp = arena->allocArray<LightSample>(lSampler.getLightSampleCount());

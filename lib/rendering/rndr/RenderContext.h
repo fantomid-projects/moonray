@@ -171,7 +171,7 @@ public:
      * Once rendering begins, no changes to the scene can be made until it is
      * stopped.
      */
-    RP_RESULT startFrame();
+    RP_RESULT startFrame(bool debugMode = false);
 
     void invalidateAllTextureResources();
     void invalidateTextureResources(const std::vector<std::string>& resources);
@@ -466,6 +466,7 @@ public:
     scene_rdl2::math::HalfOpenViewport getRezedRegionWindow() const;
     scene_rdl2::math::HalfOpenViewport getRezedApertureWindow() const;
     scene_rdl2::math::HalfOpenViewport getRezedSubViewport() const;
+    scene_rdl2::math::HalfOpenViewport getRezedSubViewportDebug() const;
 
     const scene_rdl2::rdl2::Camera* getCamera() { return mCamera; }
 
@@ -561,6 +562,8 @@ public:
 
     std::string getOiioStats(int level) const; // level=1~5
 
+    bool runSimulation();
+
 private:
     // Does any pre-render work, like building the spatial accelerator or
     // initializing any necessary libraries. Called in startFrame()
@@ -592,7 +595,7 @@ private:
 
     // Helper function for conditioning scene variables and other state into a
     // constant, fast to access structure for use within renderer inner loops.
-    void buildFrameState(FrameState *fs, double frameStartTime) const;
+    void buildFrameState(FrameState *fs, double frameStartTime, bool debugMode = false) const;
 
     // Called each frame in startFrame to update the internal state of the integrator.
     void updatePbrState(const FrameState &fs);

@@ -17,24 +17,36 @@ class Camera;
 
 // All of the user parameters used to filter the nodes
 struct PathVisualizerParams {
-    int mMinPixelX  = 0;
-    int mMinPixelY  = 0;
-    int mMaxPixelX  = -1;
-    int mMaxPixelY  = -1;
-    int mMaxDepth   = 1;
-    bool mOcclusionRaysOn   = true;
-    bool mSpecularRaysOn    = true;
-    bool mDiffuseRaysOn     = true;
-    bool mBsdfSamplesOn     = true;
-    bool mLightSamplesOn    = true;
-    scene_rdl2::math::Color mBsdfSampleColor    = scene_rdl2::math::Color(1, 0.4, 0);
-    scene_rdl2::math::Color mLightSampleColor   = scene_rdl2::math::Color(1, 1, 0);
-    scene_rdl2::math::Color mCameraRayColor     = scene_rdl2::math::Color(0, 0, 1);
-    scene_rdl2::math::Color mDiffuseRayColor    = scene_rdl2::math::Color(1, 0, 1);
-    scene_rdl2::math::Color mSpecularRayColor   = scene_rdl2::math::Color(0, 1, 1);
-    float mLineWidth = 2;
+    int mPixelX         = 0;            // x-coord for user-chosen pixel
+    int mPixelY         = 0;            // y-coord for user-chosen pixel
+    int mMaxDepth       = 1;            // max number of bounces
+    int mPixelSamples   = 4;            // # of pixel samples
+    int mLightSamples   = 1;            // # of light samples
+    int mBsdfSamples    = 1;            // # of bsdf samples
+    bool mUseSceneSamples   = true;     // whether to use the sampling settings from the rdla or user-specified settings
+    bool mOcclusionRaysOn   = true;     // whether to display occlusion rays (bsdf + light)
+    bool mSpecularRaysOn    = true;     // whether to display specular rays
+    bool mDiffuseRaysOn     = true;     // whether to display diffuse rays
+    bool mBsdfSamplesOn     = true;     // whether to display occlusion rays sampled from the bsdf
+    bool mLightSamplesOn    = true;     // whether to display occlusion rays sampled from the light
+    scene_rdl2::math::Color mCameraRayColor     = scene_rdl2::math::Color(0, 0, 1);     // color of the camera rays
+    scene_rdl2::math::Color mSpecularRayColor   = scene_rdl2::math::Color(0, 1, 1);     // color of the specular rays
+    scene_rdl2::math::Color mDiffuseRayColor    = scene_rdl2::math::Color(1, 0, 1);     // color of the diffuse rays
+    scene_rdl2::math::Color mBsdfSampleColor    = scene_rdl2::math::Color(1, 0.4, 0);   // color of the bsdf rays
+    scene_rdl2::math::Color mLightSampleColor   = scene_rdl2::math::Color(1, 1, 0);     // color of the light rays
+    float mLineWidth = 2;               // width of the lines drawn
 };
 
+/// Current state
+enum class State : uint8_t {
+    OFF                     = 0,            // does not yet contain any data, hasn't been initialized
+    READY                   = 1 << 0,       // has been initialized
+    RECORD                  = 1 << 1,       // is currently recording data (rendering in debug mode)
+    STOP_RECORD             = 1 << 2,       // done recording data -- needs to stop rendering
+    REQUEST_DRAW            = 1 << 3,       // we need to force-draw the visualization, even if rendering has ended
+    DRAW                    = 1 << 4,       // visualization is ready to draw 
+};
+    
 /// The PathVisualizer class manages the gathering and drawing of ray information 
 /// on top of the render buffer. During the rendering process, if the visualizer has been turned on, it gathers all
 /// of the ray information (see recordRay()), and stores it in a Node object.
@@ -49,74 +61,6 @@ class PathVisualizer {
 
 #define SubpixelPath std::vector<int>
 #define Pixel std::vector<SubpixelPath>
-
-    // Stores node info in a buffer of "pixels". The data structure looks like this:
-    // [ pixel1: [subpixel1: [node1, node2,...], subpixel2: [node1, node2,...]], pixel2: ...]
-    // The nodes are all stored as indices to the member variable mNodes.
-    struct PixelBuffer {
-        std::vector<Pixel> mData;
-        mutable std::mutex mLock;
-        int mWidth = -1;
-        int mHeight = -1;
-
-        PixelBuffer() : mWidth(-1), mHeight(-1), mData() {}
-
-        PixelBuffer(int w, int h, int pixelSamples) 
-            : mWidth(w), mHeight(h), mData()
-        {
-            mData.resize(w * h);
-
-            // For each pixel, there should be "pixelSamples"
-            // number of subpixel arrays allocated
-            for (Pixel& pixel : mData) {
-                pixel.resize(pixelSamples);
-            }
-        }
-
-        void validate(int pixelID, int sp, int nodeIndex) const
-        {
-            MNRY_ASSERT(pixelID >= 0 && pixelID < mData.size());
-            MNRY_ASSERT(sp >= 0 && sp < mData[pixelID].size());
-            MNRY_ASSERT(nodeIndex >= 0);
-        }
-
-        void addNode(int pixelID, int sp, int nodeIndex)
-        {
-            std::scoped_lock<std::mutex> lock(mLock);
-            validate(pixelID, sp, nodeIndex);
-
-            SubpixelPath& spPath = mData[pixelID][sp];
-            spPath.push_back(nodeIndex);
-        }
-
-        /// Gets the expanded pixel ID
-        int getPixelID(int px, int py) const
-        {
-            return py * mWidth + px; 
-        }
-
-        const Pixel& getPixelAt(int px, int py) const
-        {
-            std::scoped_lock<std::mutex> lock(mLock);
-            int pixelID = getPixelID(px, py);
-            MNRY_ASSERT(pixelID >= 0 && pixelID < mData.size());
-            return mData[pixelID];
-        }
-
-        int getSize() const
-        {
-            int pixelsSize = sizeof(mData);
-            int widthAndHeight = sizeof(int) * 2;
-
-            for (const Pixel& pixel : mData) {
-                pixelsSize += sizeof(pixel);
-                for (const SubpixelPath& path : pixel) {
-                    pixelsSize += sizeof(path) + sizeof(int) * path.size();
-                }
-            }
-            return pixelsSize + widthAndHeight + sizeof(std::mutex);
-        }
-    };
 
     /// Type flags for a Node
     enum class Flags : uint8_t {
@@ -142,41 +86,16 @@ class PathVisualizer {
                   mDepth(rayDepth), 
                   mFlags(flags) {}
 
-        // Copy constructor
-        Node(const Node& other)
-            : mRayOriginIndex(other.mRayOriginIndex),
-              mRayEndpointIndex(other.mRayEndpointIndex),
-              mRayIsectIndex(other.mRayIsectIndex),
-              mDepth(other.mDepth),
-              mFlags(other.mFlags)
-        {}
-
-        // Move constructor
-        Node(Node&& other)
-            : mRayOriginIndex(other.mRayOriginIndex),
-              mRayEndpointIndex(other.mRayEndpointIndex),
-              mRayIsectIndex(other.mRayIsectIndex),
-              mDepth(other.mDepth),
-              mFlags(other.mFlags)
-        {
-            other.mRayOriginIndex = 0;
-            other.mRayEndpointIndex = 0;
-            other.mRayIsectIndex = 0;
-            other.mDepth = 0;
-            other.mFlags = Flags::NONE;
-        }
-
         Node() = default;
         ~Node() = default;
     };
 
 public:
-    PathVisualizer(int width, int height, int pixelSamplesSqrt, const PathVisualizerParams* params, float sceneSize);
+    PathVisualizer();
     ~PathVisualizer();
 
-    /// Initializes the path visualizer, resetting the member variables and reserving memory capacity
-    void initialize(int width, int height, int pixelSamplesSqrt, int lightSamplesSqrt,
-                    int bsdfSamplesSqrt, int maxDepth);
+    /// Initializes the visualizer
+    void initialize(int width, int height, const PathVisualizerParams* params, float sceneSize);
 
     /// Calls recordRay() to record an occlusion ray
     void recordOcclusionRay(const mcrt_common::Ray& ray, const Scene& scene, int pixel, int spIndex,
@@ -188,60 +107,57 @@ public:
     /// Draws the path visualization with the given user parameters
     void draw(scene_rdl2::fb_util::RenderBuffer* renderBuffer, const Scene* scene);
 
-    // Turns off the path visualizer
-    // Prevents any more ray data from being recorded
-    void turnOff() 
-    { 
-        if (mOn) {
-            mOn = false;
-            std::cout << "------------------ Path Visualizer Stats ----------------------\n";
-            std::cout << "Memory footprint (in MB): " << (getMemoryFootprint() / 1000000.f) << std::endl;
-            printTimeStats();
-            std::cout << "---------------------------------------------------------------\n";
-        }
-    }
+    /// Clears all ray data
+    void reset();
 
-    /// Turns on the path visualizer
-    /// Ensures we will record rays during rendering
-    void turnOn()  
+    /// Returns the amount of memory used, in bytes
+    int getMemoryFootprint() const;
+
+    /// Gets/sets the current state of the visualizer
+    const State& getState() const { return mState; }
+    void setState(State state);
+
+    /// Gets/sets whether we need to restart rendering
+    /// once we are done gathering data
+    bool getNeedsRenderRefresh() const { return mNeedRenderRefresh; }
+    void setNeedsRenderRefresh(bool refresh) 
     {
-        std::scoped_lock<std::mutex> lock(mLock);
-        mOn = true; 
+        std::lock_guard<std::mutex> lock(mWriteLock);
+        mNeedRenderRefresh = refresh; 
     }
 
-    /// Is the path visualizer on?
-    bool isOn() const { return mOn; }
+    // Sets the given 'samples' input to the appropriate number
+    // based on the users selections
+    void setLightSamples(int& samples) const;
+    void setBsdfSamples(int& samples) const;
+
+    /// Print how long everything took
+    void printTimeStats() const;
 
     // Print ALL of the Nodes, up to maxEntries
     // If maxEntries == -1, print all nodes
     void printNodes(int maxEntries) const;
 
-    /// Returns the amount of memory used, in bytes
-    int getMemoryFootprint() const;
-
-    /// Print how long everything took
-    void printTimeStats() const;
 
 private:
-    
-    /// Creates a new Node to store all of the given ray information
-    void recordRay(const mcrt_common::Ray& ray, const Scene& scene, int pixel, int spIndex,
-                   int lobeType, bool lightSampleFlag, bool occlusionFlag);
-    
     /// Sets up the viewing frustum, mFrustum, for the given camera
     bool setUpFrustum(const Camera& cam);    
 
-    // Given some params to filter by, return the nodes that match that criteria
-    void filter(std::vector<int>& filteredNodes) const;
+    /// Creates a new Node to store all of the given ray information
+    void recordRay(const mcrt_common::Ray& ray, const Scene& scene, int pixel, int spIndex,
+                   int lobeType, bool lightSampleFlag, bool occlusionFlag);
 
-    /// Find the ray origin, endpoint, and intersection, if it's an occlusion ray. Then,
-    /// clip those points using the viewing frustum. Returns the number of elements 
-    /// in outPoints (can be 2-3)
-    uint8_t clipPoints(int nodeIndex, scene_rdl2::math::Vec3f* outPoints) const;
+    /// Given some ray data, check whether that ray matches the user parameters
+    bool matchesParams(int pixel, int lobeType, bool lightSampleFlag, int depth) const;
 
     /// Check if the current pixel is occluded by scene geometry
     bool pixelIsOccluded(int x, int y, const scene_rdl2::math::Vec2f& p1, const pbr::Scene* scene, 
                          float totalDistance, float invDepth1, float invDepthDiff) const;
+    
+    /// Find the ray origin, endpoint, and intersection, if it's an occlusion ray. Then,
+    /// clip those points using the viewing frustum. Returns the number of elements 
+    /// in outPoints (can be 2-3)
+    uint8_t clipPoints(int nodeIndex, scene_rdl2::math::Vec3f* outPoints) const;
 
     /// Given a node and a function to write to a pixel in the render buffer, use 
     /// Wu's line drawing algorithm to draw a line representing the ray to the buffer.
@@ -262,25 +178,14 @@ private:
 
     /// ---- Getters ----
 
-    /// Get node
-    inline const Node& getNode(int nodeIndex) const
-    {
-        std::scoped_lock<std::mutex> lock(mNodesLock);
-        return mNodes[nodeIndex];
-    }
-
-    /// Get vertex
-    inline const scene_rdl2::math::Vec3f& getVert(int vertIndex) const
-    {
-        std::scoped_lock<std::mutex> lock(mVertexBufferLock);
-        return mVertexBuffer[vertIndex];
-    }
-
     /// Tells us whether the node at nodeIndex matches the given flag
     inline bool matchesFlag(int nodeIndex, const Flags& flag) const;
 
+    /// Tells us whether the given lobeType matches the given flag
+    inline bool matchesFlag(int lobeType, int flag) const;
+
     /// Tells us whether the node at nodeIndex matches the current user-specified flags in mParams
-    inline bool matchesFlags(int nodeIndex) const;
+    inline bool matchesFlags(int lobeType, int lightSampleFlag, int depth) const;
 
     /// Gets the depth of the ray
     inline int getRayDepth(int nodeIndex) const;
@@ -307,7 +212,7 @@ private:
     /// Checks that the given pixel is in the image bounds
     inline bool isInBounds(int x, int y) const
     { 
-        return x >= 0 && x < mPixelBuffer.mWidth && y >= 0 && y < mPixelBuffer.mHeight; 
+        return x >= 0 && x < mWidth && y >= 0 && y < mHeight; 
     }
 
     /// ---- Setters ----
@@ -341,16 +246,18 @@ private:
     /// A list of path vertices, intended to reduce some duplicate vertices
     std::vector<scene_rdl2::math::Vec3f> mVertexBuffer;
 
-    /// A pixel array, where a vector of subpixels lives at
-    /// each pixel index
-    /// [ pixel1: [subpixel1: [node1, node2, etc], subpixel2: [node1, node2, etc]], pixel2: ...]
-    PixelBuffer mPixelBuffer;
-
     /// A read-only pointer to the user parameters, set in the PathVisualizerManager
     const PathVisualizerParams* mParams;
 
-    /// Is the PathVisualizer on?
-    bool mOn = false;
+    /// What state is the visualizer in?
+    State mState;
+
+    /// Width/height of the render buffer
+    int mWidth;
+    int mHeight;
+
+    /// Whether we need to restart rendering after gathering ray data
+    bool mNeedRenderRefresh = false;
 
     /// The index in mVertices of a camera ray's intersection with the scene.
     /// Used to draw the pixel focus
@@ -363,9 +270,7 @@ private:
     float mMaxRayLength;
 
     /// Mutex to avoid simultaneous writes by different threads
-    mutable std::mutex mLock;
-    mutable std::mutex mNodesLock;
-    mutable std::mutex mVertexBufferLock;
+    mutable std::mutex mWriteLock;
 
     /// Timing statistics
     mutable moonray::util::AverageDouble mInRenderingTime;

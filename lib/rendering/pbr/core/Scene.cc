@@ -1027,21 +1027,24 @@ Scene::pickVisibleLights(const mcrt_common::Ray &ray, float maxDistance, std::ve
     }
 }
 
-bool Scene::isPathVisualizerOn() const
-{
-    return mPathVisualizer && mPathVisualizer->isOn();
-}
-
 void Scene::recordOcclusionRay(const mcrt_common::Ray& ray, int pixel, int spIndex, bool isLightSample, bool isOccluded) const
 {
-    if (!isPathVisualizerOn()) { return; }
     mPathVisualizer->recordOcclusionRay(ray, *this, pixel, spIndex, isLightSample, isOccluded);
 }
 
-void Scene::recordRegularRay(const mcrt_common::Ray& ray, int pixel, int spIndex, int lobeType) const
+void Scene::recordRegularRay(const mcrt_common::Ray& ray, int pixel, int spIndex, int lobeType) const 
 {
-    if (!isPathVisualizerOn()) { return; }
     mPathVisualizer->recordRegularRay(ray, *this, pixel, spIndex, lobeType);
+}
+
+void Scene::setLightSamples(int& samples) const
+{
+    mPathVisualizer->setLightSamples(samples);
+}
+
+void Scene::setBsdfSamples(int& samples) const
+{
+    mPathVisualizer->setBsdfSamples(samples);
 }
 
 std::ostream& Scene::print(std::ostream& cout,

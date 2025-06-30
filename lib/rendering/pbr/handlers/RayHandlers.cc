@@ -87,8 +87,10 @@ areSingleRaysOccluded(pbr::TLState *pbrTls, unsigned numEntries, BundledOcclRay 
         /// Record ray for our path visualizer
         rtRay.tfar = occlRay.mMaxT;
         rtRay.setDepth(occlRay.mDepth);
-        fs.mScene->recordOcclusionRay(rtRay, occlRay.mPixel, occlRay.mSubpixelIndex, 
-                                      /* isLightSample */ true, isOccluded);
+        if (fs.mSimulationMode) {
+            fs.mScene->recordOcclusionRay(rtRay, occlRay.mPixel, occlRay.mSubpixelIndex, 
+                                          /* isLightSample */ true, isOccluded);
+        }
 
         if (!isOccluded || disableShadowing) {
             // At this point, we know that the ray is not occluded, but we still need to
@@ -437,7 +439,9 @@ rayBundleHandler(mcrt_common::ThreadLocalState *tls, unsigned numEntries,
 
             // ---- Record ray for our path visualizer ----------------------------------------------
             const Subpixel& sp = rayStates[i]->mSubpixel;
-            fs.mScene->recordRegularRay(ray, sp.mPixel, sp.mSubpixelIndex, pv.lobeType);
+            if (fs.mSimulationMode) {
+                fs.mScene->recordRegularRay(ray, sp.mPixel, sp.mSubpixelIndex, pv.lobeType);
+            }
             // --------------------------------------------------------------------------------------
 
             if (material) {

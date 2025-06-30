@@ -249,7 +249,7 @@ RenderContext::RenderContext(RenderOptions& options, std::stringstream* initMess
 
     //------------------------------
 
-    mPathVisualizerManager = std::make_unique<PathVisualizerManager>();
+    mPathVisualizerManager = std::make_unique<PathVisualizerManager>(this);
 
     // Initialize set of standard attributes
     shading::StandardAttributes::init();
@@ -725,7 +725,7 @@ RenderContext::invalidateTextureResources(const std::vector<std::string>& resour
 }
 
 RenderContext::RP_RESULT
-RenderContext::startFrame()
+RenderContext::startFrame(bool debugMode)
 {
     mRenderPrepRun = true;
 
@@ -760,6 +760,7 @@ RenderContext::startFrame()
     // of the frame also.
     double frameStartTime = scene_rdl2::util::getSeconds();
     const scene_rdl2::rdl2::SceneVariables &vars = mSceneContext->getSceneVariables();
+
 
     { // renderContext console setup for debug purpose
         int debugConsolePort = vars.get(scene_rdl2::rdl2::SceneVariables::sDebugConsole);
@@ -949,7 +950,7 @@ RenderContext::startFrame()
 
     // Condition scene variables and other state for this frame.
     FrameState frameState;
-    buildFrameState(&frameState, frameStartTime);
+    buildFrameState(&frameState, frameStartTime, debugMode);
 
     // Record some info for resume history from frameState
     mResumeHistoryMetaData->setNumOfThreads(frameState.mNumRenderThreads);
@@ -1035,6 +1036,12 @@ RenderContext::startFrame()
         mRenderStats->startRenderStats();
     }
 
+    if (debugMode) {
+        // Set the frameState's max pixel samples to the user-specified max for the visualizer
+        mPathVisualizerManager->fillPixelSamples(frameState.mMaxSamplesPerPixel);
+        frameState.mMinSamplesPerPixel = frameState.mMaxSamplesPerPixel;
+    }
+
     // Initialize the PathVisualizerManager, which will
     // create a new PathVisualizer object if it's been triggered
     mPathVisualizerManager->initialize(vars, mPbrScene.get());
@@ -1079,8 +1086,6 @@ RenderContext::stopFrame()
     mDriver->stopFrame();
 
     mRenderPrepTimingStats->recTime(RenderPrepTimingStats::StopFrameTag::MDRIVER_STOPFRAME);
-
-    mPathVisualizerManager->turnOff();
 
     mPbrScene->postFrame();
 
@@ -1233,6 +1238,21 @@ scene_rdl2::math::HalfOpenViewport
 RenderContext::getRezedSubViewport() const
 {
     return mSceneContext->getSceneVariables().getRezedSubViewport();
+}
+
+scene_rdl2::math::HalfOpenViewport
+RenderContext::getRezedSubViewportDebug() const
+{
+    scene_rdl2::math::HalfOpenViewport regionViewport = mSceneContext->getSceneVariables().getRezedRegionWindow();
+
+    scene_rdl2::math::HalfOpenViewport screen(0, 0, regionViewport.width(), regionViewport.height());
+
+    scene_rdl2::math::Vec2i debugPixel = mPathVisualizerManager->getPixel();
+    if (screen.contains(debugPixel.x, debugPixel.y)) {
+        return scene_rdl2::math::HalfOpenViewport(debugPixel.x, debugPixel.y, debugPixel.x + 1, debugPixel.y + 1);
+    }
+
+    return screen;
 }
 
 const scene_rdl2::rdl2::SceneContext&
@@ -2834,7 +2854,7 @@ namespace {
 } // anonymous namespace
 
 void
-RenderContext::buildFrameState(FrameState *fs, double frameStartTime) const
+RenderContext::buildFrameState(FrameState *fs, double frameStartTime, bool debugMode) const
 {
     // cppcheck-suppress memsetClassFloat // floating point memset to 0 is fine
     memset(fs, 0, sizeof(FrameState));
@@ -2990,7 +3010,13 @@ RenderContext::buildFrameState(FrameState *fs, double frameStartTime) const
 
     // Clamp viewport to rezed dimensions to ensure it's inside of our
     // allocated buffers.
-    fs->mViewport = scene_rdl2::math::convertToClosedViewport(vars.getRezedSubViewport());
+    if (debugMode) {
+        fs->mSimulationMode = true;
+        fs->mViewport = scene_rdl2::math::convertToClosedViewport(getRezedSubViewportDebug());
+    } else {
+        fs->mSimulationMode = false;
+        fs->mViewport = scene_rdl2::math::convertToClosedViewport(vars.getRezedSubViewport());
+    }
 
     MNRY_ASSERT(fs->mViewport.mMinX >= 0 && fs->mViewport.mMinY >= 0);
 
@@ -3531,6 +3557,22 @@ RenderContext::showExecModeAndReason() const
     }
     if (!mExecutionModeString.empty()) ostr << " (" << mExecutionModeString << ")";
     return ostr.str();
+}
+
+bool RenderContext::runSimulation()
+{
+    if (mPathVisualizerManager->isInRecordState()) {
+        if (isFrameRendering()) {
+            stopFrame();
+        }
+        // Reset the PathVisualizer
+        mPathVisualizerManager->reset();
+
+        // Restart rendering in debug mode
+        startFrame(true);
+        return true;
+    }
+    return false;
 }
 
 } // namespace rndr
