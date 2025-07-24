@@ -31,6 +31,11 @@ struct PathVertex {
 
 //----------------------------------------------------------------------------
 
+struct Rdl2LightSetList {
+    RDL2_LIGHTSET_LIST_MEMBERS;
+};
+
+
 // Structure which encapsulates the state of a ray as it flows through
 // the pipeline.
 // TODO: shrink the information required to queue a ray.

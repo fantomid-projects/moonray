@@ -45,43 +45,6 @@ struct LightContribution {
     scene_rdl2::math::Color Li;
 };
 
-
-// This class keeps track of the node lightsets encountered along a path.
-// Node lightsets also apply to indirect illumination, so any light paths
-// that collect indirect illumination must remember all bsdf node lightsets
-// encountered along the way and apply them.
-class Rdl2LightSetList
-{
-public:
-    Rdl2LightSetList() : mNumLightSets(0) {}
-
-    bool allLightSetsContain(const scene_rdl2::rdl2::Light *rdlLight) const {
-        for (int i = 0; i < mNumLightSets; i++) {
-            if (!mLightSets[i]->contains(rdlLight)) {
-                return false;
-            }
-        }
-        // note that an EMPTY list contains all lights
-        return true;
-    }
-    void append(const scene_rdl2::rdl2::LightSet* lightSet) {
-        // Note that only non-null lightsets should be appended.
-        // We could check for duplicates as a potential optimization. That would
-        // add more processing here and save processing checking the lightsets later.
-        // It is not clear if this would be more efficient overall.
-        if (mNumLightSets < mMaxLightSets) {
-            mLightSets[mNumLightSets++] = lightSet;
-        } // else just throw it away, it probably doesn't make much difference
-          // after mMaxLightSets bounces
-    }
-
-private:
-    int mNumLightSets;
-    static constexpr int mMaxLightSets = 8;
-    const scene_rdl2::rdl2::LightSet* mLightSets[mMaxLightSets];
-};
-
-
 ///
 /// @class LightSet LightSet.h <pbr/LightSet.h>
 /// @brief A light set is a list of lights that should shine! This is distinct
@@ -174,6 +137,10 @@ private:
 
 
 //----------------------------------------------------------------------------
+
+extern "C" bool
+CPP_LobeLightSetContainsLight(intptr_t lobeLightSet,
+                              intptr_t rdlLight);
 
 } // namespace pbr
 } // namespace moonray

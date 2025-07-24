@@ -15,6 +15,7 @@ struct Intersection;
 struct LightSet;
 struct PbrTLState;
 struct RayState;
+struct Rdl2LightSetList;
 struct Vec3f;
 
 // This is just a placeholder for now because
@@ -47,7 +48,8 @@ void computeRadianceBsdfMultiSampler(const uniform PathIntegrator * uniform this
                                      varying float rayEpsilon,
                                      varying float shadowRayEpsilon,
                                      const varying Color &ssAov,
-                                     varying uint32_t &sequenceID);
+                                     varying uint32_t &sequenceID,
+                                     const varying Rdl2LightSetList * uniform parentLobeLightSets);
 
 extern "C" void
 CPP_addOcclusionQueueEntries(           uniform PbrTLState *     uniform pbrTls,

@@ -93,7 +93,8 @@ void drawBsdfSamples(
         const varying Subpixel &sp, const varying PathVertex &pv,
         const varying Vec3f &P, const varying Vec3f &cullingNormal, varying float time,
         varying uint32_t sequenceID, varying BsdfSample * uniform bsmp, uniform int clampingDepth,
-        varying float clampingValue, varying Flags indirectFlags, varying float rayDirFootprint);
+        varying float clampingValue, varying Flags indirectFlags, varying float rayDirFootprint,
+        const varying Rdl2LightSetList * uniform parentLobeLightSets);
 
 void drawLightSamples(
         uniform PbrTLState * uniform pbrTls, uniform ShadingTLState * uniform shadingTls,
@@ -102,7 +103,8 @@ void drawLightSamples(
         const varying Vec3f &P, const varying Vec3f &cullingNormal, varying float time,
         varying uint32_t sequenceID, varying LightSample * uniform lsmp,
         uniform int clampingDepth, varying float clampingValue, varying float rayDirFootprint,
-        const varying RayState * uniform rs, const uniform int lightIndex, const varying float lightSelectionPdf);
+        const varying RayState * uniform rs, const uniform int lightIndex, const varying float lightSelectionPdf,
+        const varying Rdl2LightSetList * uniform parentLobeLightSets);
 
 void applyRussianRoulette(
         uniform PbrTLState * uniform pbrTls,
@@ -130,4 +132,3 @@ scatterAndScale(
         const varying float             r1,
         const varying float             r2,
         varying RayDifferential &       rd);
-

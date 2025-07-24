@@ -8,6 +8,7 @@
 namespace ispc {
 extern "C" uint32_t Subpixel_hvdValidation(bool);
 extern "C" uint32_t PathVertex_hvdValidation(bool);
+extern "C" uint32_t Rdl2LightSetList_hvdValidation(bool);
 extern "C" uint32_t RayState_hvdValidation(bool);
 }
 
@@ -37,6 +38,7 @@ isRayStateListValid(const pbr::TLState* tls, const unsigned numEntries, RayState
 
 HVD_VALIDATOR(Subpixel);
 HVD_VALIDATOR(PathVertex);
+HVD_VALIDATOR(Rdl2LightSetList);
 HVD_VALIDATOR(RayState);
 
 

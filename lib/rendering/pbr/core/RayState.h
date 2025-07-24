@@ -43,6 +43,46 @@ struct PathVertex {
     static uint32_t hvdValidation(bool verbose) { PATH_VERTEX_VALIDATION(VLEN); }
 };
 
+// This class keeps track of the node lightsets encountered along a path.
+// Node lightsets also apply to indirect illumination, so any light paths
+// that collect indirect illumination must remember all bsdf node lightsets
+// encountered along the way and apply them.
+struct Rdl2LightSetList {
+    RDL2_LIGHTSET_LIST_MEMBERS;
+
+    Rdl2LightSetList() : mNumLightSets(0) {}
+
+    bool allLightSetsContain(const scene_rdl2::rdl2::Light *rdlLight) const {
+        // If there are no lightsets in the Rdl2LightSetList, that is the same
+        // as having a lightset that contains all lights.
+        // Else, all the lightsets in the list must contain the rdlLight.
+        for (int i = 0; i < mNumLightSets; i++) {
+            intptr_t lightSetPtr = (((intptr_t) mLightSetsPtrHi[i]) << 32) | (intptr_t) mLightSetsPtrLo[i];
+            const scene_rdl2::rdl2::LightSet* lightSet =
+                reinterpret_cast<const scene_rdl2::rdl2::LightSet*>(lightSetPtr);
+            if (!lightSet->contains(rdlLight)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    void append(const scene_rdl2::rdl2::LightSet* lightSet) {
+        // Note that only non-null lightsets should be appended.
+        // We could check for duplicates as a potential optimization. That would
+        // add more processing here and save processing checking the lightsets later.
+        // It is not clear if this would be more efficient overall.
+        if (mNumLightSets < MAX_LIGHTSET_LIST_LIGHTSETS) {
+            intptr_t lightSetsPtr = reinterpret_cast<intptr_t>(lightSet);
+            mLightSetsPtrLo[mNumLightSets] = (uint32_t)(lightSetsPtr);
+            mLightSetsPtrHi[mNumLightSets] = (uint32_t)(lightSetsPtr >> 32);
+            mNumLightSets++;
+        } // else just throw it away, it probably doesn't make much difference
+          // after mMaxLightSets bounces
+    }
+
+    // HVD validation.
+    static uint32_t hvdValidation(bool verbose) { RDL2_LIGHTSET_LIST_VALIDATION(VLEN); }
+};
 
 // Structure which encapsulates the state of a ray as it flows through
 // the pipeline.

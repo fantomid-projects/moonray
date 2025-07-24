@@ -1087,7 +1087,8 @@ CPP_computeRadianceSubsurface(const PathIntegrator * pathIntegrator,
             pv.subsurfaceDepth += 1;
             radiance += pathIntegrator->computeRadianceDiffusionSubsurface(
                     pbrTls, bsdf, sp, pv, ray, isect, slice, *bssrdf, *lightSet,
-                    doIndirect[i], rayEpsilon[i], shadowRayEpsilon[i], sequenceID[i], ssAov, aovs, Rdl2LightSetList());
+                    doIndirect[i], rayEpsilon[i], shadowRayEpsilon[i], sequenceID[i], ssAov, aovs,
+                    rs->mParentLobeLightSets);
         }
         if (volumeSubsurface) {
             MNRY_ASSERT(!bssrdf); // else our depth count will be messed up

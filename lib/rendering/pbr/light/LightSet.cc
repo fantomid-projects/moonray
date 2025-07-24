@@ -131,7 +131,17 @@ LightSet::intersectAndEval(mcrt_common::ThreadLocalState *tls, const Vec3f &P, c
     lCo.Li *= (float)numLightsHit;
 }
 
+bool
+CPP_LobeLightSetContainsLight(intptr_t lobeLightSet,
+                              intptr_t rdlLight)
+{
+    const scene_rdl2::rdl2::LightSet* lobeLightSetPtr =
+        reinterpret_cast<const scene_rdl2::rdl2::LightSet*>(lobeLightSet);
+    const scene_rdl2::rdl2::Light* rdlLightPtr =
+        reinterpret_cast<const scene_rdl2::rdl2::Light*>(rdlLight);
 
+    return lobeLightSetPtr->contains(rdlLightPtr);
+}
 
 //----------------------------------------------------------------------------
 

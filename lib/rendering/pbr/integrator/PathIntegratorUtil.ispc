@@ -59,7 +59,8 @@ drawBsdfSamples(uniform PbrTLState * uniform pbrTls, uniform ShadingTLState * un
         const varying Subpixel &sp,  const varying PathVertex &pv,
         const varying Vec3f &P, const varying Vec3f &cullingNormal, varying float time,
         varying uint32_t sequenceID, varying BsdfSample * uniform bsmp, uniform int clampingDepth,
-        varying float clampingValue, varying Flags indirectFlags, varying float rayDirFootprint)
+        varying float clampingValue, varying Flags indirectFlags, varying float rayDirFootprint,
+        const varying Rdl2LightSetList * uniform parentLobeLightSets)
 {
     SequenceID bsdfSid, lightFilterSid, lightFilter3DSid, lightChoiceSid;
     IntegratorSample2D bsdfSamples;
@@ -178,7 +179,8 @@ drawBsdfSamples(uniform PbrTLState * uniform pbrTls, uniform ShadingTLState * un
             // to sInfiniteLightDistance if there is an InfiniteAreaLight.
             LightSetSampler_intersectAndEval(&lSampler, pbrTls, shadingTls, P, cullingNormal, bsmp[s].wi,
                                              lightFilterSample, time, &pv, false, includeRayTerminationLights,
-                                             lightChoiceSamples, pv.nonMirrorDepth, lobeMask, lCo, rayDirFootprint);
+                                             lightChoiceSamples, pv.nonMirrorDepth, lobeMask, lCo, rayDirFootprint,
+                                             BsdfLobe_getLightSet(lobe), parentLobeLightSets);
 
             integrateBsdfSample(bSampler, lobeIndex,
                     lSampler, pv.pathThroughput, lCo, bsmp[s]);
@@ -228,7 +230,8 @@ inline void
 integrateLightSetSample(const varying LightSetSampler &lSampler,
         uniform int lightIndex, const varying BsdfSampler &bSampler,
         const varying PathVertex &pv, varying LightSample &lsmp,
-        uniform int clampingDepth, varying float clampingValue)
+        uniform int clampingDepth, varying float clampingValue,
+        const varying Rdl2LightSetList * uniform parentLobeLightSets)
 {
     // Mark the sample valid only if we have valid lobe contributions and
     // initialize contribution for summing
@@ -266,6 +269,21 @@ integrateLightSetSample(const varying LightSetSampler &lSampler,
         const uniform Light* uniform light = LightSetSampler_getLight(&lSampler, lightIndex);
         if (!(lobeMask & Light_getVisibilityMask(light))) {
             continue;
+        }
+
+        // Skip the light if it's not in all of the parent lobes' lightsets or the
+        // current lobe's lightset.
+        uniform intptr_t rdlLight = Light_getRdlLight(light);
+        if (parentLobeLightSets != 0) {
+            if (!allLightSetsContain(parentLobeLightSets, rdlLight)) {
+                continue;
+            }
+        }
+        varying intptr_t lobeLightSet = BsdfLobe_getLightSet(lobe);
+        if (lobeLightSet != 0) {
+            if (!lobeLightSetContains(lobeLightSet, rdlLight)) {
+                continue;
+            }
         }
 
         // Evaluate the lobe
@@ -368,7 +386,8 @@ drawLightSamples(uniform PbrTLState * uniform pbrTls, uniform ShadingTLState * u
         const varying Vec3f &P, const varying Vec3f &cullingNormal, varying float time,
         varying uint32_t sequenceID, varying LightSample * uniform lsmp,
         uniform int clampingDepth, varying float clampingValue, varying float rayDirFootprint,
-        const varying RayState * uniform rs, const uniform int lightIndex, const varying float lightSelectionPdf)
+        const varying RayState * uniform rs, const uniform int lightIndex, const varying float lightSelectionPdf,
+        const varying Rdl2LightSetList * uniform parentLobeLightSets)
 {
     SequenceID sid, sidFilter, sidFilter3D;
     IntegratorSample3D lightSamples;
@@ -455,7 +474,7 @@ drawLightSamples(uniform PbrTLState * uniform pbrTls, uniform ShadingTLState * u
         MNRY_ASSERT(isNormalized(currSamp.wi));
 
         integrateLightSetSample(lSampler, lightIndex, bSampler, pv, currSamp,
-                clampingDepth, clampingValue);
+                clampingDepth, clampingValue, parentLobeLightSets);
 
         addToCounter(pbrTls->mStatistics, STATS_LIGHT_SAMPLES, getActiveLaneCount());
     }

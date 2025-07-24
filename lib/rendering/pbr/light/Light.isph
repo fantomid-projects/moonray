@@ -178,6 +178,12 @@ Light_getIsVisibleInCamera(const uniform Light * uniform light)
     return light->mIsVisibleInCamera;
 }
 
+inline uniform intptr_t
+Light_getRdlLight(const uniform Light * uniform light)
+{
+    return light->mRdlLight;
+}
+
 inline varying int32_t
 Light_getLabelId(const uniform Light * varying light)
 {

@@ -50,6 +50,7 @@ enum BsdfBuilderBehavior
 struct Bsdf;
 struct Closure;
 struct Fresnel;
+struct LightSet;
 struct LobeAttenuator;
 struct Material;
 struct State;
@@ -103,35 +104,40 @@ void BsdfBuilder_addMicrofacetAnisotropicClearcoat(
         const varying MicrofacetAnisotropicClearcoat& clearcoat,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addMicrofacetIsotropicClearcoat(
         varying BsdfBuilder& builder,
         const varying MicrofacetIsotropicClearcoat& clearcoat,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addMirrorClearcoat(
         varying BsdfBuilder& builder,
         const varying MirrorClearcoat& clearcoat,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addMirrorBRDF(
         varying BsdfBuilder& builder,
         const varying MirrorBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addMirrorBTDF(
         varying BsdfBuilder& builder,
         const varying MirrorBTDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addMirrorBSDF(
         varying BsdfBuilder& builder,
@@ -139,35 +145,40 @@ void BsdfBuilder_addMirrorBSDF(
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
         const uniform int reflectionLabel,
-        const uniform int transmissionLabel);
+        const uniform int transmissionLabel,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addMicrofacetAnisotropicBRDF(
         varying BsdfBuilder& builder,
         const varying MicrofacetAnisotropicBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addMicrofacetIsotropicBRDF(
         varying BsdfBuilder& builder,
         const varying MicrofacetIsotropicBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addMicrofacetAnisotropicBTDF(
         varying BsdfBuilder& builder,
         const varying MicrofacetAnisotropicBTDF& btdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addMicrofacetIsotropicBTDF(
         varying BsdfBuilder& builder,
         const varying MicrofacetIsotropicBTDF& btdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addMicrofacetAnisotropicBSDF(
         varying BsdfBuilder& builder,
@@ -175,7 +186,8 @@ void BsdfBuilder_addMicrofacetAnisotropicBSDF(
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
         const uniform int reflectionLabel,
-        const uniform int transmissionLabel);
+        const uniform int transmissionLabel,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addMicrofacetIsotropicBSDF(
         varying BsdfBuilder& builder,
@@ -183,154 +195,176 @@ void BsdfBuilder_addMicrofacetIsotropicBSDF(
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
         const uniform int reflectionLabel,
-        const uniform int transmissionLabel);
+        const uniform int transmissionLabel,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addToonBRDF(
         varying BsdfBuilder& builder,
         const varying ToonBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addHairToonSpecularBRDF(
         varying BsdfBuilder& builder,
         const varying HairToonSpecularBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addToonSpecularBRDF(
         varying BsdfBuilder& builder,
         const varying ToonSpecularBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addLambertianBRDF(
         varying BsdfBuilder& builder,
         const varying LambertianBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addLambertianBTDF(
         varying BsdfBuilder& builder,
         const varying LambertianBTDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addFlatDiffuseBRDF(
         varying BsdfBuilder& builder,
         const varying FlatDiffuseBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addOrenNayarBRDF(
         varying BsdfBuilder& builder,
         const varying OrenNayarBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addDipoleDiffusion(
         varying BsdfBuilder& builder,
         const varying DipoleDiffusion& bssrdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addNormalizedDiffusion(
         varying BsdfBuilder& builder,
         const varying NormalizedDiffusion& bssrdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addRandomWalkSubsurface(
         varying BsdfBuilder& builder,
         const varying RandomWalkSubsurface& sss,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addFabricBRDF(
         varying BsdfBuilder& builder,
         const varying FabricBRDF& bssrdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addVelvetBRDF(
         varying BsdfBuilder& builder,
         const varying VelvetBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addEyeCausticBRDF(
         varying BsdfBuilder& builder,
         const varying EyeCausticBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addHairDiffuseBSDF(
         varying BsdfBuilder& builder,
         const varying HairDiffuseBSDF& bsdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addHairBSDF(
         varying BsdfBuilder& builder,
         const varying HairBSDF& bsdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addHairRBRDF(
         varying BsdfBuilder& builder,
         const varying HairRBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addHairTRTBRDF(
         varying BsdfBuilder& builder,
         const varying HairTRTBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addHairTTBTDF(
         varying BsdfBuilder& builder,
         const varying HairTTBTDF& btdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addHairTRRTBRDF(
         varying BsdfBuilder& builder,
         const varying HairTRRTBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addGlitterFlakeBRDF(
         varying BsdfBuilder& builder,
         const varying GlitterFlakeBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 void BsdfBuilder_addStochasticFlakesBRDF(
         varying BsdfBuilder& builder,
         const varying StochasticFlakesBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label);
+        const uniform int label,
+        const uniform LightSet * uniform lightSet = NULL);
 
 // Specifies a radiance value to be emitted from the surface.
 // This effectively turns the object into a light source.

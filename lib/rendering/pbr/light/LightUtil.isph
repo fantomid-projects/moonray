@@ -17,6 +17,7 @@ struct LightFilterList;
 struct LightSet;
 struct PathVertex;
 struct PbrTLState;
+struct Rdl2LightSetList;
 
 //----------------------------------------------------------------------------
 
@@ -264,6 +265,7 @@ void computeActiveLights(uniform Arena * uniform arena,
                          const varying Bsdf * uniform bsdf,
                          const varying PathVertex * uniform pv,
                          varying float rayTime,
+                         const varying Rdl2LightSetList * uniform parentLobeLightSets,
                          // outputs
                          uniform LightSet * uniform lightSet,
                          uniform bool &hasRayTerminatorLights);

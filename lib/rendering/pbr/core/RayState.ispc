@@ -17,6 +17,12 @@ PathVertex_hvdValidation(uniform bool verbose)
 }
 
 export uniform uint32_t
+Rdl2LightSetList_hvdValidation(uniform bool verbose)
+{
+    RDL2_LIGHTSET_LIST_VALIDATION(VLEN);
+}
+
+export uniform uint32_t
 RayState_hvdValidation(uniform bool verbose)
 {
     RAY_STATE_VALIDATION(VLEN);

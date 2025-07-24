@@ -425,29 +425,30 @@ void addDirectVisibleLightSampleContributionsBundled(       uniform PbrTLState *
 }
 
 void
-sampleAndAddDirectLightContributionsBundled( const uniform PathIntegrator * uniform this,
-                                                   uniform PbrTLState *     uniform pbrTls,
-                                                   uniform ShadingTLState * uniform shadingTls,
-                                             const varying LightSetSampler &        lSampler,
-                                             const varying BsdfSampler &            bSampler,
-                                                   varying LightSample *    uniform lsmp,
-                                             const varying RayDifferential &        parentRay,
-                                             const varying Vec3f *          uniform cullingNormal,
-                                             const varying float                    rayEpsilon,
-                                             const varying float                    shadowRayEpsilon,
-                                             const varying Subpixel &               sp,
-                                             const varying PathVertex &             pv,
-                                             const varying RayState &               rayState,
-                                                   varying uint32_t                 srcRayIndices,
-                                                   varying BundledOcclRay * uniform dstOcclRays,
-                                                   uniform uint32_t *       uniform dstOcclRayIndices,
-                                                   uniform uint32_t &               numOcclRays,
-                                                   varying BundledOcclRay * uniform presenceShadowsRays,
-                                                   uniform uint32_t *       uniform dstPresenceShadowsRayIndices,
-                                                   uniform uint32_t &               numPresenceShadowsRays,
-                                             const varying Intersection &           isect,
-                                                   varying uint32_t &               sequenceID,
-                                             const varying float *          uniform lightSelectionPdfs)
+sampleAndAddDirectLightContributionsBundled( const uniform PathIntegrator *   uniform this,
+                                                   uniform PbrTLState *       uniform pbrTls,
+                                                   uniform ShadingTLState *   uniform shadingTls,
+                                             const varying LightSetSampler &          lSampler,
+                                             const varying BsdfSampler &              bSampler,
+                                                   varying LightSample *      uniform lsmp,
+                                             const varying RayDifferential &          parentRay,
+                                             const varying Vec3f *            uniform cullingNormal,
+                                             const varying float                      rayEpsilon,
+                                             const varying float                      shadowRayEpsilon,
+                                             const varying Subpixel &                 sp,
+                                             const varying PathVertex &               pv,
+                                             const varying RayState &                 rayState,
+                                                   varying uint32_t                   srcRayIndices,
+                                                   varying BundledOcclRay *   uniform dstOcclRays,
+                                                   uniform uint32_t *         uniform dstOcclRayIndices,
+                                                   uniform uint32_t &                 numOcclRays,
+                                                   varying BundledOcclRay *   uniform presenceShadowsRays,
+                                                   uniform uint32_t *         uniform dstPresenceShadowsRayIndices,
+                                                   uniform uint32_t &                 numPresenceShadowsRays,
+                                             const varying Intersection &             isect,
+                                                   varying uint32_t &                 sequenceID,
+                                             const varying float *            uniform lightSelectionPdfs,
+                                             const varying Rdl2LightSetList * uniform parentLobeLightSets)
 {
     MNRY_ASSERT(CPP_isIntegratorAccumulatorRunning(pbrTls));
 
@@ -487,7 +488,7 @@ sampleAndAddDirectLightContributionsBundled( const uniform PathIntegrator * unif
         drawLightSamples(pbrTls, shadingTls, lSampler, bSampler, sp, pv, getP(isect),
                          *cullingNormal, Ray_getTime(parentRay), sequenceID, lsmp,
                          this->mSampleClampingDepth, sp.mSampleClampingValue, 
-                         Ray_getDirFootprint(parentRay), &rayState, lightIndex, lightSelectionPdf);
+                         Ray_getDirFootprint(parentRay), &rayState, lightIndex, lightSelectionPdf, parentLobeLightSets);
 
         // ---------------- Apply Russian roulette to the light samples ------------------------------------------------
         if (pv.nonMirrorDepth > 0  &&  this->mRussianRouletteThreshold > 0.0f) {
@@ -772,6 +773,11 @@ addIndirectOrDirectVisibleContributionsBundled( const uniform PathIntegrator * u
             PbrTLState_acquireDeepData(pbrTls, rayState->mDeepDataHandle);
             PbrTLState_acquireCryptomatteData(pbrTls, rayState->mCryptomatteDataHandle);
 
+            // Append this lobe's lightset to the parent lobes' lists
+            varying intptr_t lobeLightSet = BsdfLobe_getLightSet(lobe);
+            copyRdl2LightSetList(&parentRayState.mParentLobeLightSets, &rayState->mParentLobeLightSets);
+            appendLobeLightSet(&rayState->mParentLobeLightSets, lobeLightSet);
+
             // Accumulate post scatter extra aovs
             if (!AovSchema_empty(aovSchema)) {
                 const varying Bsdf * uniform bsdf = BsdfSampler_getBsdf(&bSampler);
@@ -820,7 +826,8 @@ computeRadianceBsdfMultiSampler(const uniform PathIntegrator * uniform this,
                                 varying float rayEpsilon,
                                 varying float shadowRayEpsilon,
                                 const varying Color &ssAov,
-                                varying uint32_t &sequenceID)
+                                varying uint32_t &sequenceID,
+                                const varying Rdl2LightSetList * uniform parentLobeLightSets)
 {
     // We use a BsdfSampler object to keep track of sampling strategies and
     // sample budget per lobe.
@@ -880,7 +887,7 @@ computeRadianceBsdfMultiSampler(const uniform PathIntegrator * uniform this,
     const varying RayDifferential &ray = rs->mRay;
     drawBsdfSamples(pbrTls, shadingTls, bSampler, lSampler, sp, pv, getP(isect), cullingNormal,
                     Ray_getTime(ray), sequenceID, bsmp, this->mSampleClampingDepth, 
-                    sp.mSampleClampingValue, indirectFlags, Ray_getDirFootprint(ray));
+                    sp.mSampleClampingValue, indirectFlags, Ray_getDirFootprint(ray), parentLobeLightSets);
 
     // now that we have drawn our bsdf samples, we can pack our material aovs
     const uniform FrameState &fs = *pbrTls->mFs;
@@ -938,7 +945,8 @@ computeRadianceBsdfMultiSampler(const uniform PathIntegrator * uniform this,
                                                 presenceShadowsRayIndices,
                                                 numPresenceShadowsRaysFilled,
                                                 isect, sequenceID,
-                                                lightSelectionPdfs);
+                                                lightSelectionPdfs,
+                                                parentLobeLightSets);
 
     if (doIndirect) {
         addIndirectOrDirectVisibleContributionsBundled(this, pbrTls, sp, pv,

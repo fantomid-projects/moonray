@@ -237,9 +237,10 @@ integrateBundled( const uniform PathIntegrator * uniform this,
             // explicitly use the origin of render space for this ray query
             varying Vec3f origin = Vec3f_ctor(0.0f, 0.0f, 0.0f);
 
+            // No lobe lightsets because this is a primary ray
             varying int lightIdx = LightSet_intersect(pbrTls, visibleLightSet, origin, cullingNormal,
                                                       Ray_getDirection(ray), Ray_getTime(ray), Ray_getEnd(ray), false,
-                                                      lightChoiceSamples, 0, -1, hitLightIsect, numHits);
+                                                      lightChoiceSamples, 0, -1, hitLightIsect, numHits, 0, 0);
 
             if (lightIdx >= 0) {
                 const uniform Light * varying hitLight = LightSet_getLight(visibleLightSet, lightIdx);
@@ -428,7 +429,9 @@ integrateBundled( const uniform PathIntegrator * uniform this,
         // Gather up all lights that can affect the intersection point/normal.
         uniform LightSet activeLightSet;
         uniform bool hasRayTerminatorLights;
-        computeActiveLights(arena, lightSet, getP(isect), cullingNormal, bsdf, &pv, ray.time,
+
+        const varying Rdl2LightSetList * uniform parentLobeLightSets = &(rs->mParentLobeLightSets);
+        computeActiveLights(arena, lightSet, getP(isect), cullingNormal, bsdf, &pv, ray.time, parentLobeLightSets,
                             &activeLightSet, hasRayTerminatorLights);
 
         //---------------------------------------------------------------------
@@ -589,7 +592,8 @@ integrateBundled( const uniform PathIntegrator * uniform this,
                                         rayEpsilon,
                                         shadowRayEpsilon,
                                         ssAov,
-                                        sequenceID);
+                                        sequenceID,
+                                        parentLobeLightSets);
     }
 
     MNRY_ASSERT(numRadiances <= numEntries);

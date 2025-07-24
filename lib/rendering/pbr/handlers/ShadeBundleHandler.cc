@@ -564,6 +564,7 @@ void shadeBundleHandler(mcrt_common::ThreadLocalState *tls, unsigned numEntries,
                         presenceRay->mRay.primID = -1;
                         presenceRay->mRay.instID = -1;
                         presenceRay->mDeepDataHandle = nullHandle;
+                        presenceRay->mParentLobeLightSets = rs->mParentLobeLightSets;
 
                         rs->mPathVertex.pathPixelWeight *= presences[i];
                         rs->mPathVertex.aovPathPixelWeight *= presences[i];

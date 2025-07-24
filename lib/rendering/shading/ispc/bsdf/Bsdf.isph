@@ -153,6 +153,7 @@ typedef void (* uniform BsdfLobeShowFn)(const varying BsdfLobe * const uniform l
     uniform bool mIsHair;                        \
     uniform int mLabel;                          \
     uniform int mPropertyFlags;                  \
+    uniform intptr_t mLightSet;                  \
     varying Color mScale
 
 /// @class BsdfLobe Bsdf.isph <rendering/shading/bsdf/Bsdf.isph>
@@ -185,6 +186,7 @@ BsdfLobe_init(varying BsdfLobe * uniform lobe,
     lobe->mIsHair = false;
     lobe->mLabel = 0;
     lobe->mPropertyFlags = propertyFlags | BSDF_LOBE_PROPERTY_COLOR;
+    lobe->mLightSet = 0;
     lobe->mEvalFn = (uniform intptr_t) evalFn;
     lobe->mSampleFn = (uniform intptr_t) sampleFn;
     lobe->mAlbedoFn = (uniform intptr_t) albedoFn;
@@ -419,6 +421,19 @@ inline uniform int
 BsdfLobe_getLabel(const varying BsdfLobe * uniform lobe)
 {
     return lobe->mLabel;
+}
+
+inline varying intptr_t
+BsdfLobe_getLightSet(const varying BsdfLobe * uniform lobe)
+{
+    return lobe->mLightSet;
+}
+
+inline void
+BsdfLobe_setLightSet(varying BsdfLobe * uniform lobe,
+                     uniform intptr_t lightSet)
+{
+    lobe->mLightSet = lightSet;
 }
 
 inline uniform bool

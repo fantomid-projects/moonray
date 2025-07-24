@@ -47,6 +47,7 @@ computeActiveLights(uniform Arena * uniform arena,
                     const varying Bsdf * uniform bsdf,
                     const varying PathVertex * uniform pv,
                     varying float rayTime,
+                    const varying Rdl2LightSetList * uniform parentLobeLightSets,
                     uniform LightSet * uniform lightSet,
                     uniform bool &hasRayTerminatorLights)
 {
@@ -84,6 +85,15 @@ computeActiveLights(uniform Arena * uniform arena,
         for (uniform size_t i = 0; i < upperBound; ++i) {
             const uniform Light * uniform light = LightSet_getLight(lightList, i);
             const uniform LightFilterList * uniform lightFilterList = LightSet_getLightFilterList(lightList, i);
+
+            // We don't have the current BSDF lobe yet, but we can still reject the light
+            // based on the previously encountered lobes.
+            uniform intptr_t rdlLight = Light_getRdlLight(light);
+            if (parentLobeLightSets != 0) {
+                if (all(!allLightSetsContain(parentLobeLightSets, rdlLight))) {
+                    lightIdMap[i] = -1;
+                }
+            }
 
             // light culling is done in here
             if (any(Light_canIlluminate(light, pos, normal, rayTime, radius, lightFilterList, pv))) {

@@ -24,7 +24,9 @@ LightSet_intersect(uniform PbrTLState * uniform pbrTls, const uniform LightSet *
                    const varying Vec3f &P, const varying Vec3f &cullingNormal, const varying Vec3f &wi,
                    varying float time, varying float maxDistance,
                    varying bool includeRayTerminationLights, varying IntegratorSample1D &samples, varying int depth,
-                   varying int visibilityMask, varying LightIntersection &chosenIsect, varying int &numHits)
+                   varying int visibilityMask, varying LightIntersection &chosenIsect, varying int &numHits,
+                   varying intptr_t bsdfLobeLightSet,
+                   const varying Rdl2LightSetList * uniform parentLobeLightSets)
 {
     chosenIsect.distance = maxDistance;
 
@@ -62,6 +64,20 @@ LightSet_intersect(uniform PbrTLState * uniform pbrTls, const uniform LightSet *
             continue;
         }
 
+        // Skip the light if it's not in all of the parent lobes' lightsets or the
+        // current lobe's lightset.
+        uniform intptr_t rdlLight = Light_getRdlLight(light);
+        if (parentLobeLightSets != 0) {
+            if (!allLightSetsContain(parentLobeLightSets, rdlLight)) {
+                continue;
+            }
+        }
+        if (bsdfLobeLightSet != 0) {
+            if (!lobeLightSetContains(bsdfLobeLightSet, rdlLight)) {
+                continue;
+            }
+        }
+
         if (Light_intersect(light, P, cullingNormal, wi, time, maxDistance, currentIsect)) {
             numHits++;
 
@@ -87,7 +103,9 @@ LightSet_intersectAndEval(uniform PbrTLState * uniform pbrTls,
                           const varying PathVertex * uniform pv,
                           uniform bool fromCamera, varying bool includeRayTerminationLights,
                           varying IntegratorSample1D &samples, varying int depth,
-                          varying int visibilityMask, varying LightContribution &lCo, varying float rayDirFootprint)
+                          varying int visibilityMask, varying LightContribution &lCo, varying float rayDirFootprint,
+                          varying intptr_t bsdfLobeLightSet,
+                          const varying Rdl2LightSetList * uniform parentLobeLightSets)
 {
     // Initialize contribution
     lCo.isInvalid = true;
@@ -100,7 +118,7 @@ LightSet_intersectAndEval(uniform PbrTLState * uniform pbrTls,
     varying LightIntersection isect;
     varying int numLightsHit = 0;
     varying int lightIdx = LightSet_intersect(pbrTls, lightSet, P, cullingNormal, wi, time, sMaxValue,
-        includeRayTerminationLights, samples, depth, visibilityMask, isect, numLightsHit);
+        includeRayTerminationLights, samples, depth, visibilityMask, isect, numLightsHit, bsdfLobeLightSet, parentLobeLightSets);
 
     const uniform Light * varying light = nullptr;
     const uniform LightFilterList * varying lightFilterList = nullptr;

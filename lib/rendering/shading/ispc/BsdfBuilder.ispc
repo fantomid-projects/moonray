@@ -316,7 +316,8 @@ BsdfBuilder_addMicrofacetAnisotropicClearcoat(
         const varying MicrofacetAnisotropicClearcoat& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -372,6 +373,7 @@ BsdfBuilder_addMicrofacetAnisotropicClearcoat(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -382,7 +384,8 @@ BsdfBuilder_addMicrofacetIsotropicClearcoat(
         const varying MicrofacetIsotropicClearcoat& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -446,6 +449,7 @@ BsdfBuilder_addMicrofacetIsotropicClearcoat(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -456,7 +460,8 @@ BsdfBuilder_addMirrorClearcoat(
         const varying MirrorClearcoat& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -506,6 +511,7 @@ BsdfBuilder_addMirrorClearcoat(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -516,7 +522,8 @@ BsdfBuilder_addMirrorBRDF(
         const varying MirrorBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -567,6 +574,7 @@ BsdfBuilder_addMirrorBRDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -577,7 +585,8 @@ BsdfBuilder_addMirrorBTDF(
         const varying MirrorBTDF& btdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -613,6 +622,7 @@ BsdfBuilder_addMirrorBTDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -624,7 +634,8 @@ BsdfBuilder_addMirrorBSDF(
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
         const uniform int reflectionLabel,
-        const uniform int transmissionLabel)
+        const uniform int transmissionLabel,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -723,11 +734,13 @@ BsdfBuilder_addMirrorBSDF(
 
     if (refl) {
         BsdfLobe_setLabel(refl, reflectionLabel);
+        BsdfLobe_setLightSet(refl, (uniform intptr_t)lightSet);
         Bsdf_addLobe(me.mBsdf, refl);
     }
 
     if (trans) {
         BsdfLobe_setLabel(trans, transmissionLabel);
+        BsdfLobe_setLightSet(trans, (uniform intptr_t)lightSet);
         Bsdf_addLobe(me.mBsdf, trans);
     }
 
@@ -740,7 +753,8 @@ BsdfBuilder_addMicrofacetAnisotropicBRDF(
         const varying MicrofacetAnisotropicBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -797,6 +811,7 @@ BsdfBuilder_addMicrofacetAnisotropicBRDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -807,7 +822,8 @@ BsdfBuilder_addMicrofacetIsotropicBRDF(
         const varying MicrofacetIsotropicBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -874,6 +890,7 @@ BsdfBuilder_addMicrofacetIsotropicBRDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -884,7 +901,8 @@ BsdfBuilder_addMicrofacetAnisotropicBTDF(
         const varying MicrofacetAnisotropicBTDF& btdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -928,6 +946,7 @@ BsdfBuilder_addMicrofacetAnisotropicBTDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -938,7 +957,8 @@ BsdfBuilder_addMicrofacetIsotropicBTDF(
         const varying MicrofacetIsotropicBTDF& btdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -981,6 +1001,7 @@ BsdfBuilder_addMicrofacetIsotropicBTDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -992,7 +1013,8 @@ BsdfBuilder_addMicrofacetAnisotropicBSDF(
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
         const uniform int reflectionLabel,
-        const uniform int transmissionLabel)
+        const uniform int transmissionLabel,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -1123,11 +1145,13 @@ BsdfBuilder_addMicrofacetAnisotropicBSDF(
 
     if (refl) {
         BsdfLobe_setLabel(refl, reflectionLabel);
+        BsdfLobe_setLightSet(refl, (uniform intptr_t)lightSet);
         Bsdf_addLobe(me.mBsdf, refl);
     }
 
     if (trans) {
         BsdfLobe_setLabel(trans, transmissionLabel);
+        BsdfLobe_setLightSet(trans, (uniform intptr_t)lightSet);
         Bsdf_addLobe(me.mBsdf, trans);
     }
 
@@ -1141,7 +1165,8 @@ BsdfBuilder_addMicrofacetIsotropicBSDF(
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
         const uniform int reflectionLabel,
-        const uniform int transmissionLabel)
+        const uniform int transmissionLabel,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -1300,11 +1325,13 @@ BsdfBuilder_addMicrofacetIsotropicBSDF(
 
     if (refl) {
         BsdfLobe_setLabel(refl, reflectionLabel);
+        BsdfLobe_setLightSet(refl, (uniform intptr_t)lightSet);
         Bsdf_addLobe(me.mBsdf, refl);
     }
 
     if (trans) {
         BsdfLobe_setLabel(trans, transmissionLabel);
+        BsdfLobe_setLightSet(trans, (uniform intptr_t)lightSet);
         Bsdf_addLobe(me.mBsdf, trans);
     }
 
@@ -1317,7 +1344,8 @@ BsdfBuilder_addToonBRDF(
         const varying ToonBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -1363,6 +1391,7 @@ BsdfBuilder_addToonBRDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -1373,7 +1402,8 @@ BsdfBuilder_addHairToonSpecularBRDF(
         const varying HairToonSpecularBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -1437,6 +1467,7 @@ BsdfBuilder_addHairToonSpecularBRDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -1447,7 +1478,8 @@ BsdfBuilder_addToonSpecularBRDF(
         const varying ToonSpecularBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
     const varying State& state = *(me.mState);
@@ -1537,6 +1569,7 @@ BsdfBuilder_addToonSpecularBRDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -1547,7 +1580,8 @@ BsdfBuilder_addLambertianBRDF(
         const varying LambertianBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -1587,6 +1621,7 @@ BsdfBuilder_addLambertianBRDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -1597,7 +1632,8 @@ BsdfBuilder_addLambertianBTDF(
         const varying LambertianBTDF& btdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -1637,6 +1673,7 @@ BsdfBuilder_addLambertianBTDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -1647,7 +1684,8 @@ BsdfBuilder_addFlatDiffuseBRDF(
         const varying FlatDiffuseBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -1691,6 +1729,7 @@ BsdfBuilder_addFlatDiffuseBRDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -1701,7 +1740,8 @@ BsdfBuilder_addOrenNayarBRDF(
         const varying OrenNayarBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -1742,6 +1782,7 @@ BsdfBuilder_addOrenNayarBRDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -1752,7 +1793,8 @@ BsdfBuilder_addDipoleDiffusion(
         const varying DipoleDiffusion& profile,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -1766,7 +1808,8 @@ BsdfBuilder_addDipoleDiffusion(
                                       diffuse,
                                       weight,
                                       combineBehavior,
-                                      label);
+                                      label,
+                                      lightSet);
         return;
     }
 
@@ -1807,6 +1850,7 @@ BsdfBuilder_addDipoleDiffusion(
 
     Bssrdf_setTraceSet(bssrdf, profile.mTraceSet);
     Bssrdf_setLabel(bssrdf, label);
+    Bssrdf_setLightSet(bssrdf, lightSet);
     Bsdf_addBssrdf(me.mBsdf, bssrdf);
     accumulateAttenuation(me);
 }
@@ -1817,7 +1861,8 @@ BsdfBuilder_addNormalizedDiffusion(
         const varying NormalizedDiffusion& profile,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -1831,7 +1876,8 @@ BsdfBuilder_addNormalizedDiffusion(
                                       diffuse,
                                       weight,
                                       combineBehavior,
-                                      label);
+                                      label,
+                                      lightSet);
         return;
     }
 
@@ -1872,6 +1918,7 @@ BsdfBuilder_addNormalizedDiffusion(
 
     Bssrdf_setTraceSet(bssrdf, profile.mTraceSet);
     Bssrdf_setLabel(bssrdf, label);
+    Bssrdf_setLightSet(bssrdf, lightSet);
     Bsdf_addBssrdf(me.mBsdf, bssrdf);
     accumulateAttenuation(me);
 }
@@ -1882,7 +1929,8 @@ BsdfBuilder_addRandomWalkSubsurface(
         const varying RandomWalkSubsurface& sss,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -1896,7 +1944,8 @@ BsdfBuilder_addRandomWalkSubsurface(
                                       diffuse,
                                       weight,
                                       combineBehavior,
-                                      label);
+                                      label,
+                                      lightSet);
         return;
     }
 
@@ -1947,7 +1996,8 @@ BsdfBuilder_addFabricBRDF(
         const varying FabricBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -1985,6 +2035,7 @@ BsdfBuilder_addFabricBRDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -1995,7 +2046,8 @@ BsdfBuilder_addVelvetBRDF(
         const varying VelvetBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -2035,6 +2087,7 @@ BsdfBuilder_addVelvetBRDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -2045,7 +2098,8 @@ BsdfBuilder_addEyeCausticBRDF(
         const varying EyeCausticBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -2081,6 +2135,7 @@ BsdfBuilder_addEyeCausticBRDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -2091,7 +2146,8 @@ BsdfBuilder_addHairDiffuseBSDF(
         const varying HairDiffuseBSDF& bsdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -2123,6 +2179,7 @@ BsdfBuilder_addHairDiffuseBSDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -2133,7 +2190,8 @@ BsdfBuilder_addHairBSDF(
         const varying HairBSDF& bsdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -2210,6 +2268,7 @@ BsdfBuilder_addHairBSDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -2220,7 +2279,8 @@ BsdfBuilder_addHairRBRDF(
         const varying HairRBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -2267,6 +2327,7 @@ BsdfBuilder_addHairRBRDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -2277,7 +2338,8 @@ BsdfBuilder_addHairTRTBRDF(
         const varying HairTRTBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -2327,6 +2389,7 @@ BsdfBuilder_addHairTRTBRDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -2337,7 +2400,8 @@ BsdfBuilder_addHairTTBTDF(
         const varying HairTTBTDF& btdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -2385,6 +2449,7 @@ BsdfBuilder_addHairTTBTDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -2395,7 +2460,8 @@ BsdfBuilder_addHairTRRTBRDF(
         const varying HairTRRTBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -2439,6 +2505,7 @@ BsdfBuilder_addHairTRRTBRDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -2449,7 +2516,8 @@ BsdfBuilder_addGlitterFlakeBRDF(
         const varying GlitterFlakeBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -2496,6 +2564,7 @@ BsdfBuilder_addGlitterFlakeBRDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }
@@ -2506,7 +2575,8 @@ BsdfBuilder_addStochasticFlakesBRDF(
         const varying StochasticFlakesBRDF& brdf,
         const varying float weight,
         const varying BsdfBuilderBehavior combineBehavior,
-        const uniform int label)
+        const uniform int label,
+        const uniform LightSet * uniform lightSet)
 {
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
@@ -2541,6 +2611,7 @@ BsdfBuilder_addStochasticFlakesBRDF(
     }
 
     BsdfLobe_setLabel(lobe, label);
+    BsdfLobe_setLightSet(lobe, (uniform intptr_t)lightSet);
     Bsdf_addLobe(me.mBsdf, lobe);
     accumulateAttenuation(me);
 }

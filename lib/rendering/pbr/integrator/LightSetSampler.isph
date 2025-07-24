@@ -218,10 +218,13 @@ inline void LightSetSampler_intersectAndEval(
         varying float time, const varying PathVertex* uniform pv,
         uniform bool fromCamera, varying bool includeRayTerminationLights,
         varying IntegratorSample1D &samples, varying int depth,
-        const varying int visibilityMask, varying LightContribution &lCo, varying float rayDirFootprint)
+        const varying int visibilityMask, varying LightContribution &lCo, varying float rayDirFootprint,
+        varying intptr_t bsdfLobeLightSet,
+        const varying Rdl2LightSetList * uniform parentLobeLightSets)
 {
     LightSet_intersectAndEval(pbrTls, lSampler->mLightSet, tls, P, N, wi, filterR, time, pv, fromCamera,
-                              includeRayTerminationLights, samples, depth, visibilityMask, lCo, rayDirFootprint);
+                              includeRayTerminationLights, samples, depth, visibilityMask, lCo, rayDirFootprint,
+                              bsdfLobeLightSet, parentLobeLightSets);
 }
 
 inline const varying Bsdf * uniform
@@ -231,4 +234,3 @@ LightSetSampler_getBsdf(const varying LightSetSampler * uniform lSampler)
 }
 
 //----------------------------------------------------------------------------
-

@@ -1291,6 +1291,8 @@ RenderDriver::renderPixelVectorSamples(pbr::TLState *pbrTls,
         rs->mSubpixel.mSubpixelY = sample.pixelY;
         rs->mTilePass = pbr::makeTilePass(params->mTileIdx, group.mPassIdx);
 
+        rs->mParentLobeLightSets.mNumLightSets = 0;
+
         if (deepBuffer != nullptr) {
             rs->mDeepDataHandle = pbrTls->allocList(sizeof(pbr::DeepData), 1);
             pbr::DeepData *deepData = static_cast<pbr::DeepData*>(pbrTls->getListItem(rs->mDeepDataHandle, 0));

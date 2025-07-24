@@ -141,7 +141,9 @@ varying int LightSet_intersect(uniform PbrTLState * uniform pbrTls,
         const varying Vec3f &P, const varying Vec3f &cullingNormal, const varying Vec3f &wi,
         varying float time, varying float maxDistance,
         varying bool includeRayTerminationLights, varying IntegratorSample1D &samples, varying int depth,
-        varying int visibilityMask, varying LightIntersection &chosenIsect, varying int &numHits);
+        varying int visibilityMask, varying LightIntersection &chosenIsect, varying int &numHits,
+        varying intptr_t bsdfLobeLightSet,
+        const varying Rdl2LightSetList * uniform parentLobeLightSets);
 
 // Intersects the given ray (P, wi), choosing randomly among the lights in the
 // LightSet intersected by the ray. Fills up the LightContribution structure with the
@@ -154,7 +156,73 @@ void LightSet_intersectAndEval(uniform PbrTLState * uniform pbrTls,
         const varying PathVertex * uniform pv,
         uniform bool fromCamera, varying bool includeRayTerminationLights,
         varying IntegratorSample1D &samples, varying int depth,
-        varying int visibilityMask, varying LightContribution &lCo, varying float rayDirFootprint);
+        varying int visibilityMask, varying LightContribution &lCo, varying float rayDirFootprint,
+        varying intptr_t bsdfLobeLightSet,
+        const varying Rdl2LightSetList * uniform parentLobeLightSets);
 
 //----------------------------------------------------------------------------
 
+extern "C" uniform bool
+CPP_LobeLightSetContainsLight(uniform intptr_t lobeLightSet,
+                              uniform intptr_t rdlLight);
+
+inline
+varying bool lobeLightSetContains(varying intptr_t lobeLightSet,
+                                  uniform intptr_t rdlLight)
+{
+    varying bool containsVarying = false;
+    foreach_active(lane) {
+        uniform intptr_t lightSetPtr = extract(lobeLightSet, lane);
+        uniform bool contains = CPP_LobeLightSetContainsLight(lightSetPtr, rdlLight);
+        if (contains) {
+            containsVarying = insert(containsVarying, lane, true);
+        }
+    }
+    return containsVarying;
+}
+
+inline
+varying bool allLightSetsContain(const varying Rdl2LightSetList * uniform parentLobeLightSets,
+                                 uniform intptr_t rdlLight)
+{
+    varying bool containsVarying = true;
+    foreach_active(lane) {
+        uniform int numLightSets = extract(parentLobeLightSets->mNumLightSets, lane);
+
+        for (uniform int lsi = 0; lsi < numLightSets; lsi++) {
+            uniform uint32_t lightSetPtrLo = extract(parentLobeLightSets->mLightSetsPtrLo[lsi], lane);
+            uniform uint32_t lightSetPtrHi = extract(parentLobeLightSets->mLightSetsPtrHi[lsi], lane);
+            uniform intptr_t lightSetPtr = (((intptr_t) lightSetPtrHi) << 32) | (intptr_t) lightSetPtrLo;
+            uniform bool contains = CPP_LobeLightSetContainsLight(lightSetPtr, rdlLight);
+            if (!contains) {
+                containsVarying = insert(containsVarying, lane, false);
+                break;
+            }
+        }
+    }
+    return containsVarying;
+}
+
+inline
+void copyRdl2LightSetList(const varying Rdl2LightSetList * uniform srcList,
+                          varying Rdl2LightSetList * uniform dstList)
+{
+    varying int numLightSets = srcList->mNumLightSets;
+    dstList->mNumLightSets = numLightSets;
+    for (varying int lsi = 0; lsi < numLightSets; lsi++) {
+        dstList->mLightSetsPtrLo[lsi] = srcList->mLightSetsPtrLo[lsi];
+        dstList->mLightSetsPtrHi[lsi] = srcList->mLightSetsPtrHi[lsi];
+    }
+}
+
+inline
+void appendLobeLightSet(varying Rdl2LightSetList * uniform dstList,
+                        varying intptr_t lobeLightSet)
+{
+    varying int numLightSets = dstList->mNumLightSets;
+    if (lobeLightSet != 0 && numLightSets < MAX_LIGHTSET_LIST_LIGHTSETS) {
+        dstList->mLightSetsPtrLo[numLightSets] = (uint32_t)(lobeLightSet);
+        dstList->mLightSetsPtrHi[numLightSets] = (uint32_t)(lobeLightSet >> 32);
+        dstList->mNumLightSets++;
+    }
+}

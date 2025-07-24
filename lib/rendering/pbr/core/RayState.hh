@@ -86,13 +86,33 @@
 
 //----------------------------------------------------------------------------
 
+#define MAX_LIGHTSET_LIST_LIGHTSETS 8
+
+// The intptr_t lightsets pointers are split into 32-bit hi and lo parts
+// because we can't pass around a 64-bit value intact.
+
+#define RDL2_LIGHTSET_LIST_MEMBERS                                     \
+    HVD_MEMBER(int, mNumLightSets);                                    \
+    HVD_ARRAY(uint32_t, mLightSetsPtrLo, MAX_LIGHTSET_LIST_LIGHTSETS); \
+    HVD_ARRAY(uint32_t, mLightSetsPtrHi, MAX_LIGHTSET_LIST_LIGHTSETS)
+
+
+#define RDL2_LIGHTSET_LIST_VALIDATION(vlen)          \
+    HVD_BEGIN_VALIDATION(Rdl2LightSetList, vlen);    \
+    HVD_VALIDATE(Rdl2LightSetList, mNumLightSets);   \
+    HVD_VALIDATE(Rdl2LightSetList, mLightSetsPtrLo); \
+    HVD_VALIDATE(Rdl2LightSetList, mLightSetsPtrHi); \
+    HVD_END_VALIDATION
+
+
+//----------------------------------------------------------------------------
 
 #if CACHE_LINE_SIZE == 128
-/*Alignment: 128 (CACHE_LINE_SIZE), Total size: 584, Padded size: 640*/
-#define RAY_STATE_MEMBERS_PAD   (46+8)
+/*Alignment: 128 (CACHE_LINE_SIZE), Total size: 652, Padded size: 768*/
+#define RAY_STATE_MEMBERS_PAD   116
 #else
-/*Alignment: 64 (CACHE_LINE_SIZE), Total size: 568, Padded size: 576 */
-#define RAY_STATE_MEMBERS_PAD   8
+/*Alignment: 64 (CACHE_LINE_SIZE), Total size: 636, Padded size: 640 */
+#define RAY_STATE_MEMBERS_PAD   4
 #endif
 
 #define RAY_STATE_MEMBERS                                                   /*   size   macOS  */\
@@ -118,9 +138,10 @@
     HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Color), mVolTm);             /*    560    576   */\
     HVD_MEMBER(uint32_t, mVolHit);                                          /*    564    580   */\
     HVD_MEMBER(float, mVolumeSurfaceT);                                     /*    568    584   */\
-    HVD_ISPC_PAD(pad, RAY_STATE_MEMBERS_PAD)                                /*    576    640   */\
-                                                              /* macOS: 640 * 4 lanes = 2560   */\
-                                                              /* linux: 576 * 8 lanes = 4608   */\
+    HVD_MEMBER(Rdl2LightSetList, mParentLobeLightSets);                     /*    636    652   */\
+    HVD_ISPC_PAD(pad, RAY_STATE_MEMBERS_PAD)                                /*    640    768   */\
+                                                                            /* macOS: 768 * 4 lanes = 3072   */\
+                                                                            /* linux: 640 * 8 lanes = 5120   */\
 
 
 #define RAY_STATE_VALIDATION(vlen)                                          \
@@ -146,6 +167,7 @@
     HVD_VALIDATE(RayState, mVolTm);                                         \
     HVD_VALIDATE(RayState, mVolHit);                                        \
     HVD_VALIDATE(RayState, mVolumeSurfaceT);                                \
+    HVD_VALIDATE(RayState, mParentLobeLightSets);                           \
     HVD_END_VALIDATION
 
 
