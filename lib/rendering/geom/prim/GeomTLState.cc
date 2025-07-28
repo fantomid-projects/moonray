@@ -12,6 +12,7 @@ TLState::TLState(mcrt_common::ThreadLocalState *tls,
                  bool okToAllocBundledResources) :
     BaseTLState(tls->mThreadIdx,
                 tls->mArena,
+                tls->mSubpixelArena,
                 tls->mPixelArena),
     mSubsurfaceTraceSet(nullptr)
 {

@@ -174,7 +174,7 @@ scene_rdl2::math::Color
 PathIntegrator::estimateInScatteringSourceTermIndirect(pbr::TLState *pbrTls, const mcrt_common::Ray& ray,
         const scene_rdl2::math::Vec3f& scatterPoint,
         const VolumePhase& phaseFunction, const scene_rdl2::math::Vec3f& ul,
-        const Subpixel &sp, const PathVertex& pv, unsigned sequenceID,
+        Subpixel &sp, const PathVertex& pv, unsigned sequenceID,
         float *aovs) const
 {
     // Choose a scatter direction uniformly over the sphere
@@ -341,7 +341,7 @@ PathIntegrator::distanceVolumeScatteringIndirect(pbr::TLState *pbrTls,
         float ud, const scene_rdl2::math::Vec3f& ul,
         const VolumeProperties* volumeProperties,
         const GuideDistribution1D& densityDistribution,
-        const Subpixel &sp, const PathVertex& pv, unsigned sequenceID,
+        Subpixel &sp, const PathVertex& pv, unsigned sequenceID,
         float *aovs) const
 {
     float pdfDensity, udRemapped;
@@ -527,7 +527,7 @@ scene_rdl2::math::Color
 PathIntegrator::integrateVolumeScatteringIndirect(pbr::TLState *pbrTls, const mcrt_common::Ray& ray,
         const VolumeProperties* volumeProperties,
         const GuideDistribution1D& densityDistribution,
-        const Subpixel &sp, PathVertex pv, unsigned sequenceID,
+        Subpixel &sp, PathVertex pv, unsigned sequenceID,
         float* aovs) const
 {
     const bool highQualitySample = pv.nonMirrorDepth == 0;
@@ -1461,7 +1461,7 @@ PathIntegrator::approximateVolumeMultipleScattering(pbr::TLState *pbrTls,
 
 bool
 PathIntegrator::computeRadianceVolume(pbr::TLState *pbrTls, const mcrt_common::Ray& ray,
-        const Subpixel& sp, PathVertex& pv, const int lobeType,
+        Subpixel& sp, PathVertex& pv, const int lobeType,
         scene_rdl2::math::Color& radiance, unsigned sequenceID, VolumeTransmittance& vt,
         float* aovs, DeepParams* deepParams, const RayState *rs,
         float* surfaceT) const

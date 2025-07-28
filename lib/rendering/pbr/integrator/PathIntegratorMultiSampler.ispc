@@ -754,14 +754,12 @@ addIndirectOrDirectVisibleContributionsBundled( const uniform PathIntegrator * u
                 : lobeMask;
 
             rayState->mSequenceID = sequenceID;
+
+            // Copy the whole Subpixel, then overwrite just the mPixel member. This is less error-prone than
+            // copying each member explictly, which would need updating anytime the struct is modified.
+            rayState->mSubpixel = sp;
             rayState->mSubpixel.mPixel = parentRayState.mSubpixel.mPixel;
-            rayState->mSubpixel.mSubpixelIndex = sp.mSubpixelIndex;
-            rayState->mSubpixel.mSubpixelX = sp.mSubpixelX;
-            rayState->mSubpixel.mSubpixelY = sp.mSubpixelY;
-            rayState->mSubpixel.mPixelSamples = sp.mPixelSamples;
-            rayState->mSubpixel.mSampleClampingValue = sp.mSampleClampingValue;
-            rayState->mSubpixel.mPrimaryRayDiffScale = sp.mPrimaryRayDiffScale;
-            rayState->mSubpixel.mTextureDiffScale = sp.mTextureDiffScale;
+
             rayState->mTilePass = parentRayState.mTilePass;
             rayState->mDeepDataHandle = parentRayState.mDeepDataHandle;
             // Since cryptomatte records radiance information, its handle actually also needs to be acquired

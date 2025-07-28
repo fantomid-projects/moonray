@@ -64,8 +64,7 @@
     HUD_CPP_PTR(PresenceShadowsQueue::EntryType *, mPresenceShadowsEntries);        \
     HUD_CPP_PTR(RadianceQueue::EntryType *, mRadianceEntries);                      \
     HUD_CPP_PTR(AovQueue::EntryType *, mAovEntries);                                \
-    HUD_CPP_PTR(HeatMapQueue::EntryType *, mHeatMapEntries);                        \
-    HUD_ISPC_PAD(mPad, 8)
+    HUD_CPP_PTR(HeatMapQueue::EntryType *, mHeatMapEntries)
 
 
 #define PBR_TL_STATE_VALIDATION                                 \

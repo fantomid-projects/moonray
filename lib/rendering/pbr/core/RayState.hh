@@ -19,7 +19,12 @@
     HVD_MEMBER(int, mPixelSamples);                                     \
     HVD_MEMBER(float, mSampleClampingValue);                            \
     HVD_MEMBER(float, mPrimaryRayDiffScale);                            \
-    HVD_MEMBER(float, mTextureDiffScale)
+    HVD_MEMBER(float, mTextureDiffScale);                               \
+    HVD_PTR(DeferredNode *, mDeferredNodesHead);                        \
+    HVD_PTR(DeferredNode **, mDeferredNodesTailPtr);                    \
+    HVD_MEMBER(int, mNumDeferredNodes);                                 \
+    HVD_ISPC_PAD(mPad, 4)
+
 
 #define SUBPIXEL_VALIDATION(vlen)                                       \
     HVD_BEGIN_VALIDATION(Subpixel, vlen);                               \
@@ -31,6 +36,9 @@
     HVD_VALIDATE(Subpixel, mSampleClampingValue);                       \
     HVD_VALIDATE(Subpixel, mPrimaryRayDiffScale);                       \
     HVD_VALIDATE(Subpixel, mTextureDiffScale);                          \
+    HVD_VALIDATE(Subpixel, mDeferredNodesHead);                         \
+    HVD_VALIDATE(Subpixel, mDeferredNodesTailPtr);                      \
+    HVD_VALIDATE(Subpixel, mNumDeferredNodes);                          \
     HVD_END_VALIDATION
 
 
@@ -108,40 +116,36 @@
 //----------------------------------------------------------------------------
 
 #if CACHE_LINE_SIZE == 128
-/*Alignment: 128 (CACHE_LINE_SIZE), Total size: 652, Padded size: 768*/
-#define RAY_STATE_MEMBERS_PAD   116
+#define RAY_STATE_MEMBERS_PAD   92
 #else
-/*Alignment: 64 (CACHE_LINE_SIZE), Total size: 636, Padded size: 640 */
-#define RAY_STATE_MEMBERS_PAD   4
+#define RAY_STATE_MEMBERS_PAD   44
 #endif
 
-#define RAY_STATE_MEMBERS                                                   /*   size   macOS  */\
-    HVD_MEMBER(HVD_NAMESPACE(mcrt_common, RayDifferential), mRay);          /*    304    320   */\
-    HVD_MEMBER(PathVertex, mPathVertex);                                    /*    388    404   */\
-    HVD_MEMBER(uint32_t, mSequenceID);                                      /*    392    408   */\
-    HVD_MEMBER(Subpixel, mSubpixel);                                        /*    424    440   */\
-    HVD_MEMBER(uint32_t, mPad0);                                            /*    428    444   */\
-    HVD_MEMBER(uint32_t, mTilePass);                                        /*    432    448   */\
-    HVD_MEMBER(uint32_t, mRayStateIdx);                                     /*    436    452   */\
-    HVD_ISPC_PAD(mPad1, 4);                                                 /*    440    456   */\
-    HVD_PTR(HVD_NAMESPACE(shading, Intersection) *, mAOSIsect);             /*    448    464   */\
-    HVD_MEMBER(uint32_t, mDeepDataHandle);                                  /*    452    468   */\
-    HVD_MEMBER(uint32_t, mCryptomatteDataHandle);                           /*    456    472   */\
-    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Vec3f), mCryptoRefP);        /*    468    484   */\
-    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Vec3f), mCryptoP0);          /*    480    496   */\
-    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Vec3f), mCryptoRefN);        /*    492    508   */\
-    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Vec2f), mCryptoUV);          /*    500    516   */\
-    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Color), mVolRad);            /*    512    528   */\
-    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Color), mVolTr);             /*    524    540   */\
-    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Color), mVolTh);             /*    536    552   */\
-    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Color), mVolTalpha);         /*    548    564   */\
-    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Color), mVolTm);             /*    560    576   */\
-    HVD_MEMBER(uint32_t, mVolHit);                                          /*    564    580   */\
-    HVD_MEMBER(float, mVolumeSurfaceT);                                     /*    568    584   */\
-    HVD_MEMBER(Rdl2LightSetList, mParentLobeLightSets);                     /*    636    652   */\
-    HVD_ISPC_PAD(pad, RAY_STATE_MEMBERS_PAD)                                /*    640    768   */\
-                                                                            /* macOS: 768 * 4 lanes = 3072   */\
-                                                                            /* linux: 640 * 8 lanes = 5120   */\
+#define RAY_STATE_MEMBERS                                                   \
+    HVD_MEMBER(HVD_NAMESPACE(mcrt_common, RayDifferential), mRay);          \
+    HVD_MEMBER(PathVertex, mPathVertex);                                    \
+    HVD_MEMBER(uint32_t, mSequenceID);                                      \
+    HVD_MEMBER(Subpixel, mSubpixel);                                        \
+    HVD_MEMBER(uint32_t, mPad0);                                            \
+    HVD_MEMBER(uint32_t, mTilePass);                                        \
+    HVD_MEMBER(uint32_t, mRayStateIdx);                                     \
+    HVD_ISPC_PAD(mPad1, 4);                                                 \
+    HVD_PTR(HVD_NAMESPACE(shading, Intersection) *, mAOSIsect);             \
+    HVD_MEMBER(uint32_t, mDeepDataHandle);                                  \
+    HVD_MEMBER(uint32_t, mCryptomatteDataHandle);                           \
+    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Vec3f), mCryptoRefP);        \
+    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Vec3f), mCryptoP0);          \
+    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Vec3f), mCryptoRefN);        \
+    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Vec2f), mCryptoUV);          \
+    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Color), mVolRad);            \
+    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Color), mVolTr);             \
+    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Color), mVolTh);             \
+    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Color), mVolTalpha);         \
+    HVD_MEMBER(HVD_NAMESPACE(scene_rdl2::math, Color), mVolTm);             \
+    HVD_MEMBER(uint32_t, mVolHit);                                          \
+    HVD_MEMBER(float, mVolumeSurfaceT);                                     \
+    HVD_MEMBER(Rdl2LightSetList, mParentLobeLightSets);                     \
+    HVD_ISPC_PAD(pad, RAY_STATE_MEMBERS_PAD)
 
 
 #define RAY_STATE_VALIDATION(vlen)                                          \

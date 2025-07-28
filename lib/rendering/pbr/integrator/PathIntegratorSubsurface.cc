@@ -90,7 +90,7 @@ canSubstituteSubsurface(float sssRadius,
 // transmissionFresnel, if any, to the contribution of the samples.
 scene_rdl2::math::Color
 PathIntegrator::computeRadianceSubsurfaceSample(pbr::TLState *pbrTls,
-        const Bsdf &bsdf, const Subpixel &sp,
+        const Bsdf &bsdf, Subpixel &sp,
         const PathVertex &pv, const RayDifferential &parentRay,
         const scene_rdl2::math::Vec3f &dNdx, const scene_rdl2::math::Vec3f &dNdy,
         const scene_rdl2::math::Color &pathThroughput, const Fresnel *transmissionFresnel,
@@ -588,7 +588,7 @@ PathIntegrator::computeRadianceSubsurfaceSample(pbr::TLState *pbrTls,
 
 scene_rdl2::math::Color
 PathIntegrator::computeRadianceDiffusionSubsurface(pbr::TLState *pbrTls,
-        const Bsdf &bsdf, const Subpixel &sp, const PathVertex &pv,
+        const Bsdf &bsdf, Subpixel &sp, const PathVertex &pv,
         const RayDifferential &ray, const Intersection &isect,
         const BsdfSlice &slice, const Bssrdf &bssrdf,
         const LightSet &lightSet, bool doIndirect,
@@ -903,7 +903,7 @@ PathIntegrator::computeRadianceDiffusionSubsurface(pbr::TLState *pbrTls,
 
 scene_rdl2::math::Color
 PathIntegrator::computeDiffusionForwardScattering(pbr::TLState *pbrTls, const Bsdf &bsdf,
-        const Subpixel &sp, const PathVertex &pv,
+        Subpixel &sp, const PathVertex &pv,
         const RayDifferential &ray, const Intersection &isect,
         const BsdfSlice &slice, const Fresnel *transmissionFresnel,
         const scene_rdl2::math::Color& scaleFresnelWo, const LightSet &lightSet,
@@ -1255,7 +1255,7 @@ isValidIntersection(const Intersection& isect,
 
 scene_rdl2::math::Color
 PathIntegrator::computeRadiancePathTraceSubsurface(pbr::TLState* pbrTls,
-        const Bsdf& bsdf, const Subpixel &sp, const PathVertex &pv,
+        const Bsdf& bsdf, Subpixel &sp, const PathVertex &pv,
         const RayDifferential& ray, const Intersection& isect,
         const VolumeSubsurface& volumeSubsurface, const LightSet& lightSet,
         bool doIndirect, float rayEpsilon, float shadowRayEpsilon, unsigned &sequenceID,

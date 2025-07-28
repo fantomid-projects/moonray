@@ -348,7 +348,7 @@ rayBundleHandler(mcrt_common::ThreadLocalState *tls, unsigned numEntries,
     for (unsigned i = 0; i < numEntries; ++i) {
         RayState &rs = *rayStates[i];
         const mcrt_common::Ray &ray = rs.mRay;
-        const Subpixel &sp = rs.mSubpixel;
+        Subpixel &sp = rs.mSubpixel;
         PathVertex &pv = rs.mPathVertex;
         const int lobeType = pv.nonMirrorDepth == 0 ? 0 : pv.lobeType;
         const unsigned sequenceID = rs.mSequenceID;

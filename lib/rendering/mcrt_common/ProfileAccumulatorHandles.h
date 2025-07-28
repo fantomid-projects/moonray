@@ -26,7 +26,7 @@
     #define EXCL_ACCUMULATOR_IS_RUNNING(tls, type)
 #endif
 
-#define TLS_OFFSET_TO_EXCL_ACCUMULATORS                         56u
+#define TLS_OFFSET_TO_EXCL_ACCUMULATORS 64u
 
 namespace moonray {
 

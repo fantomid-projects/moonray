@@ -1060,7 +1060,7 @@ CPP_computeRadianceSubsurface(const PathIntegrator * pathIntegrator,
 
         RayState *rs = &baseRayState[rayStateIndices[i]];
 
-        const Subpixel &sp = rs->mSubpixel;
+        Subpixel &sp = rs->mSubpixel;
         PathVertex &pv = rs->mPathVertex;
         const mcrt_common::RayDifferential &ray = rs->mRay;
         const shading::Intersection &isect = *rs->mAOSIsect;

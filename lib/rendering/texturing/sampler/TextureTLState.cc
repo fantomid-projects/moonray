@@ -58,7 +58,7 @@ TLState::initTexturingSupport()
 TLState::TLState(mcrt_common::ThreadLocalState *tls, 
                  const mcrt_common::TLSInitParams &initParams,
                  bool okToAllocBundledResources) :
-    BaseTLState(tls->mThreadIdx, tls->mArena, tls->mPixelArena)
+    BaseTLState(tls->mThreadIdx, tls->mArena, tls->mSubpixelArena, tls->mPixelArena)
 {
     mTextureSampler = MNRY_VERIFY(gPrivate.mTextureSampler);
     mTextureSystem = MNRY_VERIFY(mTextureSampler->mTextureSystem);

@@ -14,6 +14,7 @@
     HUD_VIRTUAL_BASE_CLASS();                                       \
     HUD_MEMBER( const uint32_t, mThreadIdx );                       \
     HUD_PTR( Arena*, mArena );                                      \
+    HUD_PTR( Arena*, mSubpixelArena );                              \
     HUD_PTR( Arena*, mPixelArena );                                 \
     HUD_CPP_PTR(ThreadLocalAccumulator *, mIspcAccumulator);        \
     HUD_CPP_PTR(ExclusiveAccumulators *, mExclusiveAccumulatorsPtr)
@@ -22,6 +23,7 @@
     HUD_BEGIN_VALIDATION(BaseTLState);                      \
     HUD_VALIDATE(BaseTLState, mThreadIdx);                  \
     HUD_VALIDATE(BaseTLState, mArena);                      \
+    HUD_VALIDATE(BaseTLState, mSubpixelArena);              \
     HUD_VALIDATE(BaseTLState, mPixelArena);                 \
     HUD_VALIDATE(BaseTLState, mIspcAccumulator);            \
     HUD_VALIDATE(BaseTLState, mExclusiveAccumulatorsPtr);   \

@@ -196,6 +196,7 @@ ThreadLocalState::ThreadLocalState(uint32_t threadIdx, bool okToAllocBundledReso
         mcrt_common::AffinityManager::get()->getMem()->getMemoryNodeByThreadId(mThreadIdx)->getArenaBlockPool();
 
     mArena.init(MNRY_VERIFY(arenaBlockPool));
+    mSubpixelArena.init(MNRY_VERIFY(arenaBlockPool));
     mPixelArena.init(MNRY_VERIFY(arenaBlockPool));
 
     //
@@ -235,6 +236,7 @@ ThreadLocalState::~ThreadLocalState()
     mShadingTls = nullptr;
 
     mArena.cleanUp();
+    mSubpixelArena.cleanUp();
     mPixelArena.cleanUp();
 }
 
@@ -256,6 +258,7 @@ ThreadLocalState::reset()
     }
 
     mArena.clear();
+    mSubpixelArena.clear();
     mPixelArena.clear();
 }
 

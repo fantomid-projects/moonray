@@ -45,6 +45,8 @@ public:
         mIncludeCosineTerm(includeCosineTerm),
         mEntering(entering) {}
 
+    BsdfSlice() {}
+
     virtual ~BsdfSlice() {}
 
 

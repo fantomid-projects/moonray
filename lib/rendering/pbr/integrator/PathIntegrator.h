@@ -192,7 +192,7 @@ public:
             ComputeRadianceAovParams &aovParams, rndr::FastRenderMode fastMode) const;
 
     scene_rdl2::math::Color computeRadianceDiffusionSubsurface(pbr::TLState *pbrTls, const shading::Bsdf &bsdf,
-            const Subpixel &sp, const PathVertex &pv,
+            Subpixel &sp, const PathVertex &pv,
             const mcrt_common::RayDifferential &ray, const shading::Intersection &isect,
             const shading::BsdfSlice &slice, const shading::Bssrdf &bssrdf, const LightSet &lightSet,
             bool doIndirect, float rayEpsilon, float shadowRayEpsilon, unsigned &sequenceID,
@@ -200,7 +200,7 @@ public:
             const Rdl2LightSetList& parentLobeLightSets) const;
 
     scene_rdl2::math::Color computeRadiancePathTraceSubsurface(pbr::TLState *pbrTls, const shading::Bsdf &bsdf,
-            const Subpixel &sp, const PathVertex &pv,
+            Subpixel &sp, const PathVertex &pv,
             const mcrt_common::RayDifferential &ray, const shading::Intersection &isect,
             const shading::VolumeSubsurface& volumeSubsurface, const LightSet &lightSet,
             bool doIndirect, float rayEpsilon, float shadowRayEpsilon, unsigned &sequenceID,
@@ -214,7 +214,7 @@ public:
     // non-null and is used to queue aov values.  The aovs buffer is only
     // used in scalar mode.
     bool computeRadianceVolume(pbr::TLState *pbrTls, const mcrt_common::Ray& ray,
-            const Subpixel& sp, PathVertex& pv, const int lobeType,
+            Subpixel& sp, PathVertex& pv, const int lobeType,
             scene_rdl2::math::Color& radiance, unsigned sequenceID, VolumeTransmittance& vt,
             float* aovs, DeepParams* deepParams, const RayState *rs,
             float* surfaceT) const;
@@ -339,7 +339,7 @@ private:
             const Rdl2LightSetList& parentLobeLightSets) const;
 
     void addIndirectAndDirectVisibleContributions(pbr::TLState *pbrTls,
-            const Subpixel &sp,
+            Subpixel &sp,
             const PathVertex &parentPv, const BsdfSampler &bSampler,
             const BsdfSample *bsmp, const mcrt_common::RayDifferential &parentRay,
             float rayEpsilon, float shadowRayEpsilon,
@@ -365,7 +365,7 @@ private:
     // compute integrated radiance, transparency and aovs from a multiple lobe bsdf using
     // a bsdf multi sampler strategy
     scene_rdl2::math::Color computeRadianceBsdfMultiSampler(pbr::TLState *pbrTls,
-            const Subpixel &sp, const PathVertex &pv, const mcrt_common::RayDifferential &ray,
+            Subpixel &sp, const PathVertex &pv, const mcrt_common::RayDifferential &ray,
             const shading::Intersection &isect, const shading::Bsdf &bsdf, const shading::BsdfSlice &slice,
             bool doIndirect, shading::BsdfLobe::Type indirectFlags, const scene_rdl2::rdl2::Material *newPriorityList[4],
             int newPriorityListCount[4], const LightSet &activeLightSet, const scene_rdl2::math::Vec3f *cullingNormal,
@@ -415,7 +415,7 @@ private:
     scene_rdl2::math::Color integrateVolumeScatteringIndirect(pbr::TLState *pbrTls,
             const mcrt_common::Ray& ray, const VolumeProperties* volumeProperties,
             const GuideDistribution1D& densityDistribution,
-            const Subpixel &sp, PathVertex pv, unsigned sequenceID,
+            Subpixel &sp, PathVertex pv, unsigned sequenceID,
             float* aovs) const;
 
     scene_rdl2::math::Color equiAngularVolumeScattering(pbr::TLState *pbrTls,
@@ -440,7 +440,7 @@ private:
             float ud, const scene_rdl2::math::Vec3f& ul,
             const VolumeProperties* volumeProperties,
             const GuideDistribution1D& densityDistribution,
-            const Subpixel &sp, const PathVertex& pv, unsigned sequenceID,
+            Subpixel &sp, const PathVertex& pv, unsigned sequenceID,
             float *aovs) const;
 
     scene_rdl2::math::Color approximateVolumeMultipleScattering(pbr::TLState *pbrTls, const mcrt_common::Ray& ray,
@@ -461,7 +461,7 @@ private:
     scene_rdl2::math::Color estimateInScatteringSourceTermIndirect(pbr::TLState *pbrTls, const mcrt_common::Ray& ray,
             const scene_rdl2::math::Vec3f& scatterPoint,
             const VolumePhase& phaseFunction, const scene_rdl2::math::Vec3f& ul,
-            const Subpixel &sp, const PathVertex& pv, unsigned sequenceID,
+            Subpixel &sp, const PathVertex& pv, unsigned sequenceID,
             float *aovs) const;
 
     scene_rdl2::math::Color transmittanceSubinterval(pbr::TLState *pbrTls,
@@ -490,7 +490,7 @@ private:
     // volume emission/in-scattering accumulated along the ray)
     IndirectRadianceType computeRadianceRecurse(pbr::TLState *pbrTls,
             mcrt_common::RayDifferential &ray,
-            const Subpixel &sp, const PathVertex &pv, const shading::BsdfLobe *lobe,
+            Subpixel &sp, const PathVertex &pv, const shading::BsdfLobe *lobe,
             scene_rdl2::math::Color &radiance, float &transparency, VolumeTransmittance& vt,
             unsigned &sequenceID, float *aovs, float *depth,
             DeepParams* deepParams, CryptomatteParams *cryptomatteParams,
@@ -500,7 +500,7 @@ private:
             const Rdl2LightSetList& parentLobeLightSets) const;
 
     scene_rdl2::math::Color computeRadianceSubsurfaceSample(pbr::TLState *pbrTls,
-            const shading::Bsdf &bsdf, const Subpixel &sp,
+            const shading::Bsdf &bsdf, Subpixel &sp,
             const PathVertex &pv, const mcrt_common::RayDifferential &parentRay,
             const scene_rdl2::math::Vec3f &dNdx, const scene_rdl2::math::Vec3f &dNdy,
             const scene_rdl2::math::Color &pathThroughput, const shading::Fresnel *transmissionFresnel,
@@ -513,7 +513,7 @@ private:
             const Rdl2LightSetList& parentLobeLightSets) const;
 
     scene_rdl2::math::Color computeDiffusionForwardScattering(pbr::TLState *pbrTls,
-            const shading::Bsdf &bsdf, const Subpixel &sp, const PathVertex &pv,
+            const shading::Bsdf &bsdf, Subpixel &sp, const PathVertex &pv,
             const mcrt_common::RayDifferential &ray, const shading::Intersection &isect,
             const shading::BsdfSlice &slice, const shading::Fresnel *transmissionFresnel,
             const scene_rdl2::math::Color& scaleFresnelWo, const LightSet &lightSet,

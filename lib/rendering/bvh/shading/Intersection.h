@@ -644,8 +644,8 @@ private:
 
     static uint32_t intersectionHvdCrc(bool verbose)    { INTERSECTION_VALIDATION(VLEN); }
 
-    /// Copy is disabled
-    DISALLOW_COPY_OR_ASSIGNMENT(Intersection);
+    /// Copy is disabled - not
+    //DISALLOW_COPY_OR_ASSIGNMENT(Intersection);
 
     typedef mcrt_common::Flags Flags;
     INTERSECTION_MEMBERS;

@@ -422,7 +422,7 @@ PathIntegrator::sampleAndAddDirectLightContributions(pbr::TLState* pbrTls,
 void
 PathIntegrator::addIndirectAndDirectVisibleContributions(
     pbr::TLState *pbrTls,
-    const Subpixel &sp, const PathVertex &parentPv, const BsdfSampler &bSampler,
+    Subpixel &sp, const PathVertex &parentPv, const BsdfSampler &bSampler,
     const BsdfSample *bsmp, const mcrt_common::RayDifferential &parentRay,
     float rayEpsilon, float shadowRayEpsilon,
     const shading::Intersection &isect, shading::BsdfLobe::Type indirectFlags,
@@ -649,7 +649,7 @@ PathIntegrator::addIndirectAndDirectVisibleContributions(
 
 scene_rdl2::math::Color
 PathIntegrator::computeRadianceBsdfMultiSampler(pbr::TLState *pbrTls,
-    const Subpixel &sp, const PathVertex &pv, const mcrt_common::RayDifferential &ray,
+    Subpixel &sp, const PathVertex &pv, const mcrt_common::RayDifferential &ray,
     const shading::Intersection &isect, const shading::Bsdf &bsdf, const shading::BsdfSlice &slice,
     bool doIndirect, const shading::BsdfLobe::Type indirectFlags, const scene_rdl2::rdl2::Material *newPriorityList[4],
     int newPriorityListCount[4], const LightSet &activeLightSet, const scene_rdl2::math::Vec3f *cullingNormal,

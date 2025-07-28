@@ -7,7 +7,7 @@
 
 #define SHADING_TL_STATE_MEMBERS                            \
     HUD_PTR(const int *, mAttributeOffsets);                \
-    HUD_ISPC_PAD(mPad, 48)
+    HUD_ISPC_PAD(mPad, 40)
 
 #define SHADING_TL_STATE_VALIDATION                         \
     HUD_BEGIN_VALIDATION(ShadingTLState);                   \

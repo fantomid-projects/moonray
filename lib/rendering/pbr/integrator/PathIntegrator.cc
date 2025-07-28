@@ -349,11 +349,56 @@ shadeMaterial(mcrt_common::ThreadLocalState *tls, const scene_rdl2::rdl2::Materi
 #endif
 }
 
+// Auxilliary function to add a node in the ray tree. The members of the node will change frequently while development
+// of disintegrator work is ongoing, but the basic idea is to record enough information at each hit point that any
+// rendering computation that needs to be performed for that ray bounce can be deferred to a later pass and still have
+// access to all the information it needs.
+
+void
+addNode(moonray::pbr::TLState *pbrTls, Subpixel &sp, const PathVertex &pv, const shading::Intersection &isect,
+        const shading::Bsdf &bsdf, const shading::BsdfSlice &slice, const shading::BsdfLobe *parentLobe,
+        int sequenceID, float rayEpsilon, float rayDirFootprint)
+{
+    // Allocate new node. We use the subpixelArena so that the nodes will persist for the lifespan of the Subpixel
+    scene_rdl2::alloc::Arena *subpixelArena = pbrTls->mSubpixelArena;
+    DeferredNode *node = subpixelArena->alloc<DeferredNode>();
+
+    // The node needs to record the bsdf, but instead of copying the whole bsdf struct, which is large, we copy
+    // just the lobe pointers since on average a bsdf has considerably fewer than the max number supported (16).
+    const shading::BsdfLobe **lobePtrs = nullptr;
+    const int lobeCount = bsdf.getLobeCount();
+    MNRY_ASSERT(lobeCount > 0);     // Zero lobeCount would cause early-out before we ever got here
+    lobePtrs = subpixelArena->allocArray<const shading::BsdfLobe *>(lobeCount);
+    for (int i = 0; i < lobeCount; i++) {
+        lobePtrs[i] = bsdf.getLobe(i);
+    }
+
+    // Set node members
+    node->mThroughput      = pv.pathThroughput;
+    node->mNonMirrorDepth  = pv.nonMirrorDepth;
+    node->mParentLobe      = parentLobe;
+    node->mLobePtrs        = lobePtrs;
+    node->mLobeCount       = lobeCount;
+    node->mBsdfIsSpherical = bsdf.getIsSpherical();
+    node->mSlice           = slice;
+    node->mRayEpsilon      = rayEpsilon;
+    node->mSequenceID      = sequenceID;
+    node->mIntersection    = isect;
+    node->mRayDirFootprint = rayDirFootprint;
+    node->mAlbedo          = bsdf.albedo(slice);
+
+    // Link new node into list
+    node->mNext = nullptr;
+    *sp.mDeferredNodesTailPtr = node;
+    sp.mDeferredNodesTailPtr = &node->mNext;
+    sp.mNumDeferredNodes++;
+}
+
 // BsdfLobe is passed in so that we can track the lobe type which generated
 // the ray for ray debugging purposes. Other than that, it's not needed.
 PathIntegrator::IndirectRadianceType
 PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDifferential &ray,
-        const Subpixel &sp, const PathVertex &prevPv, const shading::BsdfLobe *lobe,
+        Subpixel &sp, const PathVertex &prevPv, const shading::BsdfLobe *lobe,
         scene_rdl2::math::Color &radiance, float &transparency, VolumeTransmittance& vt,
         unsigned &sequenceID, float *aovs, float *depth,
         DeepParams* deepParams, CryptomatteParams *cryptomatteParamsPtr,
@@ -1051,6 +1096,11 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
     radiance += computeRadianceEmissiveRegionsScalar(pbrTls, sp, pv, ray, isect,
         *bsdf, slice, rayEpsilon, sequenceID, aovs);
 
+    // At this point we have all the information about the current hard surface bounce, so we add a node for it
+    // to capture the data we'll need for deferred rendering. Note that immediately below there's a call to
+    // computeRadianceBsdfMultiSampler(), which recursively adds the nodes for any subtrees
+    addNode(pbrTls, sp, pv, isect, *bsdf, slice, lobe, sequenceID, rayEpsilon, ray.getDirFootprint());
+
     //---------------------------------------------------------------------
     // Setup bsdf and light samples
     radiance += computeRadianceBsdfMultiSampler(pbrTls, sp, pv, ray, isect, *bsdf, slice,
@@ -1119,18 +1169,21 @@ PathIntegrator::initPrimaryRay(pbr::TLState *pbrTls,
     camera->createRay(&ray, pixelX + sample.pixelX, pixelY + sample.pixelY,
                       sample.time, sample.lensU, sample.lensV, true);
 
-     // check that the ray is valid
-     if (ray.getStart() == scene_rdl2::math::sMaxValue && ray.getEnd() == scene_rdl2::math::sMaxValue) {
-         // ray is invalid
-         return false;
-     }
+    // check that the ray is valid
+    if (ray.getStart() == scene_rdl2::math::sMaxValue && ray.getEnd() == scene_rdl2::math::sMaxValue) {
+        // ray is invalid
+        return false;
+    }
 
-    // Create a sub-pixel structure
+    // Initialize sub-pixel structure
     sp.mPixel = pixelLocationToUint32(unsigned(pixelX), unsigned(pixelY));
     sp.mSubpixelIndex = subpixelIndex;
     sp.mSubpixelX = sample.pixelX;
     sp.mSubpixelY = sample.pixelY;
     sp.mPixelSamples = pixelSamples;
+    sp.mDeferredNodesHead = nullptr;
+    sp.mDeferredNodesTailPtr = &sp.mDeferredNodesHead;
+    sp.mNumDeferredNodes = 0;
 
     // Make sure our clamping is look-invariant with changes in bsdf sample counts
     sp.mSampleClampingValue = mSampleClampingValue / mBsdfSamples;
@@ -1257,6 +1310,9 @@ PathIntegrator::computeRadiance(pbr::TLState *pbrTls, int pixelX, int pixelY,
         CryptomatteBuffer *cryptomatteBuffer) const
 {
     EXCL_ACCUMULATOR_PROFILE(pbrTls, EXCL_ACCUM_INTEGRATION);
+
+    scene_rdl2::alloc::Arena *subpixelArena = pbrTls->mSubpixelArena;
+    SCOPED_MEM(subpixelArena);
 
     // Aov results
     float &alpha    = aovParams.mAlpha;

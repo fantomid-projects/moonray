@@ -7,12 +7,12 @@
 #include <moonray/rendering/pbr/Types.h>
 #include "RayState.hh"
 
+#include <moonray/rendering/bvh/shading/Intersection.h>
 #include <moonray/rendering/mcrt_common/Ray.h>
 #include <moonray/rendering/pbr/core/PbrTLState.h>
 #include <moonray/rendering/shading/Types.h>
 
 namespace moonray {
-namespace shading { class Intersection; }
 namespace pbr {
 
 //
@@ -25,6 +25,25 @@ namespace pbr {
 //
 
 // Subpixel and PathVertex were moved from PathIntegrator to here.
+
+// Node structure for recording each bounce of the ray tree for a given Subpixel. Deferred rendering passes
+// will then consume the data they record and use them to do radiance computations.
+struct DeferredNode
+{
+    scene_rdl2::math::Color     mThroughput;
+    int                         mNonMirrorDepth;
+    const shading::BsdfLobe    *mParentLobe;
+    const shading::BsdfLobe   **mLobePtrs;
+    int                         mLobeCount;
+    bool                        mBsdfIsSpherical;
+    shading::BsdfSlice          mSlice;
+    float                       mRayEpsilon;
+    unsigned int                mSequenceID;
+    float                       mRayDirFootprint;
+    scene_rdl2::math::Color     mAlbedo;
+    shading::Intersection       mIntersection;
+    DeferredNode               *mNext;
+};
 
 // Identifies where the primary ray comes from
 struct Subpixel {

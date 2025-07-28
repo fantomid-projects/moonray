@@ -110,9 +110,12 @@ struct BaseTLState
 {
     typedef mcrt_common::ThreadLocalAccumulator ThreadLocalAccumulator;
 
-    BaseTLState(const uint32_t threadIdx, scene_rdl2::alloc::Arena &arena, scene_rdl2::alloc::Arena &pixelArena) :
+    BaseTLState(const uint32_t threadIdx, scene_rdl2::alloc::Arena &arena,
+                                          scene_rdl2::alloc::Arena &subpixelArena,
+                                          scene_rdl2::alloc::Arena &pixelArena) :
         mThreadIdx(threadIdx),
         mArena(&arena),
+        mSubpixelArena(&subpixelArena),
         mPixelArena(&pixelArena),
         mIspcAccumulator(nullptr),
         mExclusiveAccumulatorsPtr(nullptr) {}
@@ -170,6 +173,10 @@ public:
 
     // Primary thread local memory arena.
     scene_rdl2::alloc::Arena        mArena;
+
+    // Arena for a given Subpixel. This is used for recording the nodes of the ray tree, for consumption by
+    // deferred rendering passes.
+    scene_rdl2::alloc::Arena        mSubpixelArena;
 
     // Arena for pixel data.  Persists for the rendering of an entire pixel.
     // This is only true for batch mode and is not useful for progressive and
