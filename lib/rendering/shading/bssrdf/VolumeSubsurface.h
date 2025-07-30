@@ -36,6 +36,7 @@ public:
 
     explicit VolumeSubsurface(const scene_rdl2::math::Color& trlColor,
                               const scene_rdl2::math::Color& trlRadius,
+                              const float creaseAttenuation,
                               const scene_rdl2::rdl2::Material* material,
                               scene_rdl2::rdl2::EvalNormalFunc evalNormalFn,
                               const scene_rdl2::math::Vec3f& N,
@@ -53,6 +54,10 @@ public:
 
     scene_rdl2::math::Color getScatteringRadius() const {
         return mScatteringRadius;
+    }
+
+    float getCreaseAttenuation() const {
+        return mCreaseAttenuation;
     }
 
     scene_rdl2::math::Color getAlbedo() const {
@@ -143,6 +148,8 @@ private:
     scene_rdl2::math::Color mScatteringColor;
     // user specified volume mean free path
     scene_rdl2::math::Color mScatteringRadius;
+    // user specified fudge factor to attenuate over-bright creases caused by random walk zero-scatter rays
+    float mCreaseAttenuation;
     // volume extinction coefficient (sigmaT = sigmaA + sigmaS)
     scene_rdl2::math::Color mSigmaT;
     // extinction coeff for exiting the surface without scattering inside
@@ -186,6 +193,7 @@ VolumeSubsurface*
 createVolumeSubsurface(scene_rdl2::alloc::Arena* arena,
                        const scene_rdl2::math::Color& trlColor,
                        const scene_rdl2::math::Color& trlRadius,
+                       const float creaseAttenuation,
                        const scene_rdl2::rdl2::Material* material,
                        scene_rdl2::rdl2::EvalNormalFunc evalNormalFn,
                        const scene_rdl2::math::Vec3f& N,

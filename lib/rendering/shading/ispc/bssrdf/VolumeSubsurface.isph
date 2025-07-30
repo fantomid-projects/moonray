@@ -21,6 +21,8 @@ struct VolumeSubsurface
     varying Color mScatteringColor;
     // user specified volume mean free path
     varying Color mScatteringRadius;
+    // user specified fudge factor to attenuate over-bright creases caused by random walk zero-scatter rays
+    varying float mCreaseAttenuation;
     // volume extinction coefficient (sigmaT = sigmaA + sigmaS)
     varying Color mSigmaT;
     // extinction coeff for exiting the surface without scattering inside
@@ -61,6 +63,7 @@ VolumeSubsurface_init(varying VolumeSubsurface * uniform vS,
                       const varying Vec3f &N,
                       const varying Color &albedo,
                       const varying Color &radius,
+                      const varying float creaseAttenuation,
                       uniform bool resolveSelfIntersections,
                       const uniform Material *uniform  material,
                       const uniform intptr_t evalNormalFn);
@@ -70,6 +73,7 @@ VolumeSubsurface_init(varying VolumeSubsurface * uniform vS,
                       const varying Vec3f &N,
                       const varying Color &albedo,
                       const varying Color &radius,
+                      const varying float creaseAttenuation,
                       uniform bool resolveSelfIntersections,
                       const uniform Material *uniform  material,
                       const uniform intptr_t evalNormalFn,

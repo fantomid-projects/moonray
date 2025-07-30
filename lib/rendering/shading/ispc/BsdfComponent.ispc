@@ -785,6 +785,7 @@ RandomWalkSubsurface_init(
         const varying Vec3f& N,
         const varying Color& albedo,
         const varying Color& radius,
+        const varying float creaseAttenuation,
         const uniform bool resolveSelfIntersections,
         const uniform Material * uniform material,
         const uniform TraceSet * uniform traceSet,
@@ -793,7 +794,8 @@ RandomWalkSubsurface_init(
     me.mN                           = N;
     me.mAlbedo                      = albedo;
     me.mRadius                      = radius;
-    me.mResolveSelfIntersections    = resolveSelfIntersections,
+    me.mCreaseAttenuation           = creaseAttenuation;
+    me.mResolveSelfIntersections    = resolveSelfIntersections;
     me.mMaterial                    = material;
     me.mTraceSet                    = traceSet;
     me.mEvalNormalFn                = evalNormalFn;

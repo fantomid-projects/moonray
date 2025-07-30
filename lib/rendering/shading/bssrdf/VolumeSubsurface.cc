@@ -23,6 +23,7 @@ static constexpr float sLargeZeroScatterSigmaT = 1e5;
 
 VolumeSubsurface::VolumeSubsurface(const scene_rdl2::math::Color& trlColor,
                                    const scene_rdl2::math::Color& trlRadius,
+                                   const float creaseAttenuation,
                                    const scene_rdl2::rdl2::Material* material,
                                    scene_rdl2::rdl2::EvalNormalFunc evalNormalFn,
                                    const scene_rdl2::math::Vec3f& N,
@@ -33,6 +34,7 @@ VolumeSubsurface::VolumeSubsurface(const scene_rdl2::math::Color& trlColor,
             mScatteringRadius(scene_rdl2::math::max(0.001f, trlRadius[0] * 0.3333f),
                               scene_rdl2::math::max(0.001f, trlRadius[1] * 0.3333f),
                               scene_rdl2::math::max(0.001f, trlRadius[2] * 0.3333f)),
+            mCreaseAttenuation(creaseAttenuation),
             mScale(1.0f),
             mFresnel(nullptr),
             mTraceSet(nullptr),
@@ -148,6 +150,7 @@ VolumeSubsurface::VolumeSubsurface(scene_rdl2::alloc::Arena *arena,
 
     mScatteringColor = colorvToColor(volumeSubsurfacev.mScatteringColor, lane);
     mScatteringRadius = colorvToColor(volumeSubsurfacev.mScatteringRadius, lane);
+    mCreaseAttenuation = volumeSubsurfacev.mCreaseAttenuation[lane];
     mSigmaT = colorvToColor(volumeSubsurfacev.mSigmaT, lane);
     mZeroScatterSigmaT = colorvToColor(volumeSubsurfacev.mZeroScatterSigmaT, lane);
     mAlbedo = colorvToColor(volumeSubsurfacev.mAlbedo, lane);
@@ -203,6 +206,7 @@ VolumeSubsurface*
 createVolumeSubsurface(scene_rdl2::alloc::Arena* arena,
                        const scene_rdl2::math::Color& trlColor,
                        const scene_rdl2::math::Color& trlRadius,
+                       const float creaseAttenuation,
                        const scene_rdl2::rdl2::Material* material,
                        scene_rdl2::rdl2::EvalNormalFunc evalNormalFn,
                        const scene_rdl2::math::Vec3f& N,
@@ -210,6 +214,7 @@ createVolumeSubsurface(scene_rdl2::alloc::Arena* arena,
 {
     return arena->allocWithArgs<VolumeSubsurface>(trlColor,
                                                   trlRadius,
+                                                  creaseAttenuation,
                                                   material,
                                                   evalNormalFn,
                                                   N,

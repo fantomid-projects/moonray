@@ -202,6 +202,55 @@ Intersection::adaptNormal(const scene_rdl2::math::Vec3f &Ns) const
 
 //----------------------------------------------------------------------------
 
+void
+Intersection::computePrincipalCurvatures(float &k1, float &k2,
+                                         scene_rdl2::math::Vec3f *v1, scene_rdl2::math::Vec3f *v2) const
+{
+    // We follow the derivation found here:
+    // https://web.mit.edu/hyperbook/Patrikalakis-Maekawa-Cho/node26.html
+
+    // Coefficients of first fundamental form.
+    float E = scene_rdl2::math::dot(mdPds, mdPds);
+    float F = scene_rdl2::math::dot(mdPds, mdPdt);
+    float G = scene_rdl2::math::dot(mdPdt, mdPdt);
+
+    // Coefficients of second fundamental form.
+    // Note: The calculations for M0 and M1 should produce the same results, and both should equal the
+    // value M in the reference cited above. They don't, because our differential geometry derivatives
+    // aren't fully correct, so here we mitigate this by taking for M the mean of M0 and M1.
+    // TODO: fix the differential geometry derivatives (though note that they seem acceptably good for
+    // mooray's needs in other contexts)
+    float L = scene_rdl2::math::dot(mdPds, mdNds);
+    float M0= scene_rdl2::math::dot(mdPds, mdNdt);
+    float M1= scene_rdl2::math::dot(mdPdt, mdNds);
+    float M = 0.5f * (M0 + M1);
+    float N = scene_rdl2::math::dot(mdPdt, mdNdt);
+
+    // Compute Gaussian curvature (K) and mean curvature (H).
+    float recip = 1.0f / (E*G - F*F);
+    float K = recip * (L*N - M*M);
+    float H = recip * (0.5f * (E*N + G*L) - F*M);
+
+    // Compute principal curvatures k1 and k2, the max and min values of the normal curvature.
+    float S = scene_rdl2::math::sqrt(H*H - K);
+    k1 = H + S;
+    k2 = H - S;
+
+    // Compute the principal directions v1 and v2, the directions in which curvatures k1 and k2 are attained.
+    if (v1 != nullptr) {
+        float lambda1Numtr = M - k1*F;
+        float lambda1Denom = N - k1*G;
+        *v1 = scene_rdl2::math::normalize(lambda1Denom * mdPds - lambda1Numtr * mdPdt);
+    }
+    if (v2 != nullptr) {
+        float lambda2Numtr = M - k2*F;
+        float lambda2Denom = N - k2*G;
+        *v2 = scene_rdl2::math::normalize(lambda2Denom * mdPds - lambda2Numtr * mdPdt);
+    }
+}
+
+//----------------------------------------------------------------------------
+
 HVD_VALIDATOR(Intersection);
 
 } // namespace shading

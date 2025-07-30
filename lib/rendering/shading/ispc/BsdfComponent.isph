@@ -472,6 +472,7 @@ void RandomWalkSubsurface_init(
         const varying Vec3f& N,
         const varying Color& albedo,
         const varying Color& radius,
+        const varying float creaseAttenuation,
         const uniform bool resolveSelfIntersections,
         const uniform Material * uniform material,
         const uniform TraceSet * uniform traceSet,
@@ -929,6 +930,7 @@ struct RandomWalkSubsurface
     varying Vec3f   mN;
     varying Color   mAlbedo;
     varying Color   mRadius;
+    varying float   mCreaseAttenuation;
     uniform bool    mResolveSelfIntersections;
     const uniform Material * uniform  mMaterial;
     const uniform TraceSet * uniform  mTraceSet;

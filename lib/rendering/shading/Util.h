@@ -181,7 +181,8 @@ finline scene_rdl2::math::Vec3f
 sampleLocalHemisphereCosine(float r1, float r2)
 {
     // Sample polar coordinates
-    float cosTheta = (r1 > 1.0f  ?  1.0f  :  scene_rdl2::math::sqrt(r1));
+    r1 = scene_rdl2::math::clamp(r1, 0.0f, 1.0f);
+    float cosTheta = scene_rdl2::math::sqrt(r1);
     float sinTheta = scene_rdl2::math::sqrt(1.0f - r1);
 
     float phi = r2 * scene_rdl2::math::sTwoPi;
@@ -557,6 +558,42 @@ sampleLocalSphericalCapUniform2(float r1, float r2, float versineThetaMax)
     return result;
 }
 
+/// pdf = cosTheta / (PI * sinThetaMax^2)
+/// See Dutre's "Global Illumination Compendium", p20 sec 35.
+finline scene_rdl2::math::Vec3f
+sampleLocalSphericalCapCosine(float r1, float r2, float sinThetaMax)
+{
+    float sinTheta = scene_rdl2::math::sqrt(1.0f - r1) * sinThetaMax;
+    float cosTheta = scene_rdl2::math::sqrt(1.0f - sinTheta * sinTheta);
+
+    float phi = r2 * scene_rdl2::math::sTwoPi;
+    float sinPhi, cosPhi;
+    scene_rdl2::math::sincos(phi, &sinPhi, &cosPhi);
+
+    scene_rdl2::math::Vec3f result;
+    result[0] = sinTheta * cosPhi;
+    result[1] = sinTheta * sinPhi;
+    result[2] = cosTheta;
+
+    return result;
+}
+
+/// pdf = cosTheta / (PI * sinThetaMax1 * sinThetaMax2)
+finline scene_rdl2::math::Vec3f
+sampleLocalSphericalEllipticCapCosine(float r1, float r2, float sinThetaMax1, float sinThetaMax2)
+{
+    float phi = r2 * scene_rdl2::math::sTwoPi;
+    float sinPhi, cosPhi;
+    scene_rdl2::math::sincos(phi, &sinPhi, &cosPhi);
+
+    float s = scene_rdl2::math::sqrt(1.0f - r1);
+    scene_rdl2::math::Vec3f result;
+    result[0] = s * sinThetaMax1 * cosPhi;
+    result[1] = s * sinThetaMax2 * sinPhi;
+    result[2] = scene_rdl2::math::sqrt(1.0f - result[0]*result[0] - result[1]*result[1]);
+
+    return result;
+}
 
 /// pdf = 1.0 / (4.0 * PI)
 finline scene_rdl2::math::Vec3f

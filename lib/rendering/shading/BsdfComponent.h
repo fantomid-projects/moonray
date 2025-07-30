@@ -944,6 +944,7 @@ public:
             const scene_rdl2::math::Vec3f &N,
             const scene_rdl2::math::Color &albedo,
             const scene_rdl2::math::Color &radius,
+            const float creaseAttenuation,
             const bool resolveSelfIntersections,
             const scene_rdl2::rdl2::Material* const material,
             const scene_rdl2::rdl2::TraceSet* const traceSet,
@@ -954,6 +955,7 @@ public:
     finline const scene_rdl2::math::Vec3f& getN()               const { return mN; }
     finline const scene_rdl2::math::Color& getAlbedo()          const { return mAlbedo; }
     finline const scene_rdl2::math::Color& getRadius()          const { return mRadius; }
+    finline float getCreaseAttenuation()                        const { return mCreaseAttenuation; }
     finline bool getResolveSelfIntersections()                  const { return mResolveSelfIntersections; }
     finline const scene_rdl2::rdl2::Material* getMaterial()     const { return mMaterial; }
     finline const scene_rdl2::rdl2::TraceSet* getTraceSet()     const { return mTraceSet; }
@@ -963,6 +965,7 @@ private:
     const scene_rdl2::math::Vec3f &mN;
     const scene_rdl2::math::Color &mAlbedo;
     const scene_rdl2::math::Color &mRadius;
+    const float mCreaseAttenuation;
     const bool mResolveSelfIntersections;
     const scene_rdl2::rdl2::Material* const mMaterial;
     const scene_rdl2::rdl2::TraceSet* const mTraceSet;

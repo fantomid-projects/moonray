@@ -637,6 +637,12 @@ public:
         mN  = -mN;
     }
 
+    // Compute the max (k1) and min (k2) curvatures at the intersection point,
+    // and the directions (v1, v2) in which they are attained.
+    // (See https://web.mit.edu/hyperbook/Patrikalakis-Maekawa-Cho/node26.html)
+    void computePrincipalCurvatures(float &k1, float &k2,
+        scene_rdl2::math::Vec3f *v1 = nullptr, scene_rdl2::math::Vec3f *v2 = nullptr) const;
+
 private:
     int keyOffset(AttributeKey key) const {
         return getTable()->keyOffset(key);

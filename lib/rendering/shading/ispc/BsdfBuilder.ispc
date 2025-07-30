@@ -1956,6 +1956,7 @@ BsdfBuilder_addRandomWalkSubsurface(
                                    sss.mN,
                                    sss.mAlbedo,
                                    sss.mRadius,
+                                   sss.mCreaseAttenuation,
                                    sss.mResolveSelfIntersections,
                                    sss.mMaterial,
                                    sss.mEvalNormalFn);

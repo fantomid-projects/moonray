@@ -1078,42 +1078,6 @@ PathIntegrator::computeDiffusionForwardScattering(pbr::TLState *pbrTls, const Bs
 }
 
 //-----------------------------------------------------------------------------
-
-// utility function to sample distance t from 0 to inf with distribution
-// propotional to exp(-sigmaT[channel] * t)
-// channel is selected based on discrete pdf provided through channelWeights
-// this is similar to the bsdf one sample idea that picking out a lobe first
-// and then eval the total lobes contribution
-// the idea is explored by multiple publication addressing chromatic volume
-// coefficient importance sampling, see
-// "Practical and Controllable Subsurface Scattering for Production Path Tracing"
-// Matt Jen-Yuan Chiang el al
-// 3. Sampling for detail reference
-// pbrt3 also contains an implementation that selecting channel with uniform pdf
-// http://www.pbr-book.org/3ed-2018/Light_Transport_II_Volume_Rendering/Sampling_Volume_Scattering.html#HomogeneousMedium
-float
-sampleDistanceZeroScatter(const scene_rdl2::math::Color& channelWeights, const scene_rdl2::math::Color& sigmaT,
-        float uChannel, float uDistance, scene_rdl2::math::Color& tr, float& pdfDistance)
-{
-    float normalization = 1.0f / (channelWeights[0] + channelWeights[1] + channelWeights[2]);
-    scene_rdl2::math::Color pdfChannel = normalization * channelWeights;
-
-    float distance;
-    if (uChannel < pdfChannel[0]) {
-        distance = -scene_rdl2::math::log(1.0f - uDistance) / sigmaT[0];
-    } else if (uChannel < (pdfChannel[0] + pdfChannel[1])) {
-        distance = -scene_rdl2::math::log(1.0f - uDistance) / sigmaT[1];
-    } else {
-        distance = -scene_rdl2::math::log(1.0f - uDistance) / sigmaT[2];
-    }
-    tr = scene_rdl2::math::exp(-sigmaT * distance);
-    pdfDistance =
-        pdfChannel[0] * sigmaT[0] * tr[0] +
-        pdfChannel[1] * sigmaT[1] * tr[1] +
-        pdfChannel[2] * sigmaT[2] * tr[2];
-    return distance;
-}
-
 // Distance Sampling with either:
 // (a) sampling transmittance or (b) Dwivedi distance sampling
 // For Dwivedi Distance Sampling, ref "Improved Dwivedi Sampling"
@@ -1326,11 +1290,6 @@ PathIntegrator::computeRadiancePathTraceSubsurface(pbr::TLState* pbrTls,
     // get incremented in the process.
     unsigned sssSampleID = sequenceID;
 
-    // Local Reference Frame
-    // Using the smooth shading normal here instead of Ng to avoid
-    // faceting artifacts (similar to the diffusion integrator above)
-    scene_rdl2::math::ReferenceFrame inReferenceFrame(isect.getN());
-    const scene_rdl2::math::ReferenceFrame inReferenceFrameNg(isect.getNg());
     pbrTls->mStatistics.addToCounter(STATS_SSS_SAMPLES, nSubsurfaceSample);
  
 
@@ -1385,12 +1344,44 @@ PathIntegrator::computeRadiancePathTraceSubsurface(pbr::TLState* pbrTls,
         if (isBlack(pt)) {
             continue;
         }
+
         // sample a random walk direction using hemisphere cosine distribution
         // along the flip side of shading Normal
         scene_rdl2::math::Vec2f uDir;
         directionSamples.getSample(&uDir[0], pv.nonMirrorDepth);
-        scene_rdl2::math::Vec3f dir = -inReferenceFrame.localToGlobal(
-            sampleLocalHemisphereCosine(uDir[0], uDir[1]));
+
+        scene_rdl2::math::ReferenceFrame inReferenceFrame;
+        scene_rdl2::math::Vec3f dir;
+        const float creaseAttenuation = volumeSubsurface.getCreaseAttenuation();
+
+        if (creaseAttenuation == 0.0f) {
+            // If not using crease attenuation, keep the old behavior for backwards compatibility
+            inReferenceFrame = scene_rdl2::math::ReferenceFrame(isect.getN());
+            dir = -inReferenceFrame.localToGlobal(sampleLocalHemisphereCosine(uDir[0], uDir[1]));
+        } else {
+            // To use crease attenuation we need to compute principal curvatures and principal directions.
+            // (Note: we only need the first principal direction; together with the normal this suffices to
+            // establish the reference frame.)
+            float k1, k2;
+            scene_rdl2::math::Vec3f v1;
+            isect.computePrincipalCurvatures(k1, k2, &v1, nullptr);
+            inReferenceFrame = scene_rdl2::math::ReferenceFrame(isect.getN(), v1);
+
+            if (k1 > 0.0f) {
+                // If there's positive curvature, use the 2 curvature values to better distribute the zero scatter rays.
+                // Note: we multiply the fudge factor by a fudge factor so the user-side range is more sensible
+                float p = creaseAttenuation * 0.01f;
+                float sinThetaMax1 = 1.0f / (k1*p + 1.0f);
+                float sinThetaMax2 = 1.0f;
+                if (k2 > 0.0f) {
+                    sinThetaMax2 = 1.0f / (k2*p + 1.0f);
+                }
+                dir = -inReferenceFrame.localToGlobal(sampleLocalSphericalEllipticCapCosine(uDir[0], uDir[1],
+                                                                                            sinThetaMax1, sinThetaMax2));
+            } else {
+                dir = -inReferenceFrame.localToGlobal(sampleLocalHemisphereCosine(uDir[0], uDir[1]));
+            }
+        }
 
         // Use reverse geometric normal with minimum of rayEpsilon and sHitEpsilonStart (10e-5)  
         // min(rayEpsilon, sHitEpsilonStart) is used instead of just rayEpsilon for the following reason
@@ -1405,7 +1396,7 @@ PathIntegrator::computeRadiancePathTraceSubsurface(pbr::TLState* pbrTls,
         // https://link.springer.com/content/pdf/10.1007%2F978-1-4842-4427-2_6.pdf has more insight on this
         // TODO: do the random walk in volumesubsurface space so we can reduce precision loss even further when camera is 
         // far away. this involves generating a BVH with just the volume subsurface at render prep time.   
-        scene_rdl2::math::Vec3f org = isect.getP() - inReferenceFrameNg.getN() * scene_rdl2::math::min(rayEpsilon, sHitEpsilonStart);
+        scene_rdl2::math::Vec3f org = isect.getP() - isect.getNg() * scene_rdl2::math::min(rayEpsilon, sHitEpsilonStart);
         bool reachSurface = false;
         scene_rdl2::math::Vec3f pOut, nOut;
         Intersection isectOut;
@@ -1417,17 +1408,28 @@ PathIntegrator::computeRadiancePathTraceSubsurface(pbr::TLState* pbrTls,
             if (isBlack(pt)) {
                 break;
             }
-            // sample the next scattering event based on path throughput and sigmaT
+            // sample the next scattering event based on path throughput and zeroScatterSigmaT
             float uChannel, uDistance;
             channelSamples.getSample(&uChannel, pv.nonMirrorDepth);
             distanceSamples.getSample(&uDistance, pv.nonMirrorDepth);
-            scene_rdl2::math::Color tr;
-            float pdfT;
             scene_rdl2::math::Color zeroScatterSigmaT = volumeSubsurface.getZeroScatterSigmaT();
-            float tfar = sampleDistanceZeroScatter(pt, zeroScatterSigmaT,
-                uChannel, uDistance, tr, pdfT);
+
+            // Generate a randomly drawn tfar distance, distributed so its pdf is proportional to
+            // exp(-zeroScatterSigmaT[channel] * t). The channel is randomly selected with probability
+            // proportional to channel throughput.
+            // References:
+            // (1) Matt Jen-Yuan Chiang el al, "Practical and Controllable Subsurface Scattering for
+            // Production Path Tracing"
+            // (2) pbrt3,
+            // http://www.pbr-book.org/3ed-2018/Light_Transport_II_Volume_Rendering/Sampling_Volume_Scattering.html#HomogeneousMedium
+            float recipChannelSum = 1.0f / (pt.r + pt.g + pt.b);
+            int channel = (uChannel <     pt.r      * recipChannelSum) ? 0 :
+                          (uChannel < (pt.r + pt.g) * recipChannelSum) ? 1 : 2;
+            float tfar = -scene_rdl2::math::log(1.0f - uDistance) / zeroScatterSigmaT[channel];
+
             // setup random walk ray
             Ray sssRay(org, dir, 0.0f, tfar, time);
+
             // setup trace set
             sssRay.ext.geomTls = (void*)geomTls;
             const scene_rdl2::rdl2::Material* isectMaterial = isect.getMaterial();
@@ -1439,20 +1441,20 @@ PathIntegrator::computeRadiancePathTraceSubsurface(pbr::TLState* pbrTls,
             bool intersected = scene->intersectRay(pbrTls->mTopLevelTls, sssRay,
                 isectOut, lobeType);
             if (intersected && isValidIntersection(isectOut, volumeSubsurface)) {
-                // update throughput
-                tr = exp(-zeroScatterSigmaT * sssRay.tfar);
-                // the pdf of tfar sample from the intersection point
-                // see pbrt3
+                // Compute the probability that the randomly sampled distance will exceed the distance of the
+                // intersection point. For derivation, see pbrt3, 15.11:
                 // http://www.pbr-book.org/3ed-2018/Light_Transport_II_Volume_Rendering/Sampling_Volume_Scattering.html#eq:homogeneous-medium-psurf
-                // for derivation
-                // 15.11, 1/n is for uniform sampling
-                // we use MIS between channels based on throughput instead
-                float normalization = 1.0f / (pt[0] + pt[1] + pt[2]);
-                float pdfExitSurf =
-                    pt[0] * normalization * tr[0] +
-                    pt[1] * normalization * tr[1] +
-                    pt[2] * normalization * tr[2];
-                pt *= tr / pdfExitSurf;
+                // The averaging used in that formula is for uniform sampling - here we do MIS between channels
+                // based on throughput.
+                float t1 = sssRay.tfar;
+                // Calculate per-channel transmittance between 0 and t1
+                scene_rdl2::math::Color tr01 = exp(-zeroScatterSigmaT * t1);
+                // Apply MIS weighting to compute probability
+                float exitProbability = (pt.r * tr01.r + pt.g * tr01.g + pt.b * tr01.b) * recipChannelSum;
+
+                // Update throughput using the exit probability and the transmittance from 0 to t1
+                scene_rdl2::math::Color tr = exp(-zeroScatterSigmaT * t1);
+                pt *= tr / exitProbability;
 
                 pOut = isectOut.getP();
                 // construct intersection

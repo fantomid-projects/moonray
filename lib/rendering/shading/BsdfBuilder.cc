@@ -809,6 +809,7 @@ public:
         auto bssrdf = createVolumeSubsurface(mTls->mArena,
                                              component.getAlbedo(),
                                              component.getRadius(),
+                                             component.getCreaseAttenuation(),
                                              component.getMaterial(),
                                              component.getEvalNormalFn(),
                                              component.getN(),

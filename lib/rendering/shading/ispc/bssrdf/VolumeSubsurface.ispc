@@ -23,6 +23,7 @@ VolumeSubsurface_init(varying VolumeSubsurface * uniform bssrdf,
                       const varying Vec3f& N,
                       const varying Color& trlColor,
                       const varying Color& trlRadius,
+                      const varying float creaseAttenuation,
                       uniform bool resolveSelfIntersections,
                       const uniform Material *uniform  material,
                       const uniform intptr_t evalNormalFn,
@@ -63,6 +64,7 @@ VolumeSubsurface_init(varying VolumeSubsurface * uniform bssrdf,
                                            max(0.001f, trlRadius.g * 0.3333f),
                                            max(0.001f, trlRadius.b * 0.3333f));
 
+    bssrdf->mCreaseAttenuation = creaseAttenuation;
     bssrdf->mN = N;
     bssrdf->mResolveSelfIntersections = resolveSelfIntersections;
 
@@ -128,6 +130,7 @@ VolumeSubsurface_init(varying VolumeSubsurface * uniform vS,
                       const varying Vec3f &N,
                       const varying Color &albedo,
                       const varying Color &radius,
+                      const varying float creaseAttenuation,
                       uniform bool resolveSelfIntersections,
                       const uniform Material *uniform  material,
                       const uniform intptr_t evalNormalFn)
@@ -136,6 +139,7 @@ VolumeSubsurface_init(varying VolumeSubsurface * uniform vS,
                           N,
                           albedo,
                           radius,
+                          creaseAttenuation,
                           resolveSelfIntersections,
                           material,
                           evalNormalFn,
