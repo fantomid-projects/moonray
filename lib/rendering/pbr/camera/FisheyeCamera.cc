@@ -53,8 +53,8 @@ void FisheyeCamera::updateImpl(const Mat4d& world2render)
 {
     mMapping = getRdlCamera()->get(sMappingKey);
 
-    const float w = getRegionWindowWidth();
-    const float h = getRegionWindowHeight();
+    const float w = getApertureWindowWidth();
+    const float h = getApertureWindowHeight();
 
     int format  = getRdlCamera()->get(sFormatKey);
     float diameter;
@@ -129,8 +129,8 @@ void FisheyeCamera::createRayImpl(mcrt_common::RayDifferential* dstRay,
 
 bool FisheyeCamera::createDirection(Vec3f& dir, float X, float Y) const
 {
-    const float W = getRegionWindowWidth();
-    const float H = getRegionWindowHeight();
+    const float W = getApertureWindowWidth();
+    const float H = getApertureWindowHeight();
 
     X -= 0.5f * W;
     Y -= 0.5f * H;
