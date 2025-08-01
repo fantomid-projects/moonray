@@ -26,9 +26,9 @@
 #include <moonray/rendering/geom/prim/VolumeRegions.h>
 #include <moonray/rendering/geom/prim/VolumeAssignmentTable.h>
 #include <moonray/rendering/rt/EmbreeAccelerator.h>
-#include <moonray/rendering/bvh/shading/AttributeTable.h>
-#include <moonray/rendering/bvh/shading/Intersection.h>
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/AttributeTable.h>
+#include <moonray/rendering/shading/Intersection.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
 #include <moonray/rendering/shading/bsdf/Bsdf.h>
 #include <moonray/rendering/shading/bsdf/Bsdfv.h>
 #include <moonray/rendering/shading/Util.h>

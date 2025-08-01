@@ -6,7 +6,7 @@
 
 #include "LightFilter.hh"
 
-#include <moonray/rendering/bvh/shading/ispc/ShadingTLState.isph>
+#include <moonray/rendering/shading/ispc/ShadingTLState.isph>
 #include <moonray/rendering/pbr/core/Distribution.isph>
 #include <moonray/rendering/pbr/core/RayState.isph>
 #include <moonray/rendering/pbr/light/LightUtil.isph>

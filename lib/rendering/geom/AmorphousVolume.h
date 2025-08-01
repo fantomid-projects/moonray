@@ -11,8 +11,8 @@
 
 #include "VdbVolume.h"
 
-#include <moonray/rendering/bvh/shading/PrimitiveAttribute.h>
-#include <moonray/rendering/bvh/shading/Xform.h>
+#include <moonray/rendering/shading/PrimitiveAttribute.h>
+#include <moonray/rendering/shading/Xform.h>
 
 namespace moonray {
 namespace geom {

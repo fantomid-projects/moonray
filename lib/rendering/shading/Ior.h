@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <moonray/rendering/bvh/shading/State.h>
+#include <moonray/rendering/shading/State.h>
 #include <scene_rdl2/common/math/Color.h>
 
 namespace moonray {

@@ -9,7 +9,7 @@
 
 #include <moonray/rendering/shading/bsdf/Bsdfv.h>
 #include <moonray/rendering/shading/BsdfBuilder.h>
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
 
 #include <scene_rdl2/common/platform/Platform.h>
 #include <scene_rdl2/render/util/Arena.h>

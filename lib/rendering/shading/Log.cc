@@ -8,7 +8,7 @@
 
 #include "Log.h"
 
-#include <moonray/rendering/bvh/shading/ThreadLocalObjectState.h>
+#include <moonray/rendering/shading/ThreadLocalObjectState.h>
 #include <moonray/rendering/mcrt_common/Util.h>
 
 void CPP_logEvent(const scene_rdl2::rdl2::Shader *shader, scene_rdl2::logging::LogEvent event)

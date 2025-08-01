@@ -14,8 +14,8 @@
 #include <moonray/rendering/geom/prim/Primitive.h>
 #include <moonray/rendering/geom/prim/ShadowLinking.h>
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/Attributes.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/Attributes.h>
 #include <moonray/rendering/geom/LayerAssignmentId.h>
 
 namespace moonray {

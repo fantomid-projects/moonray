@@ -26,7 +26,7 @@
 #include "TileSampleSpecialEvent.h"
 #include "PathVisualizerManager.h"
 
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
 #include <moonray/rendering/pbr/core/DebugRay.h>
 
 #include <tbb/task_arena.h>

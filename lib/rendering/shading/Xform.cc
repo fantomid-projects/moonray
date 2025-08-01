@@ -5,7 +5,7 @@
 
 #include "Xform.h"
 
-#include <moonray/rendering/bvh/shading/State.h>
+#include <moonray/rendering/shading/State.h>
 
 using namespace scene_rdl2;
 

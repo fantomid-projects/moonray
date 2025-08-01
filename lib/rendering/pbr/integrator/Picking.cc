@@ -10,8 +10,8 @@
 
 #include <moonray/rendering/geom/IntersectionInit.h>
 #include <moonray/rendering/mcrt_common/ThreadLocalState.h>
-#include <moonray/rendering/bvh/shading/Intersection.h>
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/Intersection.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
 #include <moonray/rendering/shading/bsdf/BsdfSlice.h>
 #include <moonray/rendering/shading/BsdfBuilder.h>
 #include <moonray/rendering/shading/EvalShader.h>

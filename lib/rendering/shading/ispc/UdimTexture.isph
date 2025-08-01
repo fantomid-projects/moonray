@@ -7,7 +7,7 @@
 
 #include <moonray/rendering/shading/ispc/Shading.isph>
 
-#include <moonray/rendering/bvh/shading/ispc/ThreadLocalObjectState.isph>
+#include <moonray/rendering/shading/ispc/ThreadLocalObjectState.isph>
 #include <scene_rdl2/common/platform/IspcUtil.isph>
 
 typedef uniform intptr_t (*uniform StartAccumulatorFnUdim) (uniform ShadingTLState * uniform tls, uniform uint32_t displacement);

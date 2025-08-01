@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
+#include <moonray/rendering/shading/AttributeKey.h>
 #include <moonray/rendering/geom/MotionBlurParams.h>
 #include <moonray/rendering/geom/ProceduralContext.h>
 #include <vector>

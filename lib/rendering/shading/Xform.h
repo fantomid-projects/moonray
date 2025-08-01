@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <moonray/rendering/bvh/shading/ispc/Xform_ispc_stubs.h>
+#include <moonray/rendering/shading/ispc/Xform_ispc_stubs.h>
 
 #include <scene_rdl2/common/math/simd.h>
 #include <scene_rdl2/render/util/AlignedAllocator.h>

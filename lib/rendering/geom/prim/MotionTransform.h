@@ -7,7 +7,7 @@
 ///
 #pragma once
 
-#include <moonray/rendering/bvh/shading/Xform.h>
+#include <moonray/rendering/shading/Xform.h>
 #include <moonray/rendering/geom/Types.h>
 #include <scene_rdl2/common/math/Math.h>
 

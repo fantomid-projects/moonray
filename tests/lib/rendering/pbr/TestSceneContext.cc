@@ -5,8 +5,8 @@
 #include "TestSceneContext.h"
 
 #include <scene_rdl2/common/math/Color.h>
-#include <moonray/rendering/bvh/shading/Intersection.h>
-#include <moonray/rendering/bvh/shading/State.h>
+#include <moonray/rendering/shading/Intersection.h>
+#include <moonray/rendering/shading/State.h>
 #include <scene_rdl2/scene/rdl2/AttributeKey.h>
 #include <scene_rdl2/scene/rdl2/SceneContext.h>
 #include <scene_rdl2/scene/rdl2/SceneClass.h>

@@ -1,7 +1,6 @@
 # Copyright 2023-2024 DreamWorks Animation LLC
 # SPDX-License-Identifier: Apache-2.0
 
-add_subdirectory(bvh)
 add_subdirectory(displayfilter)
 add_subdirectory(drawing)
 add_subdirectory(lpe)

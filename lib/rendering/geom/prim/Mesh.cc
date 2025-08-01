@@ -7,7 +7,7 @@
 #include <moonray/rendering/geom/prim/MotionTransform.h>
 #include <moonray/rendering/geom/prim/Util.h>
 
-#include <moonray/rendering/bvh/shading/Attributes.h>
+#include <moonray/rendering/shading/Attributes.h>
 #include <scene_rdl2/scene/rdl2/Geometry.h>
 
 #include <openvdb/tools/Composite.h>

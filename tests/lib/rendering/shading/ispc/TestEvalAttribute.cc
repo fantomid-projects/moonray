@@ -7,7 +7,7 @@
 
 #include <moonray/rendering/shading/ispc/Shadingv.h>
 
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
 #include <moonray/rendering/shading/BsdfBuilder.h>
 #include <moonray/rendering/shading/bsdf/Bsdf.h>
 #include <moonray/rendering/shading/bsdf/BsdfLambert.h>

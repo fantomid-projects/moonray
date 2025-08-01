@@ -4,9 +4,9 @@
 #include "CookieLightFilter_v2.h"
 
 #include <moonray/common/mcrt_macros/moonray_static_check.h>
-#include <moonray/rendering/bvh/shading/Intersection.h>
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
-#include <moonray/rendering/bvh/shading/State.h>
+#include <moonray/rendering/shading/Intersection.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/State.h>
 #include <moonray/rendering/pbr/core/Util.h>
 #include <moonray/rendering/pbr/lightfilter/CookieLightFilter_v2_ispc_stubs.h>
 

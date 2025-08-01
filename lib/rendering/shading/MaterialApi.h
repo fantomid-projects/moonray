@@ -10,7 +10,7 @@
 #include <moonray/rendering/shading/Shading.h>
 #include <moonray/rendering/shading/ShadingUtil.h>
 
-#include <moonray/rendering/bvh/shading/State.h>
+#include <moonray/rendering/shading/State.h>
 #include <moonray/rendering/shading/ispc/bssrdf/Bssrdf_ispc_stubs.h>
 #include <moonray/rendering/shading/ispc/Shading_ispc_stubs.h>
 

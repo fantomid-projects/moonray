@@ -5,7 +5,7 @@
 /// @file PrimitiveUserData.h
 
 #pragma once
-#include <moonray/rendering/bvh/shading/PrimitiveAttribute.h>
+#include <moonray/rendering/shading/PrimitiveAttribute.h>
 #include <scene_rdl2/scene/rdl2/SceneObject.h>
 
 namespace moonray {

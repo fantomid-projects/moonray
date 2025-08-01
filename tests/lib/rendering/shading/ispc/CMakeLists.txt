@@ -70,7 +70,6 @@ endif()
 target_link_libraries(${target}
     PRIVATE
         Moonray::common_mcrt_macros
-        Moonray::rendering_bvh_shading
         Moonray::rendering_mcrt_common
         Moonray::rendering_rndr
         Moonray::rendering_shading

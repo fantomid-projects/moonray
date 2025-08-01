@@ -4,7 +4,7 @@
 
 #include "PathIntegratorUtil.h"
 
-#include <moonray/rendering/bvh/shading/Intersection.h>
+#include <moonray/rendering/shading/Intersection.h>
 #include <moonray/rendering/geom/IntersectionInit.h>
 #include <moonray/rendering/geom/prim/BVHUserData.h>
 #include <moonray/rendering/geom/prim/NamedPrimitive.h>

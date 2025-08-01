@@ -16,7 +16,7 @@
 #include <moonray/rendering/geom/Types.h>
 #include <moonray/rendering/geom/ProceduralContext.h>
 
-#include <moonray/rendering/bvh/shading/Xform.h>
+#include <moonray/rendering/shading/Xform.h>
 #include <scene_rdl2/render/util/Ref.h>
 #include <scene_rdl2/scene/rdl2/Geometry.h>
 

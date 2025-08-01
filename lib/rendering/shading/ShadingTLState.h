@@ -5,8 +5,8 @@
 
 #include "ShadingTLState.hh"
 
-#include <moonray/rendering/bvh/shading/AttributeTable.h>
-#include <moonray/rendering/bvh/shading/RootShader.h>
+#include <moonray/rendering/shading/AttributeTable.h>
+#include <moonray/rendering/shading/RootShader.h>
 #include <moonray/rendering/texturing/sampler/TextureTLState.h>
 #include <scene_rdl2/scene/rdl2/RootShader.h>
 

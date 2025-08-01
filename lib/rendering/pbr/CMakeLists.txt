@@ -97,7 +97,6 @@ function(make_ispc_target target sources stubsDestination)
     target_link_libraries(${target}
         PRIVATE
             embree
-            ${PROJECT_NAME}::bvh_shading_ispc
             ${PROJECT_NAME}::common_mcrt_macros
             ${PROJECT_NAME}::rendering_lpe
             ${PROJECT_NAME}::rendering_mcrt_common
@@ -137,7 +136,6 @@ function(make_ispc_target target sources stubsDestination)
     if(NOT objLibDeps STREQUAL "")
         add_dependencies(${objLibDeps} 
             embree
-            ${PROJECT_NAME}::bvh_shading_ispc
             ${PROJECT_NAME}::common_mcrt_macros
             ${PROJECT_NAME}::rendering_lpe
             ${PROJECT_NAME}::rendering_mcrt_common
@@ -427,8 +425,7 @@ get_target_property(objLibDeps_04 rendering_pbr_ispc_04 DEPENDENCY)
 get_target_property(objLibDeps_05 rendering_pbr_ispc_05 DEPENDENCY)
 
 if(NOT objLibDeps_00 STREQUAL "")
-    add_dependencies(${objLibDeps_00} 
-        ${PROJECT_NAME}::bvh_shading_ispc
+    add_dependencies(${objLibDeps_00}
         ${PROJECT_NAME}::common_mcrt_macros
         ${PROJECT_NAME}::rendering_lpe
         ${PROJECT_NAME}::rendering_mcrt_common

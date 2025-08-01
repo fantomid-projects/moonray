@@ -6,8 +6,8 @@
 
 #include <moonray/rendering/shading/ispc/BsdfBuilder.isph>
 
-#include <moonray/rendering/bvh/shading/ispc/State.isph>
-#include <moonray/rendering/bvh/shading/ispc/ThreadLocalObjectState.isph>
+#include <moonray/rendering/shading/ispc/State.isph>
+#include <moonray/rendering/shading/ispc/ThreadLocalObjectState.isph>
 #include <moonray/rendering/shading/BsdfUtil.hh>
 #include <scene_rdl2/common/math/ispc/Color.isph>
 #include <scene_rdl2/common/math/ispc/Vec3.isph>

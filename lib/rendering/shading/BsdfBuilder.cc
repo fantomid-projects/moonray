@@ -30,8 +30,8 @@
 #include <moonray/rendering/shading/LobeAttenuator.h>
 #include <moonray/rendering/shading/Shading.h>
 
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
-#include <moonray/rendering/bvh/shading/State.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/State.h>
 #include <moonray/rendering/shading/ispc/BsdfComponent_ispc_stubs.h>
 
 #include <scene_rdl2/common/math/Math.h>

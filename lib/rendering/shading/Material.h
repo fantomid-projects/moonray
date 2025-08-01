@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
-#include <moonray/rendering/bvh/shading/RootShader.h>
+#include <moonray/rendering/shading/RootShader.h>
 #include <moonray/rendering/mcrt_common/AffinityManager.h>
 #include <moonray/rendering/mcrt_common/Bundle.h>
 #include <moonray/rendering/shading/Types.h>

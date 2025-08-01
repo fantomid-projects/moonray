@@ -11,10 +11,10 @@
 #include <moonray/rendering/geom/prim/BVHUserData.h>
 #include <moonray/rendering/geom/prim/Util.h>
 
-#include <moonray/rendering/bvh/shading/Attributes.h>
-#include <moonray/rendering/bvh/shading/AttributeTable.h>
-#include <moonray/rendering/bvh/shading/Interpolator.h>
-#include <moonray/rendering/bvh/shading/RootShader.h>
+#include <moonray/rendering/shading/Attributes.h>
+#include <moonray/rendering/shading/AttributeTable.h>
+#include <moonray/rendering/shading/Interpolator.h>
+#include <moonray/rendering/shading/RootShader.h>
 
 namespace moonray {
 namespace geom {

@@ -7,7 +7,7 @@
 #include "LightUtil.h"
 #include "LightSet.h"
 
-#include <moonray/rendering/bvh/shading/Intersection.h>
+#include <moonray/rendering/shading/Intersection.h>
 #include <moonray/rendering/pbr/core/RayState.h>
 #include <moonray/rendering/pbr/light/LightUtil_ispc_stubs.h>
 #include <moonray/rendering/shading/bsdf/Bsdf.h>

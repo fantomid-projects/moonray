@@ -7,7 +7,7 @@
 
 #include "BakeCamera.h"
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
+#include <moonray/rendering/shading/AttributeKey.h>
 #include <moonray/rendering/geom/PolygonMesh.h>
 #include <moonray/rendering/geom/PrimitiveGroup.h>
 #include <moonray/rendering/geom/PrimitiveVisitor.h>

@@ -8,8 +8,8 @@
 #include <moonray/rendering/pbr/integrator/BsdfSampler.isph>
 #include "Util.isph"
 
-#include <moonray/rendering/bvh/shading/ispc/Intersection.isph>
-#include <moonray/rendering/bvh/shading/ispc/State.isph>
+#include <moonray/rendering/shading/ispc/Intersection.isph>
+#include <moonray/rendering/shading/ispc/State.isph>
 #include <moonray/rendering/lpe/StateMachine.isph>
 #include <moonray/rendering/shading/ispc/AovLabels.isph>
 #include <moonray/rendering/shading/ispc/bsdf/Bsdf.isph>

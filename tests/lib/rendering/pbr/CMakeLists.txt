@@ -32,7 +32,7 @@ set_target_properties(${objLib} PROPERTIES
 
 target_link_libraries(${objLib}
     PRIVATE
-        Moonray::rendering_bvh_shading
+        Moonray::rendering_shading
         Moonray::rendering_pbr)
 
 # Set standard compile/link options
@@ -42,7 +42,7 @@ Moonray_link_options(${objLib})
 get_target_property(objLibDeps ${objLib} DEPENDENCY)
 if(NOT objLibDeps STREQUAL "")
     add_dependencies(${objLibDeps} 
-        Moonray::rendering_bvh_shading
+        Moonray::rendering_shading
         Moonray::rendering_pbr
     )
 endif()
@@ -90,7 +90,6 @@ target_link_libraries(${target}
         Moonray::common_mcrt_macros
         Moonray::common_mcrt_util
         Moonray::common_time
-        Moonray::rendering_bvh_shading
         Moonray::rendering_geom
         Moonray::rendering_mcrt_common
         Moonray::rendering_pbr

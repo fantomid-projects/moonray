@@ -55,7 +55,7 @@
 #include <moonray/rendering/pbr/core/Aov.isph>
 #include <moonray/rendering/pbr/core/RayState.isph>
 #include <moonray/rendering/pbr/light/LightSet.isph>
-#include <moonray/rendering/bvh/shading/ispc/Intersection.isph>
+#include <moonray/rendering/shading/ispc/Intersection.isph>
 #include <moonray/rendering/shading/ispc/bsdf/Bsdf.isph>
 #include <scene_rdl2/render/util/Arena.isph>
 

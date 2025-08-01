@@ -8,12 +8,12 @@
 
 #pragma once
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/AttributeTable.h>
-#include <moonray/rendering/bvh/shading/InstanceAttributes.h>
-#include <moonray/rendering/bvh/shading/Interpolator.h>
-#include <moonray/rendering/bvh/shading/ispc/Intersection.hh>
-#include <moonray/rendering/bvh/shading/MipSelector.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/AttributeTable.h>
+#include <moonray/rendering/shading/InstanceAttributes.h>
+#include <moonray/rendering/shading/Interpolator.h>
+#include <moonray/rendering/shading/ispc/Intersection.hh>
+#include <moonray/rendering/shading/MipSelector.h>
 
 #include <moonray/rendering/mcrt_common/Ray.h>
 #include <moonray/rendering/mcrt_common/ThreadLocalState.h>

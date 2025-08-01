@@ -13,7 +13,7 @@
 #include <moonray/rendering/geom/Primitive.h>
 #include <moonray/rendering/geom/VertexBuffer.h>
 
-#include <moonray/rendering/bvh/shading/Xform.h>
+#include <moonray/rendering/shading/Xform.h>
 #include <moonray/rendering/geom/internal/InterleavedTraits.h>
 
 namespace moonray {

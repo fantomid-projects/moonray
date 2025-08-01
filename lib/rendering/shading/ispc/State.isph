@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <moonray/rendering/bvh/shading/ispc/Intersection.isph>
+#include <moonray/rendering/shading/ispc/Intersection.isph>
 #include <scene_rdl2/common/platform/Platform.isph>
 
 struct Arena;

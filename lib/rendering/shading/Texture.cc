@@ -3,7 +3,7 @@
 
 #include "Texture.h"
 
-#include <moonray/rendering/bvh/shading/Intersection.h>
+#include <moonray/rendering/shading/Intersection.h>
 #include <moonray/rendering/texturing/sampler/TextureSampler.h>
 
 namespace moonray {

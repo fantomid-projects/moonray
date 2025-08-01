@@ -3,7 +3,7 @@
 
 #include "TestGeomApi.h"
 #include "SizeVerifyingAllocator.h"
-#include <moonray/rendering/bvh/shading/PrimitiveAttribute.h>
+#include <moonray/rendering/shading/PrimitiveAttribute.h>
 #include <moonray/rendering/geom/internal/InterleavedTraits.h>
 #include <moonray/rendering/geom/LayerAssignmentId.h>
 #include <moonray/rendering/geom/Types.h>

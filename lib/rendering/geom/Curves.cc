@@ -12,7 +12,7 @@
 #include <moonray/rendering/geom/PrimitiveVisitor.h>
 #include <moonray/rendering/geom/State.h>
 
-#include <moonray/rendering/bvh/shading/PrimitiveAttribute.h>
+#include <moonray/rendering/shading/PrimitiveAttribute.h>
 #include <moonray/rendering/geom/prim/BezierSpanChains.h>
 #include <moonray/rendering/geom/prim/BSpline.h>
 #include <moonray/rendering/geom/prim/LineSegments.h>

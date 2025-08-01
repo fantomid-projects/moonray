@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <moonray/rendering/bvh/shading/PrimitiveAttribute.h>
+#include <moonray/rendering/shading/PrimitiveAttribute.h>
 #include <moonray/rendering/geom/Api.h>
 #include <moonray/rendering/geom/prim/CubicSpline.h>
 

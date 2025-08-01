@@ -8,8 +8,8 @@
 #include <moonray/rendering/pbr/integrator/BsdfSampler.h>
 #include "RayState.h"
 
-#include <moonray/rendering/bvh/shading/Intersection.h>
-#include <moonray/rendering/bvh/shading/State.h>
+#include <moonray/rendering/shading/Intersection.h>
+#include <moonray/rendering/shading/State.h>
 #include <moonray/rendering/lpe/StateMachine.h>
 #include <moonray/rendering/pbr/core/Aov_ispc_stubs.h>
 #include <moonray/rendering/shading/bsdf/Bsdf.h>

@@ -9,7 +9,7 @@
 #include "TestPrimitiveAttribute.h"
 
 #include <moonray/common/mcrt_macros/moonray_static_check.h>
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
 #include <moonray/rendering/mcrt_common/ThreadLocalState.h>
 
 #include <cppunit/TestFixture.h>

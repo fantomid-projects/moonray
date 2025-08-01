@@ -13,6 +13,9 @@ add_library(${PROJECT_NAME}::${component} ALIAS ${component})
 
 target_sources(${component}
     PRIVATE
+        AttributeKey.cc
+        Attributes.cc
+        AttributeTable.cc
         BasicTexture.cc
         BsdfBuilder.cc
         BsdfComponent.cc
@@ -20,14 +23,23 @@ target_sources(${component}
         EvalAttribute.cc
         EvalShader.cc
         Geometry.cc
+        InstanceAttributes.cc
+        Interpolator.cc
+        Intersection.cc
+        Log.cc
         Material.cc
+        MipSelector.cc
         OpenVdbSampler.cc
         OpenVdbUtil.cc
         PbrValidity.cc
+        PrimitiveAttribute.cc
         RampControl.cc
+        ShadingTLState.cc
         ShadingUtil.cc
+        State.cc
         Texture.cc
         UdimTexture.cc
+        Xform.cc
         bsdf/Bsdf.cc
         bsdf/BsdfSlice.cc
         bsdf/BsdfTable.cc
@@ -63,6 +75,9 @@ target_sources(${component}
 
 set_property(TARGET ${component}
     PROPERTY PUBLIC_HEADER
+        AttributeKey.h
+        Attributes.h
+        AttributeTable.h
         BasicTexture.h
         BsdfBuilder.h
         BsdfComponent.h
@@ -70,16 +85,21 @@ set_property(TARGET ${component}
         Displacement.h
         EvalAttribute.h
         EvalShader.h
+        Log.h
         MaterialApi.h
         MapApi.h
         OpenVdbSampler.h
+        PrimitiveAttribute.h
         RampControl.h
         Shading.h
+        ShadingTLState.hh
         ShadingUtil.h
+        State.h
         ColorCorrect.h
         Iridescence.h
         UdimTexture.h
         Util.h
+        Xform.h
 )
 
 target_include_directories(${component}
@@ -91,10 +111,8 @@ target_include_directories(${component}
 
 target_link_libraries(${component}
     PUBLIC
-        ${PROJECT_NAME}::bvh_shading_ispc
         ${PROJECT_NAME}::common_file_resource
         ${PROJECT_NAME}::common_mcrt_util
-        ${PROJECT_NAME}::rendering_bvh_shading
         ${PROJECT_NAME}::shading_eval_ispc
         ${PROJECT_NAME}::shading_ispc
         ${PROJECT_NAME}::texturing_sampler

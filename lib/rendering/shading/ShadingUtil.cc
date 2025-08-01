@@ -8,8 +8,8 @@
 
 #include "ShadingUtil.h"
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
 #include <scene_rdl2/render/util/Arena.h>
 
 namespace moonray {

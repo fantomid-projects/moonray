@@ -5,8 +5,8 @@
 
 #include <moonray/rendering/geom/Primitive.h>
 
-#include <moonray/rendering/bvh/shading/InstanceAttributes.h>
-#include <moonray/rendering/bvh/shading/Intersection.h>
+#include <moonray/rendering/shading/InstanceAttributes.h>
+#include <moonray/rendering/shading/Intersection.h>
 #include <moonray/rendering/geom/prim/BVHUserData.h>
 #include <moonray/rendering/geom/prim/Instance.h>
 #include <moonray/rendering/geom/prim/Util.h>

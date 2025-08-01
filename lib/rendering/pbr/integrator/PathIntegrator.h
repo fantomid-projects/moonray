@@ -14,7 +14,7 @@
 #include "BsdfSampler.h"
 #include "LightSetSampler.h"
 #include <moonray/common/mcrt_macros/moonray_static_check.h>
-#include <moonray/rendering/bvh/shading/Intersection.h>
+#include <moonray/rendering/shading/Intersection.h>
 #include <moonray/rendering/geom/prim/Primitive.h>
 #include <moonray/rendering/pbr/sampler/IntegratorSample.h>
 #include <moonray/rendering/pbr/sampler/Sampler.h>

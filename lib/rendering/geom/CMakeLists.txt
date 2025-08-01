@@ -112,7 +112,6 @@ target_link_libraries(${component}
         OpenVDB::OpenVDB
         ${PROJECT_NAME}::common_file_resource
         ${PROJECT_NAME}::common_mcrt_util
-        ${PROJECT_NAME}::rendering_bvh_shading
         ${PROJECT_NAME}::rendering_mcrt_common
         ${PROJECT_NAME}::rendering_shading
         ${PROJECT_NAME}::shading_eval_ispc

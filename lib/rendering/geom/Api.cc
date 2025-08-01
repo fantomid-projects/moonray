@@ -11,8 +11,8 @@
 #include <moonray/rendering/geom/PrimitiveVisitor.h>
 #include <moonray/rendering/geom/ProceduralContext.h>
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/PrimitiveAttribute.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/PrimitiveAttribute.h>
 #include <scene_rdl2/render/util/stdmemory.h>
 #include <scene_rdl2/scene/rdl2/Geometry.h>
 #include <scene_rdl2/scene/rdl2/Layer.h>

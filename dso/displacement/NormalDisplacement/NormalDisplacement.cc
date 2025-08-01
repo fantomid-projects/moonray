@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 
-#include <moonray/rendering/bvh/shading/State.h>
+#include <moonray/rendering/shading/State.h>
 #include <moonray/rendering/shading/EvalAttribute.h>
 
 #include <scene_rdl2/scene/rdl2/rdl2.h>

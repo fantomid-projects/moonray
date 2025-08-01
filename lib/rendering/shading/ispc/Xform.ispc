@@ -3,7 +3,7 @@
 
 
 #include "Xform.isph"
-#include <moonray/rendering/bvh/shading/ispc/State.isph>
+#include <moonray/rendering/shading/ispc/State.isph>
 
 // Export enums and structs which will force the C++ definition 
 // of SHADER_XFORM_Constants into Xform_ispc_stubs.h - which we 

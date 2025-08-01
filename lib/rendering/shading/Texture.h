@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <moonray/rendering/bvh/shading/Intersection.h>
-#include <moonray/rendering/bvh/shading/State.h>
+#include <moonray/rendering/shading/Intersection.h>
+#include <moonray/rendering/shading/State.h>
 
 #ifdef __ARM_NEON__
 // This works around OIIO including x86 based headers due to detection of SSE

@@ -5,8 +5,8 @@
 
 #include <moonray/rendering/geom/prim/VolumeAssignmentTable.h>
 
-#include <moonray/rendering/bvh/shading/State.h>
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/State.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
 #include <scene_rdl2/scene/rdl2/VolumeShader.h>
 
 #include <openvdb/openvdb.h>

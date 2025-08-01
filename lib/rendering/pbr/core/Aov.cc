@@ -8,7 +8,7 @@
 #include "Aov.h"
 #include "PbrTLState.h"
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
+#include <moonray/rendering/shading/AttributeKey.h>
 #include <moonray/rendering/pbr/camera/Camera.h>
 #include <moonray/rendering/pbr/camera/ProjectiveCamera.h>
 #include <moonray/rendering/pbr/core/Aov_ispc_stubs.h>
@@ -19,7 +19,7 @@
 #include <moonray/rendering/shading/bsdf/Bsdfv.h>
 #include <moonray/rendering/shading/bssrdf/VolumeSubsurface.h>
 #include <moonray/rendering/shading/ispc/Shadingv.h>
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
 
 #include <scene_rdl2/scene/rdl2/Map.h>
 #include <scene_rdl2/scene/rdl2/UserData.h>

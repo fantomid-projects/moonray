@@ -13,9 +13,9 @@
 #include <moonray/rendering/geom/prim/GridSampler.h>
 #include <moonray/rendering/geom/prim/NamedPrimitive.h>
 
-#include <moonray/rendering/bvh/shading/Intersection.h>
-#include <moonray/rendering/bvh/shading/PrimitiveAttribute.h>
-#include <moonray/rendering/bvh/shading/State.h>
+#include <moonray/rendering/shading/Intersection.h>
+#include <moonray/rendering/shading/PrimitiveAttribute.h>
+#include <moonray/rendering/shading/State.h>
 #include <moonray/rendering/geom/MotionBlurParams.h>
 #include <moonray/rendering/mcrt_common/Ray.h>
 #include <moonray/rendering/mcrt_common/ThreadLocalState.h>

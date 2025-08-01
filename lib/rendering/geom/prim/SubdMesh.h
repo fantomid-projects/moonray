@@ -12,9 +12,9 @@
 
 #include <moonray/rendering/geom/prim/Mesh.h>
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/PrimitiveAttribute.h>
-#include <moonray/rendering/bvh/shading/Xform.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/PrimitiveAttribute.h>
+#include <moonray/rendering/shading/Xform.h>
 #include <moonray/rendering/geom/SubdivisionMesh.h>
 
 #include <scene_rdl2/render/logging/logging.h>

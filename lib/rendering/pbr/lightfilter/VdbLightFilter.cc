@@ -5,9 +5,9 @@
 #include "VdbLightFilter.h"
 
 #include <moonray/common/mcrt_macros/moonray_static_check.h>
-#include <moonray/rendering/bvh/shading/Intersection.h>
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
-#include <moonray/rendering/bvh/shading/State.h>
+#include <moonray/rendering/shading/Intersection.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/State.h>
 #include <moonray/rendering/pbr/core/Util.h>
 #include <moonray/rendering/pbr/lightfilter/VdbLightFilter_ispc_stubs.h>
 #include <moonray/rendering/shading/OpenVdbSampler.h>

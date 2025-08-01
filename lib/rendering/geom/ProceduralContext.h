@@ -14,7 +14,7 @@
 #include <moonray/rendering/geom/MotionBlurParams.h>
 #include <moonray/rendering/geom/Types.h>
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
+#include <moonray/rendering/shading/AttributeKey.h>
 #include <moonray/rendering/mcrt_common/Frustum.h>
 #include <scene_rdl2/scene/rdl2/Geometry.h>
 

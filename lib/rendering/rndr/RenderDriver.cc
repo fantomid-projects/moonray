@@ -14,7 +14,7 @@
 #include "RenderOutputHelper.h"
 #include "TileScheduler.h"
 #include <moonray/common/mcrt_macros/moonray_static_check.h>
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
 #include <moonray/rendering/geom/prim/GeomTLState.h>
 #include <moonray/rendering/geom/prim/Statistics.h>
 #include <moonray/rendering/mcrt_common/AffinityManager.h>

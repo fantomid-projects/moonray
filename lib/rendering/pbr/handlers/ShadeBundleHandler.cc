@@ -6,9 +6,9 @@
 #include <moonray/rendering/pbr/core/Aov.h>
 #include <moonray/rendering/pbr/core/Constants.h>
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/Intersection.h>
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/Intersection.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
 #include <moonray/rendering/geom/IntersectionInit.h>
 #include <moonray/rendering/mcrt_common/Clock.h>
 #include <moonray/rendering/mcrt_common/SOAUtil.h>

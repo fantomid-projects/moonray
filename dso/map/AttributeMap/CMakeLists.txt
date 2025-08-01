@@ -3,7 +3,6 @@
 
 moonray_ispc_dso(AttributeMap
     DEPENDENCIES
-        Moonray::rendering_bvh_shading
         Moonray::rendering_shading
         Moonray::shading_ispc
         Moonray::texturing_sampler

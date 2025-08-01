@@ -3,7 +3,7 @@
 
 #include <moonray/rendering/geom/prim/NamedPrimitive.h>
 
-#include <moonray/rendering/bvh/shading/RootShader.h>
+#include <moonray/rendering/shading/RootShader.h>
 #include <moonray/rendering/geom/prim/BVHUserData.h>
 #include <moonray/rendering/geom/prim/GeomTLState.h>
 #include <moonray/rendering/geom/prim/VdbVolume.h>

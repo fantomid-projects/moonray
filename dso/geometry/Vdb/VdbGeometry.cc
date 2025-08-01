@@ -11,7 +11,7 @@
 #include <moonray/rendering/geom/Api.h>
 #include <moonray/rendering/geom/Types.h>
 #include <moonray/rendering/geom/ProceduralLeaf.h>
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
+#include <moonray/rendering/shading/AttributeKey.h>
 #include <moonray/rendering/shading/Shading.h>
 
 #include <scene_rdl2/scene/rdl2/rdl2.h>

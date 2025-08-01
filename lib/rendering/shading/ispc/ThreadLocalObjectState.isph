@@ -6,8 +6,8 @@
 /// Provide an ISPC interface to per thread data - e.g. timing stats
 #pragma once
 
-#include <moonray/rendering/bvh/shading/ispc/ShadingTLState.isph>
-#include <moonray/rendering/bvh/shading/ispc/State.isph>
+#include <moonray/rendering/shading/ispc/ShadingTLState.isph>
+#include <moonray/rendering/shading/ispc/State.isph>
 #include <scene_rdl2/scene/rdl2/rdl2.isph>
 
 struct Displacement;

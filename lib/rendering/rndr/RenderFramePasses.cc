@@ -18,7 +18,7 @@
 
 #include <moonray/rendering/rndr/adaptive/ActivePixelMask.h>
 
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
 #include <moonray/rendering/mcrt_common/AffinityManager.h>
 #include <moonray/rendering/mcrt_common/Clock.h>
 #include <moonray/rendering/mcrt_common/ThreadLocalState.h>

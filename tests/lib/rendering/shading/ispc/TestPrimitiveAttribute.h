@@ -5,7 +5,7 @@
 #pragma once
 
 #include <moonray/rendering/shading/ispc/Shadingv.h>
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
 #include <cppunit/TestFixture.h>
 #include <cppunit/extensions/HelperMacros.h>
 

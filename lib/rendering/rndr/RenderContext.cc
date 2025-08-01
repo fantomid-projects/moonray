@@ -31,9 +31,9 @@
 #include <moonray/rendering/geom/Procedural.h>
 #include <moonray/rendering/geom/ProceduralLeaf.h>
 #include <moonray/rendering/geom/prim/GeomTLState.h>
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/Intersection.h>
-#include <moonray/rendering/bvh/shading/ThreadLocalObjectState.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/Intersection.h>
+#include <moonray/rendering/shading/ThreadLocalObjectState.h>
 #include <moonray/rendering/mcrt_common/AffinityManager.h>
 #include <moonray/rendering/mcrt_common/ThreadLocalState.h>
 #include <moonray/rendering/pbr/camera/Camera.h>

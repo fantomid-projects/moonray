@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
+#include <moonray/rendering/shading/AttributeKey.h>
 #include <scene_rdl2/common/fb_util/FbTypes.h>
 #include <scene_rdl2/common/fb_util/VariablePixelBuffer.h>
 #include <scene_rdl2/common/grid_util/Parser.h>

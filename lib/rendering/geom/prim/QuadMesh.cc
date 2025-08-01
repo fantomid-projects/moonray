@@ -10,10 +10,10 @@
 
 #include <moonray/rendering/geom/prim/MeshTessellationUtil.h>
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/Attributes.h>
-#include <moonray/rendering/bvh/shading/PrimitiveAttribute.h>
-#include <moonray/rendering/bvh/shading/RootShader.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/Attributes.h>
+#include <moonray/rendering/shading/PrimitiveAttribute.h>
+#include <moonray/rendering/shading/RootShader.h>
 #include <moonray/rendering/mcrt_common/ThreadLocalState.h>
 #include <scene_rdl2/common/math/MathUtil.h>
 #include <scene_rdl2/common/math/ReferenceFrame.h>

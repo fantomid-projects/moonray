@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include <moonray/rendering/bvh/shading/ispc/State.isph>
-#include <moonray/rendering/bvh/shading/ispc/ThreadLocalObjectState.isph>
+#include <moonray/rendering/shading/ispc/State.isph>
+#include <moonray/rendering/shading/ispc/ThreadLocalObjectState.isph>
 #include <moonray/rendering/mcrt_common/Util.isph>
 #include <scene_rdl2/common/platform/Platform.isph>
 #include <scene_rdl2/common/math/ispc/asA.isph>

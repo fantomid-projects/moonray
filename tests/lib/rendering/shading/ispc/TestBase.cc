@@ -9,7 +9,7 @@
 #include <moonray/rendering/shading/ispc/Shadingv.h>
 #include <moonray/rendering/shading/BsdfBuilder.h>
 
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
 
 #include <scene_rdl2/render/util/Memory.h>
 #include <scene_rdl2/scene/rdl2/rdl2.h>

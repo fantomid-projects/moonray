@@ -23,7 +23,7 @@
 #include <moonray/rendering/geom/SubdivisionMesh.h>
 #include <moonray/rendering/geom/VdbVolume.h>
 #include <moonray/rendering/geom/TransformedPrimitive.h>
-#include <moonray/rendering/bvh/shading/Xform.h>
+#include <moonray/rendering/shading/Xform.h>
 
 namespace scene_rdl2 {
 

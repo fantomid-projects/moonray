@@ -7,7 +7,7 @@
 
 #include "AmorphousVolume.h"
 
-#include <moonray/rendering/bvh/shading/State.h>
+#include <moonray/rendering/shading/State.h>
 
 #include <openvdb/openvdb.h>
 #include <openvdb/Grid.h>

@@ -7,7 +7,7 @@
 #include <moonray/rendering/pbr/Types.h>
 #include "RayState.hh"
 
-#include <moonray/rendering/bvh/shading/Intersection.h>
+#include <moonray/rendering/shading/Intersection.h>
 #include <moonray/rendering/mcrt_common/Ray.h>
 #include <moonray/rendering/pbr/core/PbrTLState.h>
 #include <moonray/rendering/shading/Types.h>

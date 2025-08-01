@@ -6,9 +6,9 @@
 #include "TestPrimUtils.h"
 
 #include <moonray/rendering/geom/prim/OpenSubdivMesh.h>
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/Attributes.h>
-#include <moonray/rendering/bvh/shading/InstanceAttributes.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/Attributes.h>
+#include <moonray/rendering/shading/InstanceAttributes.h>
 #include <scene_rdl2/common/math/Xform.h>
 #include <scene_rdl2/scene/rdl2/Geometry.h>
 #include <scene_rdl2/scene/rdl2/SceneContext.h>

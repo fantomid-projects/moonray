@@ -34,9 +34,9 @@
 #include <moonray/rendering/shading/ispc/Ior.isph>
 #include <moonray/rendering/shading/ispc/LobeAttenuator.isph>
 
-#include <moonray/rendering/bvh/shading/ispc/Intersection.isph>
-#include <moonray/rendering/bvh/shading/ispc/ShadingTLState.isph>
-#include <moonray/rendering/bvh/shading/ispc/State.isph>
+#include <moonray/rendering/shading/ispc/Intersection.isph>
+#include <moonray/rendering/shading/ispc/ShadingTLState.isph>
+#include <moonray/rendering/shading/ispc/State.isph>
 
 // this limit is tied to the maximum number of lobes
 // supported in Moonray. Keep in sync w/ scalar BsdfBuilder

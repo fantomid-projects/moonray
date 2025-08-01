@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/Intersection.h>
-#include <moonray/rendering/bvh/shading/Xform.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/Intersection.h>
+#include <moonray/rendering/shading/Xform.h>
 #include <moonray/rendering/geom/internal/InterleavedTraits.h>
 #include <moonray/rendering/geom/Types.h>
 #include <moonray/rendering/geom/VertexBuffer.h>

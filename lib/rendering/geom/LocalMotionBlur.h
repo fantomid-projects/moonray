@@ -5,8 +5,8 @@
 #ifndef LOCALMOTIONBLUR_H
 #define LOCALMOTIONBLUR_H
 
-#include <moonray/rendering/bvh/shading/PrimitiveAttribute.h>
-#include <moonray/rendering/bvh/shading/Xform.h>
+#include <moonray/rendering/shading/PrimitiveAttribute.h>
+#include <moonray/rendering/shading/Xform.h>
 #include <moonray/rendering/geom/Api.h>
 #include <moonray/rendering/geom/ProceduralContext.h>
 

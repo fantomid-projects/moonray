@@ -28,8 +28,8 @@
 
 #include <moonray/rendering/shading/ispc/EvalShader.isph>
 
-#include <moonray/rendering/bvh/shading/ispc/ShadingTLState.isph>
-#include <moonray/rendering/bvh/shading/ispc/State.isph>
+#include <moonray/rendering/shading/ispc/ShadingTLState.isph>
+#include <moonray/rendering/shading/ispc/State.isph>
 #include <scene_rdl2/common/math/ispc/Color.isph>
 #include <scene_rdl2/common/math/ispc/ReferenceFrame.isph>
 #include <scene_rdl2/common/math/ispc/Vec3.isph>

@@ -86,7 +86,6 @@ target_include_directories(${component}
 target_link_libraries(${component}
     PUBLIC
         ${PROJECT_NAME}::shading_ispc
-        ${PROJECT_NAME}::rendering_bvh_shading
         SceneRdl2::scene_rdl2
 )
 

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <moonray/rendering/bvh/shading/AttributeTable.h>
+#include <moonray/rendering/shading/AttributeTable.h>
 
 #include <scene_rdl2/scene/rdl2/RootShader.h>
 

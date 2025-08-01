@@ -11,7 +11,7 @@
 #include <moonray/rendering/geom/prim/Instance.h>
 #include <moonray/rendering/geom/prim/MotionTransform.h>
 #include <moonray/rendering/geom/prim/Util.h>
-#include <moonray/rendering/bvh/shading/Intersection.h>
+#include <moonray/rendering/shading/Intersection.h>
 #include <moonray/rendering/mcrt_common/ThreadLocalState.h>
 #include <scene_rdl2/common/math/Math.h>
 

@@ -11,9 +11,9 @@
 #include <moonray/rendering/geom/prim/MotionTransform.h>
 #include <moonray/rendering/geom/prim/Util.h>
 
-#include <moonray/rendering/bvh/shading/Attributes.h>
-#include <moonray/rendering/bvh/shading/AttributeTable.h>
-#include <moonray/rendering/bvh/shading/Interpolator.h>
+#include <moonray/rendering/shading/Attributes.h>
+#include <moonray/rendering/shading/AttributeTable.h>
+#include <moonray/rendering/shading/Interpolator.h>
 #include <moonray/rendering/mcrt_common/ThreadLocalState.h>
 #include <moonray/rendering/shading/Material.h>
 #include <scene_rdl2/common/math/ReferenceFrame.h>

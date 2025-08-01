@@ -3,7 +3,7 @@
 
 
 #include "Intersection.isph"
-#include <moonray/rendering/bvh/shading/ispc/AttributeTable.isph>
+#include <moonray/rendering/shading/ispc/AttributeTable.isph>
 
 inline uniform uint32_t
 intersectionCrc(uniform bool verbose)

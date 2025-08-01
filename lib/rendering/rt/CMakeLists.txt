@@ -126,7 +126,6 @@ target_include_directories(${component}
 target_link_libraries(${component}
     PUBLIC
         ${PROJECT_NAME}::common_mcrt_util
-        ${PROJECT_NAME}::rendering_bvh_shading
         ${PROJECT_NAME}::rendering_geom
         ${PROJECT_NAME}::rendering_mcrt_common
         ${PROJECT_NAME}::rendering_shading

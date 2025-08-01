@@ -13,7 +13,6 @@ target_sources(${target}
 
 target_link_libraries(${target}
     PRIVATE
-        Moonray::rendering_bvh_shading
         Moonray::rendering_geom
         Moonray::rendering_mcrt_common
         Moonray::rendering_pbr

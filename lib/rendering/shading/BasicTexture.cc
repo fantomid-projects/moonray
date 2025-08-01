@@ -8,9 +8,9 @@
 #include <moonray/rendering/shading/Texture.h>
 
 #include <moonray/common/mcrt_macros/moonray_static_check.h>
-#include <moonray/rendering/bvh/shading/Intersection.h>
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
-#include <moonray/rendering/bvh/shading/ThreadLocalObjectState.h>
+#include <moonray/rendering/shading/Intersection.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/ThreadLocalObjectState.h>
 #include <moonray/rendering/mcrt_common/ProfileAccumulatorHandles.h>
 #include <moonray/rendering/texturing/sampler/TextureSampler.h>
 

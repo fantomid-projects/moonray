@@ -15,7 +15,7 @@
 #include <moonray/rendering/geom/Procedural.h>
 #include <moonray/rendering/geom/SharedPrimitive.h>
 
-#include <moonray/rendering/bvh/shading/Xform.h>
+#include <moonray/rendering/shading/Xform.h>
 
 #include <tbb/concurrent_vector.h>
 

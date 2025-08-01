@@ -7,7 +7,7 @@
 // Include this before any other includes!
 #include <scene_rdl2/common/platform/Platform.isph>
 
-#include <moonray/rendering/bvh/shading/ShadingTLState.hh>
+#include <moonray/rendering/shading/ShadingTLState.hh>
 #include <moonray/rendering/mcrt_common/ThreadLocalState.hh>
 #include <moonray/rendering/texturing/sampler/TextureTLState.hh>
 

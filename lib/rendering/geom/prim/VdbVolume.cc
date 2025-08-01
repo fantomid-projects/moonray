@@ -10,9 +10,9 @@
 #include <moonray/rendering/geom/prim/VolumeSampleInfo.h>
 #include <moonray/rendering/geom/prim/VolumeTransition.h>
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/RootShader.h>
-#include <moonray/rendering/bvh/shading/State.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/RootShader.h>
+#include <moonray/rendering/shading/State.h>
 #include <scene_rdl2/render/logging/logging.h>
 #include <scene_rdl2/render/util/stdmemory.h>
 #include <scene_rdl2/scene/rdl2/VisibilityFlags.h>

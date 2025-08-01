@@ -14,11 +14,11 @@
 #include <moonray/rendering/geom/internal/InterleavedTraits.h> // must include first
 #include <moonray/rendering/geom/prim/BufferDesc.h>
 #include <moonray/rendering/geom/prim/NamedPrimitive.h>
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/Attributes.h>
-#include <moonray/rendering/bvh/shading/Interpolator.h>
-#include <moonray/rendering/bvh/shading/Intersection.h>
-#include <moonray/rendering/bvh/shading/Xform.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/Attributes.h>
+#include <moonray/rendering/shading/Interpolator.h>
+#include <moonray/rendering/shading/Intersection.h>
+#include <moonray/rendering/shading/Xform.h>
 #include <moonray/rendering/geom/PolygonMesh.h>
 #include <moonray/rendering/geom/VertexBuffer.h>
 #include <scene_rdl2/common/math/Math.h>

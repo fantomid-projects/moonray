@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
+#include <moonray/rendering/shading/AttributeKey.h>
 #include <scene_rdl2/render/util/Random.h>
 
 #include <random>

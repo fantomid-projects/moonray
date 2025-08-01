@@ -5,7 +5,7 @@
 #include "PbrTLState.h"
 #include <moonray/rendering/pbr/light/Light.h>
 
-#include <moonray/rendering/bvh/shading/Intersection.h>
+#include <moonray/rendering/shading/Intersection.h>
 #include <moonray/rendering/mcrt_common/Ray.h>
 
 #include <set>

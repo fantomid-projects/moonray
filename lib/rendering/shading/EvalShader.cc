@@ -17,10 +17,10 @@
 #include <moonray/rendering/shading/Material.h>
 
 #include <moonray/common/time/Ticker.h>
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/Intersection.h>
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
-#include <moonray/rendering/bvh/shading/ThreadLocalObjectState.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/Intersection.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/ThreadLocalObjectState.h>
 
 // Enable / disable shader call & timing statistics tracking
 #define SHADING_BRACKET_TIMING_ENABLED

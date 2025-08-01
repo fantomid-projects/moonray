@@ -7,9 +7,9 @@
 #include <moonray/rendering/pbr/core/Util.h>
 
 #include <moonray/common/mcrt_macros/moonray_static_check.h>
-#include <moonray/rendering/bvh/shading/Intersection.h>
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
-#include <moonray/rendering/bvh/shading/State.h>
+#include <moonray/rendering/shading/Intersection.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/State.h>
 #include <moonray/rendering/geom/prim/Mesh.h>
 #include <moonray/rendering/mcrt_common/SOAUtil.h>
 #include <moonray/rendering/mcrt_common/ProfileAccumulatorHandles.h>
@@ -23,7 +23,7 @@
 
 #ifdef SHADING_BRACKET_TIMING_ENABLED
 #include <moonray/common/time/Ticker.h>
-#include <moonray/rendering/bvh/shading/ThreadLocalObjectState.h>
+#include <moonray/rendering/shading/ThreadLocalObjectState.h>
 #endif
 
 using namespace scene_rdl2;

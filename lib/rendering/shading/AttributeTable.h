@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/ispc/AttributeTable.hh>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/ispc/AttributeTable.hh>
 
 namespace moonray {
 namespace shading {

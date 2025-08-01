@@ -10,7 +10,7 @@
 
 #include <moonray/rendering/shading/BsdfUtil.hh>
 
-#include <moonray/rendering/bvh/shading/State.h>
+#include <moonray/rendering/shading/State.h>
 #include <scene_rdl2/scene/rdl2/rdl2.h>
 #include <scene_rdl2/scene/rdl2/Material.h>
 #include <scene_rdl2/common/math/Math.h>

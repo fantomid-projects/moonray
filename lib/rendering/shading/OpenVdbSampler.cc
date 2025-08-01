@@ -7,7 +7,7 @@
 
 #include "OpenVdbSampler.h"
 
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
 #include <moonray/rendering/mcrt_common/ThreadLocalState.h>
 #include <scene_rdl2/render/util/stdmemory.h>
 

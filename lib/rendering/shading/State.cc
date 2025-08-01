@@ -7,7 +7,7 @@
 ///
 
 #include "State.h"
-#include <moonray/rendering/bvh/shading/Intersection.h>
+#include <moonray/rendering/shading/Intersection.h>
 
 using namespace scene_rdl2;
 

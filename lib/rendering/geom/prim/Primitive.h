@@ -17,7 +17,7 @@
 #include <moonray/rendering/geom/prim/GridSampler.h>
 #include <moonray/rendering/geom/prim/VDBVelocity.h>
 
-#include <moonray/rendering/bvh/shading/Intersection.h>
+#include <moonray/rendering/shading/Intersection.h>
 #include <moonray/rendering/mcrt_common/Ray.h>
 
 #include <scene_rdl2/common/platform/Platform.h>

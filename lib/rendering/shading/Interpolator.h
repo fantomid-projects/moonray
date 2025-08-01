@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/Attributes.h>
-#include <moonray/rendering/bvh/shading/PrimitiveAttribute.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/Attributes.h>
+#include <moonray/rendering/shading/PrimitiveAttribute.h>
 
 #include <array>
 

@@ -6,7 +6,7 @@
 
 #include <moonray/rendering/shading/ispc/Shading.isph>
 
-#include <moonray/rendering/bvh/shading/ispc/Xform.isph>
+#include <moonray/rendering/shading/ispc/Xform.isph>
 #include <scene_rdl2/common/math/ispc/Mat4.isph>
 #include <scene_rdl2/common/math/ispc/Xform.isph>
 #include <scene_rdl2/common/platform/IspcUtil.isph>

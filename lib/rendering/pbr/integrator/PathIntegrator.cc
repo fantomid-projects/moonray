@@ -30,9 +30,9 @@
 #include <moonray/rendering/mcrt_common/ThreadLocalState.h>
 #include <moonray/rendering/rt/rt.h>
 #include <moonray/rendering/rt/EmbreeAccelerator.h>
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/ShadingTLState.h>
-#include <moonray/rendering/bvh/shading/ThreadLocalObjectState.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/ShadingTLState.h>
+#include <moonray/rendering/shading/ThreadLocalObjectState.h>
 #include <moonray/rendering/shading/BsdfBuilder.h>
 #include <moonray/rendering/shading/Material.h>
 #include <moonray/rendering/shading/AovLabels.h>

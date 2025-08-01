@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
+#include <moonray/rendering/shading/AttributeKey.h>
 #include <scene_rdl2/scene/rdl2/Types.h>
 
 // API Overview

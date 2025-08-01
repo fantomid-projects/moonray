@@ -6,7 +6,7 @@
 
 #include <moonray/rendering/shading/EvalShader.h>
 
-#include <moonray/rendering/bvh/shading/Intersection.h>
+#include <moonray/rendering/shading/Intersection.h>
 #include <moonray/rendering/mcrt_common/ThreadLocalState.h>
 
 namespace moonray {

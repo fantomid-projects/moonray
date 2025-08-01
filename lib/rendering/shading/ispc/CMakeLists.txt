@@ -28,24 +28,41 @@ set_target_properties(shading_eval_ispc
 
 target_sources(shading_eval_ispc
     PRIVATE
+        AttributeTable.ispc
         BasicTexture.ispc
         EvalAttribute.ispc
+        Intersection.ispc
+        MipSelector.ispc
         OpenVdbUtil.ispc
         Shading.ispc
+        ShadingTLState.ispc
         UdimTexture.ispc
+        Xform.ispc
 )
 
 set_property(TARGET shading_eval_ispc
     PROPERTY PUBLIC_HEADER
         BasicTexture.isph
         EvalAttribute.isph
+        Intersection.hh
+        Intersection.isph
         Shading.isph
+        ShadingTLState.isph
+        State.isph
+        ThreadLocalObjectState.isph
         UdimTexture.isph
+        Xform.isph
+        ${CMAKE_CURRENT_BINARY_DIR}/AttributeTable_ispc_stubs.h
         ${CMAKE_CURRENT_BINARY_DIR}/BasicTexture_ispc_stubs.h
         ${CMAKE_CURRENT_BINARY_DIR}/EvalAttribute_ispc_stubs.h
+        ${CMAKE_CURRENT_BINARY_DIR}/Intersection_ispc_stubs.h
+        ${CMAKE_CURRENT_BINARY_DIR}/Intersection_ispc_stubs.h
+        ${CMAKE_CURRENT_BINARY_DIR}/MipSelector_ispc_stubs.h
         ${CMAKE_CURRENT_BINARY_DIR}/OpenVdbUtil_ispc_stubs.h
         ${CMAKE_CURRENT_BINARY_DIR}/Shading_ispc_stubs.h
+        ${CMAKE_CURRENT_BINARY_DIR}/ShadingTLState_ispc_stubs.h
         ${CMAKE_CURRENT_BINARY_DIR}/UdimTexture_ispc_stubs.h
+        ${CMAKE_CURRENT_BINARY_DIR}/Xform_ispc_stubs.h
 )
 
 file(RELATIVE_PATH relBinDir ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR})
@@ -70,7 +87,6 @@ target_include_directories(shading_eval_ispc
 
 target_link_libraries(shading_eval_ispc
     PUBLIC
-        ${PROJECT_NAME}::bvh_shading_ispc
         ${PROJECT_NAME}::texturing_sampler
         SceneRdl2::common_platform
         SceneRdl2::scene_rdl2

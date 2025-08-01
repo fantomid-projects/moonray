@@ -7,7 +7,7 @@
 ///
 #pragma once
 
-#include <moonray/rendering/bvh/shading/Xform.h>
+#include <moonray/rendering/shading/Xform.h>
 #include <moonray/rendering/geom/Primitive.h>
 #include <moonray/rendering/geom/Procedural.h>
 #include <moonray/rendering/geom/SharedPrimitive.h>

@@ -20,11 +20,11 @@
 #include <moonray/rendering/pbr/light/Light.h>
 #include <moonray/rendering/pbr/light/LightSet.h>
 
-#include <moonray/rendering/bvh/shading/State.h>
+#include <moonray/rendering/shading/State.h>
 #include <moonray/rendering/geom/IntersectionInit.h>
 #include <moonray/rendering/geom/prim/GeomTLState.h>
 #include <moonray/rendering/mcrt_common/Ray.h>
-#include <moonray/rendering/bvh/shading/Intersection.h>
+#include <moonray/rendering/shading/Intersection.h>
 #include <moonray/rendering/shading/bsdf/BsdfLambert.h>
 #include <moonray/rendering/shading/bsdf/BsdfSlice.h>
 #include <moonray/rendering/shading/bsdf/Fresnel.h>

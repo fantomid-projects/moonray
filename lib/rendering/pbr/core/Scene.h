@@ -15,7 +15,7 @@
 #include <moonray/rendering/pbr/light/LightSet.h>
 #include <moonray/rendering/rndr/RenderStatistics.h>
 
-#include <moonray/rendering/bvh/shading/Intersection.h>
+#include <moonray/rendering/shading/Intersection.h>
 #include <moonray/rendering/geom/prim/EmissiveRegion.h>
 
 #include <scene_rdl2/common/math/Mat4.h>

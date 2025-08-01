@@ -3,7 +3,7 @@
 
 /// @file MipSelector.ispc
 
-#include <moonray/rendering/bvh/shading/MipSelector.hh>
+#include <moonray/rendering/shading/MipSelector.hh>
 #include <scene_rdl2/common/math/ispc/Vec2.isph>
 
 inline varying float

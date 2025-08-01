@@ -11,8 +11,8 @@
 #include <moonray/rendering/geom/prim/Mesh.h>
 #include <moonray/rendering/geom/prim/PolyMesh.h>
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/AttributeTable.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/AttributeTable.h>
 #include <moonray/rendering/geom/Api.h>
 #include <moonray/rendering/geom/PolygonMesh.h>
 

@@ -8,9 +8,9 @@
 #include "GeomContext.h"
 
 #include <moonray/common/time/Ticker.h>
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/AttributeTable.h>
-#include <moonray/rendering/bvh/shading/RootShader.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/AttributeTable.h>
+#include <moonray/rendering/shading/RootShader.h>
 #include <moonray/rendering/geom/Api.h>
 #include <moonray/rendering/geom/BakedAttribute.h>
 #include <moonray/rendering/geom/MotionBlurParams.h>

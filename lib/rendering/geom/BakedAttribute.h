@@ -11,7 +11,7 @@
 #include <moonray/rendering/geom/Primitive.h>
 #include <moonray/rendering/geom/VertexBuffer.h>
 
-#include <moonray/rendering/bvh/shading/PrimitiveAttribute.h>
+#include <moonray/rendering/shading/PrimitiveAttribute.h>
 #include <moonray/rendering/geom/internal/InterleavedTraits.h>
 #include <moonray/rendering/shading/Shading.h>
 

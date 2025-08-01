@@ -360,6 +360,6 @@
 #include <moonray/rendering/shading/ispc/ShaderMacros.isph>
 #include <moonray/rendering/shading/ispc/ShaderDataAux.isph>
 
-#include <moonray/rendering/bvh/shading/ispc/State.isph>
-#include <moonray/rendering/bvh/shading/ispc/Xform.isph>
+#include <moonray/rendering/shading/ispc/State.isph>
+#include <moonray/rendering/shading/ispc/Xform.isph>
 

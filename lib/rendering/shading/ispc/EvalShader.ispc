@@ -8,7 +8,7 @@
 #include <moonray/rendering/shading/ispc/bsdf/Bsdf.isph>
 #include <moonray/rendering/shading/ispc/Closure.isph>
 
-#include <moonray/rendering/bvh/shading/ispc/State.isph>
+#include <moonray/rendering/shading/ispc/State.isph>
 #include <scene_rdl2/scene/rdl2/rdl2.isph>
 
 typedef void (*ShadePtr)(const uniform Material *          uniform material,

@@ -5,7 +5,7 @@
 
 #include "StereoView.h"
 
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
+#include <moonray/rendering/shading/AttributeKey.h>
 #include <moonray/rendering/mcrt_common/Frustum.h>
 #include <moonray/rendering/mcrt_common/Ray.h>
 

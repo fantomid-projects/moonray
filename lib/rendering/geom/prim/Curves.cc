@@ -11,13 +11,13 @@
 #include <moonray/rendering/geom/prim/GeomTLState.h>
 #include <moonray/rendering/geom/prim/MeshTessellationUtil.h>
 #include <moonray/rendering/geom/BakedAttribute.h>
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/Attributes.h>
-#include <moonray/rendering/bvh/shading/Intersection.h>
-#include <moonray/rendering/bvh/shading/AttributeTable.h>
-#include <moonray/rendering/bvh/shading/PrimitiveAttribute.h>
-#include <moonray/rendering/bvh/shading/State.h>
-#include <moonray/rendering/bvh/shading/Xform.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/Attributes.h>
+#include <moonray/rendering/shading/Intersection.h>
+#include <moonray/rendering/shading/AttributeTable.h>
+#include <moonray/rendering/shading/PrimitiveAttribute.h>
+#include <moonray/rendering/shading/State.h>
+#include <moonray/rendering/shading/Xform.h>
 #include <scene_rdl2/common/math/MathUtil.h>
 
 namespace moonray {

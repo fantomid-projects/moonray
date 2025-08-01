@@ -10,10 +10,10 @@
 #include <moonray/rendering/geom/prim/CubicSpline.h>
 #include <moonray/rendering/geom/prim/Curves.h>
 
-#include <moonray/rendering/bvh/shading/Attributes.h>
-#include <moonray/rendering/bvh/shading/AttributeKey.h>
-#include <moonray/rendering/bvh/shading/AttributeTable.h>
-#include <moonray/rendering/bvh/shading/Interpolator.h>
+#include <moonray/rendering/shading/Attributes.h>
+#include <moonray/rendering/shading/AttributeKey.h>
+#include <moonray/rendering/shading/AttributeTable.h>
+#include <moonray/rendering/shading/Interpolator.h>
 #include <moonray/rendering/geom/Api.h>
 
 namespace moonray {

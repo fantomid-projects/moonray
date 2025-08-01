@@ -8,7 +8,7 @@
 
 #include "EvalAttribute.h"
 
-#include <moonray/rendering/bvh/shading/ThreadLocalObjectState.h>
+#include <moonray/rendering/shading/ThreadLocalObjectState.h>
 #include <moonray/rendering/mcrt_common/Util.h>
 
 using namespace scene_rdl2;

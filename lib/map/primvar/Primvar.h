@@ -10,7 +10,7 @@
 #include <scene_rdl2/scene/rdl2/rdl2.h>
 
 #include <moonray/rendering/shading/MapApi.h>
-#include <moonray/rendering/bvh/shading/Xform.h>
+#include <moonray/rendering/shading/Xform.h>
 
 namespace moonshine  {
 namespace primvar  {
