@@ -36,7 +36,7 @@ Bssrdf::Bssrdf(const Vec3f &N, int32_t propertyFlags,
 }
 
 Bssrdf::Bssrdf(scene_rdl2::alloc::Arena *arena, const Bssrdfv &bssrdfv, int lane)
-  : mFresnel(nullptr), mLightSet(nullptr)
+  : mFresnel(nullptr)
 {
     if (bssrdfv.mFresnel && ((1 << lane) & bssrdfv.mFresnelMask)) {
         setTransmissionFresnel(createFresnel(arena, bssrdfv.mFresnel, lane));
@@ -52,6 +52,7 @@ Bssrdf::Bssrdf(scene_rdl2::alloc::Arena *arena, const Bssrdfv &bssrdfv, int lane
     mBssrdfTraceSet = (const scene_rdl2::rdl2::TraceSet *)bssrdfv.mBssrdfTraceSet;
     mMaterial = (const scene_rdl2::rdl2::Material*)bssrdfv.mMaterial;
     mEvalNormalFunc = (scene_rdl2::rdl2::EvalNormalFunc)bssrdfv.mEvalNormalFn;
+    mLightSet = (const scene_rdl2::rdl2::LightSet*)bssrdfv.mLightSet;
 }
 
 //----------------------------------------------------------------------------
