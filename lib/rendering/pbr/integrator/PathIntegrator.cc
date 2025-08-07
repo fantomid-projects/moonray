@@ -1098,8 +1098,12 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
 
     // At this point we have all the information about the current hard surface bounce, so we add a node for it
     // to capture the data we'll need for deferred rendering. Note that immediately below there's a call to
-    // computeRadianceBsdfMultiSampler(), which recursively adds the nodes for any subtrees
-    addNode(pbrTls, sp, pv, isect, *bsdf, slice, lobe, sequenceID, rayEpsilon, ray.getDirFootprint());
+    // computeRadianceBsdfMultiSampler(), which recursively adds the nodes for any subtrees.
+    // Vector and xpu modes don't make use of the nodes, but they can call here under some circumstances, so we
+    // supress node addition for all but scalar mode.
+    if (fs.mExecutionMode == mcrt_common::ExecutionMode::SCALAR) {
+        addNode(pbrTls, sp, pv, isect, *bsdf, slice, lobe, sequenceID, rayEpsilon, ray.getDirFootprint());
+    }
 
     //---------------------------------------------------------------------
     // Setup bsdf and light samples
