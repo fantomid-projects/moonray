@@ -27,7 +27,7 @@ shade(const uniform Material *      uniform  me,
     const uniform RaySwitchMaterial * uniform switchMtl = RaySwitchMaterial_get(me);
 
     // If this material is cutting out, terminate the ray
-    if (!isIndirect(state) && switchMtl->mCutoutCameraRays) {
+    if (isDirect(state) && switchMtl->mCutoutCameraRays) {
         BsdfBuilder_setEarlyTermination(bsdfBuilder);
         return;
     }

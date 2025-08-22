@@ -74,7 +74,7 @@ RaySwitchMaterial::shade(const scene_rdl2::rdl2::Material* self,
                          BsdfBuilder& bsdfBuilder)
 {
     // If this material is cutting out, terminate the ray
-    if (!state.isIndirect() && self->get(attrCutoutCameraRays)) {
+    if (state.isDirect() && self->get(attrCutoutCameraRays)) {
         bsdfBuilder.setEarlyTermination();
         return;
     }

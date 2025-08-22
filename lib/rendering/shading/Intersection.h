@@ -62,9 +62,6 @@ public:
         IndirectGlossy,     // At least one glossy or mirror bounce
         IndirectDiffuse,    // At least one diffuse or glossy or mirror bounce
 
-        // Light path not yet connected to the camera (bi-directional integrators)
-        LightPath,
-
         PathTypeCount
     };
 
@@ -582,8 +579,8 @@ public:
     /// What type of path leads to this intersection ?
     finline PathType getPathType() const    { return PathType((mFlags.getAll() & sPathTypeMask) >> sPathTypeOffset); }
 
-    /// Is this indirect shading ?
-    finline bool isIndirect() const      { return getPathType() != Primary; }
+    /// Is this direct shading ?
+    finline bool isDirect() const      { return getPathType() == Primary; }
 
     /// Get the minimum roughness to be used for roughness clamping. We always
     /// guarantee that minRoughness.x <= minRoughness.y
@@ -593,8 +590,7 @@ public:
     finline bool isHifi() const {
         const PathType pathType = getPathType();
         return (pathType == Intersection::PathType::Primary  ||
-                pathType == Intersection::PathType::IndirectMirror  ||
-                pathType == Intersection::PathType::LightPath);
+                pathType == Intersection::PathType::IndirectMirror);
     }
 
     /// Using 'wo' to create view-dependent effects in the shader is generally
@@ -746,7 +742,7 @@ finline std::ostream& operator<<(std::ostream& outs, const Intersection& i)
 }
 
 
-MNRY_STATIC_ASSERT(Intersection::PathTypeCount == 5);
+MNRY_STATIC_ASSERT(Intersection::PathTypeCount == 4);
 
 struct CACHE_ALIGN Intersectionv
 {

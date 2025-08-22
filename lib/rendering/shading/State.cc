@@ -39,7 +39,7 @@ bool State::isDisplacement()      const { return mIntersection->isDisplacement()
 bool State::isEntering()          const { return mIntersection->isEntering();          }
 bool State::isCausticPath()       const { return mIntersection->isCausticPath();       }
 bool State::isSubsurfaceAllowed() const { return mIntersection->isSubsurfaceAllowed(); }
-bool State::isIndirect()          const { return mIntersection->isIndirect();          }
+bool State::isDirect()            const { return mIntersection->isDirect();            }
 bool State::isHifi()              const { return mIntersection->isHifi();              }
 
 bool State::hasExplicitAttributes() const { return mIntersection->hasExplicitAttributes(); }

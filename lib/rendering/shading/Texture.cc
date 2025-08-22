@@ -32,9 +32,6 @@ getTextureOptionIndex(bool isDisplacement,
     case Intersection::IndirectMirror:
         return LinearMipClosestTexel;
 
-    case Intersection::LightPath:
-        return LinearMipClosestTexel;
-
     default:
         MNRY_ASSERT(0  &&  "Missing switch case");
         return 0;
@@ -60,9 +57,6 @@ getTextureOptionIndex(bool isDisplacement,
         return TrilinearAnisotropic;
 
     case Intersection::IndirectMirror:
-        return LinearMipClosestTexel;
-
-    case Intersection::LightPath:
         return LinearMipClosestTexel;
 
     default:

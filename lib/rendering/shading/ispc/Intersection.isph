@@ -53,9 +53,6 @@ enum PathType {
     PATH_TYPE_INDIRECT_GLOSSY,     // At least one glossy or mirror bounce
     PATH_TYPE_INDIRECT_DIFFUSE,    // At least one diffuse or glossy or mirror bounce
 
-    // Light path not yet connected to the camera (bi-directional integrators)
-    PATH_TYPE_LIGHT,
-
     PATH_TYPE_COUNT
 };
 
@@ -105,7 +102,7 @@ struct Intersection
     /* What type of path leads to this intersection? */                                                                                                       \
     inline varying PathType getPathType(const varying TypeName &me) { return (PathType)((Flags_getAll(me.mFlags) & sPathTypeMask) >> sPathTypeOffset); }      \
                                                                                                                                                               \
-    inline varying bool isIndirect(const varying TypeName &me)   { return (getPathType(me) != PATH_TYPE_PRIMARY); }                                           \
+    inline varying bool isDirect(const varying TypeName &me)   { return (getPathType(me) == PATH_TYPE_PRIMARY); }                                           \
                                                                                                                                                               \
     /* Get the minimum roughness to be used for roughness clamping. We always */                                                                              \
     /* guarantee that minRoughness.x <= minRoughness.y */                                                                                                     \
@@ -118,8 +115,7 @@ inline varying bool
 isHifi(varying PathType pathType)
 {
     return (pathType == PATH_TYPE_PRIMARY ||
-            pathType == PATH_TYPE_INDIRECT_MIRROR ||
-            pathType == PATH_TYPE_LIGHT);
+            pathType == PATH_TYPE_INDIRECT_MIRROR);
 }
 
 inline varying bool

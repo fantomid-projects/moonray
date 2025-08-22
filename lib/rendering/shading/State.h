@@ -79,7 +79,7 @@ public:
     bool isEntering()           const;
     bool isCausticPath()        const;
     bool isSubsurfaceAllowed()  const;
-    bool isIndirect()           const;
+    bool isDirect()             const;
     bool isHifi()               const;
 
     bool hasExplicitAttributes() const;
