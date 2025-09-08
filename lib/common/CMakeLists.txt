@@ -5,6 +5,7 @@ add_subdirectory(file_resource)
 add_subdirectory(geometry)
 add_subdirectory(mcrt_macros)
 add_subdirectory(mcrt_util)
+add_subdirectory(noise)
 add_subdirectory(time)
 # no longer used
 # add_subdirectory(rec_load)
