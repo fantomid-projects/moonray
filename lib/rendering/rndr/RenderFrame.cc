@@ -1,4 +1,4 @@
-// Copyright 2023-2024 DreamWorks Animation LLC
+// Copyright 2023-2025 DreamWorks Animation LLC
 // SPDX-License-Identifier: Apache-2.0
 
 //
@@ -304,6 +304,7 @@ RenderDriver::renderFrame(RenderDriver *driver, const FrameState &fs)
 
     if (fs.mSimulationMode) {
         fs.mRenderContext->getPathVisualizerManager()->stopSimulation();
+        fs.mRenderContext->restoreCachedCameraXform();
     }
 
     // Reset all TLS objects.

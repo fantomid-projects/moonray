@@ -1,4 +1,4 @@
-// Copyright 2023-2024 DreamWorks Animation LLC
+// Copyright 2023-2025 DreamWorks Animation LLC
 // SPDX-License-Identifier: Apache-2.0
 
 ///
@@ -1027,24 +1027,14 @@ Scene::pickVisibleLights(const mcrt_common::Ray &ray, float maxDistance, std::ve
     }
 }
 
-void Scene::recordOcclusionRay(const mcrt_common::Ray& ray, int pixel, int spIndex, bool isLightSample, bool isOccluded) const
+void Scene::recordOcclusionRay(const mcrt_common::Ray& ray, uint32_t pixel, bool isLightSample, bool isOccluded) const
 {
-    mPathVisualizer->recordOcclusionRay(ray, *this, pixel, spIndex, isLightSample, isOccluded);
+    mPathVisualizer->recordOcclusionRay(ray, *this, pixel, isLightSample, isOccluded);
 }
 
-void Scene::recordRegularRay(const mcrt_common::Ray& ray, int pixel, int spIndex, int lobeType) const 
+void Scene::recordRegularRay(const mcrt_common::Ray& ray, uint32_t pixel, int lobeType) const
 {
-    mPathVisualizer->recordRegularRay(ray, *this, pixel, spIndex, lobeType);
-}
-
-void Scene::setLightSamples(int& samples) const
-{
-    mPathVisualizer->setLightSamples(samples);
-}
-
-void Scene::setBsdfSamples(int& samples) const
-{
-    mPathVisualizer->setBsdfSamples(samples);
+    mPathVisualizer->recordRegularRay(ray, *this, pixel, lobeType);
 }
 
 std::ostream& Scene::print(std::ostream& cout,

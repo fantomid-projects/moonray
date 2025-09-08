@@ -1,4 +1,4 @@
-// Copyright 2023-2024 DreamWorks Animation LLC
+// Copyright 2023-2025 DreamWorks Animation LLC
 // SPDX-License-Identifier: Apache-2.0
 
 ///
@@ -314,12 +314,9 @@ public:
     }
 
     // Record an occlusion ray for the path visualizer
-    void recordOcclusionRay(const mcrt_common::Ray& ray, int pixel, int spIndex, bool isLightSample, bool isOccluded) const;
+    void recordOcclusionRay(const mcrt_common::Ray& ray, uint32_t pixel, bool isLightSample, bool isOccluded) const;
     // Record a regular ray for the path visualizer
-    void recordRegularRay(const mcrt_common::Ray& ray, int pixel, int spIndex, int lobeType) const;
-    // Given an input 'samples', sets it to the appropriate number based on user selections in the path visualizer gui
-    void setLightSamples(int& samples) const;
-    void setBsdfSamples(int& samples) const;
+    void recordRegularRay(const mcrt_common::Ray& ray, uint32_t pixel, int lobeType) const;
 
 private:
     /// Copy is disabled

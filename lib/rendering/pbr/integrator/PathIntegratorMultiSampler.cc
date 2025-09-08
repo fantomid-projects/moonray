@@ -1,4 +1,4 @@
-// Copyright 2023-2024 DreamWorks Animation LLC
+// Copyright 2023-2025 DreamWorks Animation LLC
 // SPDX-License-Identifier: Apache-2.0
 
 /// @file PathIntegratorMultiSampler.cc
@@ -130,7 +130,7 @@ PathIntegrator::addDirectVisibleBsdfLobeSampleContribution(pbr::TLState *pbrTls,
     /// Record ray for our path visualizer
     if (fs.mSimulationMode) {
         mcrt_common::Ray debugRay(parentRay.getOrigin(), bsmp.wi, 0.f, tfar, 0.f, rayDepth);
-        fs.mScene->recordOcclusionRay(debugRay, sp.mPixel, sp.mSubpixelIndex, /* isLightSample */ false, isOccluded);
+        fs.mScene->recordOcclusionRay(debugRay, sp.mPixel, /* isLightSample */ false, isOccluded);
     }
 }
 
@@ -328,7 +328,7 @@ PathIntegrator::addDirectVisibleLightSampleContributions(pbr::TLState* pbrTls, S
         /// Record ray for our path visualizer
         if (fs.mSimulationMode) {
             mcrt_common::Ray debugRay(P, lsmp[i].wi, 0.f, tfar, 0.f, rayDepth);
-            fs.mScene->recordOcclusionRay(debugRay, sp.mPixel, sp.mSubpixelIndex, /* isLightSample */ true, isOccluded);
+            fs.mScene->recordOcclusionRay(debugRay, sp.mPixel, /* isLightSample */ true, isOccluded);
         }
     }
 }
@@ -682,9 +682,6 @@ PathIntegrator::computeRadianceBsdfMultiSampler(pbr::TLState *pbrTls,
     // We only want to split on the first scattering event seen from the
     // camera (either directly, either through one or many mirror bounces)
     int bsdfMaxSamples = mBsdfSamples;
-    if (pbrTls->mFs->mSimulationMode) {
-        pbrTls->mFs->mScene->setBsdfSamples(bsdfMaxSamples);
-    }
     const int maxSamplesPerLobe = (pv.nonMirrorDepth == 0  ?  bsdfMaxSamples  :
             scene_rdl2::math::min(bsdfMaxSamples, 1));
 
@@ -699,9 +696,6 @@ PathIntegrator::computeRadianceBsdfMultiSampler(pbr::TLState *pbrTls,
     // sample budget per light.
     // We use the same splitting strategy as for lobes above.
     int lightSampleCount = mLightSamples;
-    if (pbrTls->mFs->mSimulationMode) {
-        pbrTls->mFs->mScene->setLightSamples(lightSampleCount);
-    }
     const int maxSamplesPerLight = (pv.nonMirrorDepth == 0  ?  lightSampleCount  :
             scene_rdl2::math::min(lightSampleCount, 1));
     LightSetSampler lSampler(arena, activeLightSet, bsdf, isect.getP(), maxSamplesPerLight);

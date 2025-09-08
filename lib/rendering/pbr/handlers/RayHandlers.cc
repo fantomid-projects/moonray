@@ -1,4 +1,4 @@
-// Copyright 2023-2024 DreamWorks Animation LLC
+// Copyright 2023-2025 DreamWorks Animation LLC
 // SPDX-License-Identifier: Apache-2.0
 
 //
@@ -88,8 +88,7 @@ areSingleRaysOccluded(pbr::TLState *pbrTls, unsigned numEntries, BundledOcclRay 
         rtRay.tfar = occlRay.mMaxT;
         rtRay.setDepth(occlRay.mDepth);
         if (fs.mSimulationMode) {
-            fs.mScene->recordOcclusionRay(rtRay, occlRay.mPixel, occlRay.mSubpixelIndex, 
-                                          /* isLightSample */ true, isOccluded);
+            fs.mScene->recordOcclusionRay(rtRay, occlRay.mPixel, /* isLightSample */ true, isOccluded);
         }
 
         if (!isOccluded || disableShadowing) {
@@ -440,7 +439,7 @@ rayBundleHandler(mcrt_common::ThreadLocalState *tls, unsigned numEntries,
             // ---- Record ray for our path visualizer ----------------------------------------------
             const Subpixel& sp = rayStates[i]->mSubpixel;
             if (fs.mSimulationMode) {
-                fs.mScene->recordRegularRay(ray, sp.mPixel, sp.mSubpixelIndex, pv.lobeType);
+                fs.mScene->recordRegularRay(ray, sp.mPixel, pv.lobeType);
             }
             // --------------------------------------------------------------------------------------
 

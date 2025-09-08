@@ -1,7 +1,5 @@
-// Copyright 2023-2024 DreamWorks Animation LLC
+// Copyright 2023-2025 DreamWorks Animation LLC
 // SPDX-License-Identifier: Apache-2.0
-
-
 #include <scene_rdl2/render/util/AtomicFloat.h> // Needs to be included before any OpenImageIO file
 #include <moonray/rendering/pbr/core/Scene.h>
 
@@ -725,7 +723,7 @@ RenderContext::invalidateTextureResources(const std::vector<std::string>& resour
 }
 
 RenderContext::RP_RESULT
-RenderContext::startFrame(bool debugMode)
+RenderContext::startFrame(const bool simulationMode)
 {
     mRenderPrepRun = true;
 
@@ -844,7 +842,7 @@ RenderContext::startFrame(bool debugMode)
     // Make sure everything is ready to render.
     scene_rdl2::rec_time::RecTime recTime;
     recTime.start();
-    RP_RESULT execResult = renderPrep(allowUnsupportedXPUFeatures); // may throw
+    RP_RESULT execResult = renderPrep(allowUnsupportedXPUFeatures, simulationMode); // may throw
     mDriver->pushRenderPrepTime(recTime.end()); // statistical info update for debug
 
 #if defined(USE_PARTITIONED_PIXEL) || defined(USE_PARTITIONED_LENS) || defined(USE_PARTITIONED_TIME)
@@ -939,7 +937,7 @@ RenderContext::startFrame(bool debugMode)
     // Don't spam the logs if in real-time mode.
     // mTotalRenderPrepTime was set inside of the prep function call
     if (getRenderMode() != RenderMode::REALTIME) {
-        if (mLogTime) { // only print this if previous pass printing timing
+        if (mLogTime && !simulationMode) { // only print this if previous pass printing timing
             mRenderStats->logInfoEmptyLine();
             mRenderStats->updateAndLogRenderPrepStats();
         }
@@ -950,7 +948,7 @@ RenderContext::startFrame(bool debugMode)
 
     // Condition scene variables and other state for this frame.
     FrameState frameState;
-    buildFrameState(&frameState, frameStartTime, debugMode);
+    buildFrameState(&frameState, frameStartTime, simulationMode);
 
     // Record some info for resume history from frameState
     mResumeHistoryMetaData->setNumOfThreads(frameState.mNumRenderThreads);
@@ -1036,10 +1034,12 @@ RenderContext::startFrame(bool debugMode)
         mRenderStats->startRenderStats();
     }
 
-    if (debugMode) {
+    if (simulationMode) {
         // Set the frameState's max pixel samples to the user-specified max for the visualizer
-        mPathVisualizerManager->fillPixelSamples(frameState.mMaxSamplesPerPixel);
-        frameState.mMinSamplesPerPixel = frameState.mMaxSamplesPerPixel;
+        int pixelSamples = frameState.mMinSamplesPerPixel;
+        mPathVisualizerManager->fillPixelSamples(pixelSamples);
+        frameState.mMaxSamplesPerPixel = pixelSamples;
+        frameState.mMinSamplesPerPixel = pixelSamples;
     }
 
     // Initialize the PathVisualizerManager, which will
@@ -1076,7 +1076,7 @@ RenderContext::requestStopAtFrameReadyForDisplay()
 }
 
 void
-RenderContext::stopFrame()
+RenderContext::stopFrame(const bool simulationMode)
 {
     mRenderPrepTimingStats->recTimeStart();
 
@@ -1118,7 +1118,9 @@ RenderContext::stopFrame()
     }
 
     // Any errors that occurred during shading will be reported at this time
-    reportShadingLogs();
+    if (!simulationMode) {
+        reportShadingLogs();
+    }
 
     mRenderPrepTimingStats->recTime(RenderPrepTimingStats::StopFrameTag::REPORTSHADINGLOGS);
 
@@ -1129,7 +1131,7 @@ RenderContext::stopFrame()
     // looking at the result, and then deciding to move the camera again.
     // The decision for this pass is remembered in mLogTime for next pass to stop
     // it from printing renderprep timing.
-    if (getRenderMode() != RenderMode::REALTIME) {
+    if (getRenderMode() != RenderMode::REALTIME && !simulationMode) {
         if (isFrameComplete() || mPbrStatistics->mMcrtTime >= 10.0) {
             mLogTime = true;
             mRenderStats->logInfoEmptyLine();
@@ -1838,7 +1840,7 @@ RenderContext::getNumConsistentSamples() const
 }
 
 RenderContext::RP_RESULT
-RenderContext::renderPrep(bool allowUnsupportedXPUFeatures)
+RenderContext::renderPrep(bool allowUnsupportedXPUFeatures, const bool simulationMode)
 {
     if (mRenderPrepExecTracker.startRenderPrep() == RenderPrepExecTracker::RESULT::CANCELED) {
         return RP_RESULT::CANCELED;
@@ -1869,6 +1871,17 @@ RenderContext::renderPrep(bool allowUnsupportedXPUFeatures)
 
     bool loadAllGeometries = false;
 
+    mSceneUpdated |= mPathVisualizerManager->getCameraXformWasCached();
+    mPathVisualizerManager->setCameraXformWasCached(false);
+
+    if (simulationMode) {
+        // If we're in simulation mode, we should always use the initial camera transform
+        // to generate the ray data. This function caches the current camera xform and restores the 
+        // original camera xform. Once the simulation is done, it sets the cached camera xform
+        // and a flag to indicate that the scene was updated.
+        resetCameraXform();
+    }
+
     if (mFirstFrame) {
         mRenderStats->logString(
             "---------- Render Prep -----------------------------------");
@@ -1877,7 +1890,10 @@ RenderContext::renderPrep(bool allowUnsupportedXPUFeatures)
             return RP_RESULT::CANCELED;
         }
         resetShaderStatsAndLogs();  // initialize EventLog to allocate memory for messages
-        
+
+        // Save the initial camera xform so we can restore it, if needed
+        mPathVisualizerManager->setInitialCameraXform(mCamera->get(scene_rdl2::rdl2::Node::sNodeXformKey));
+
         // Call update() on all SceneObjects
         mSceneContext->applyUpdates(mLayer);
         // Add MeshLight geometry to a MeshLightLayer and assign each geometry a material, 
@@ -2174,6 +2190,14 @@ RenderContext::updatePbrState(const FrameState &fs)
         static_cast<int>(pbr::VolumeOverlapMode::NUM_MODES));
     integratorParams.mIntegratorVolumeOverlapMode =
         static_cast<pbr::VolumeOverlapMode>(vars.get(scene_rdl2::rdl2::SceneVariables::sVolumeOverlapMode));
+
+    // If simulation mode is on, use the path visualizer's settings
+    if (fs.mSimulationMode) {
+        mPathVisualizerManager->fillPixelSamples(integratorParams.mIntegratorPixelSamplesSqrt);
+        mPathVisualizerManager->fillLightSamples(integratorParams.mIntegratorLightSamplesSqrt);
+        mPathVisualizerManager->fillBsdfSamples(integratorParams.mIntegratorBsdfSamplesSqrt);
+        mPathVisualizerManager->fillMaxDepth(integratorParams.mIntegratorMaxDepth);
+    }
 
     mIntegrator->update(fs, integratorParams);
 }
@@ -2854,7 +2878,7 @@ namespace {
 } // anonymous namespace
 
 void
-RenderContext::buildFrameState(FrameState *fs, double frameStartTime, bool debugMode) const
+RenderContext::buildFrameState(FrameState *fs, double frameStartTime, const bool simulationMode) const
 {
     // cppcheck-suppress memsetClassFloat // floating point memset to 0 is fine
     memset(fs, 0, sizeof(FrameState));
@@ -2866,6 +2890,11 @@ RenderContext::buildFrameState(FrameState *fs, double frameStartTime, bool debug
 
     SamplingMode samplingMode = (SamplingMode)vars.get(scene_rdl2::rdl2::SceneVariables::sSamplingMode);
     validateSamplingMode(samplingMode);
+
+    // If in simulation mode, we want to use uniform sampling
+    if (simulationMode) {
+        samplingMode = SamplingMode::UNIFORM;
+    }
 
     // Adaptive sampling mode takes priority over pixel samples maps if both are active.
     // This means to use the pixel sample maps functionality, adaptive sampling must be
@@ -3010,7 +3039,7 @@ RenderContext::buildFrameState(FrameState *fs, double frameStartTime, bool debug
 
     // Clamp viewport to rezed dimensions to ensure it's inside of our
     // allocated buffers.
-    if (debugMode) {
+    if (simulationMode) {
         fs->mSimulationMode = true;
         fs->mViewport = scene_rdl2::math::convertToClosedViewport(getRezedSubViewportDebug());
     } else {
@@ -3427,7 +3456,7 @@ RenderContext::parserConfigure()
     mParser.description("RenderContext command");
 
     mParser.opt("startRender", "", "calls RenderContext::setForceCallStartFrame(true) : for moonray_gui",
-                [&](Arg &arg) -> bool {
+                [&](Arg &arg) {
                     if (!isFrameRendering()) {
                         setForceCallStartFrame();
                         return arg.msg("setForceCallStartFrame(true)\n");
@@ -3436,7 +3465,7 @@ RenderContext::parserConfigure()
                     }
                 });
     mParser.opt("stopRender", "", "calls RenderContext::stopFrame()",
-                [&](Arg &arg) -> bool {
+                [&](Arg &arg) {
                     if (isFrameRendering()) {
                         stopFrame();
                         return arg.msg("stopFrame() done\n");
@@ -3445,44 +3474,40 @@ RenderContext::parserConfigure()
                     }
                 });
     mParser.opt("renderContextAddr", "", "show renderContext address",
-                [&](Arg &arg) -> bool {
+                [&](Arg &arg) {
                     std::ostringstream ostr;
                     ostr << "renderContext:0x" << std::hex << (uintptr_t)this;
                     return arg.msg(ostr.str() + '\n');
                 });
     mParser.opt("renderPrepExecTracker", "...command...", "renderPrepExecTracker command",
-                [&](Arg &arg) -> bool {
-                    return mRenderPrepExecTracker.getParser().main(arg.childArg());
-                });
+                [&](Arg &arg) { return mRenderPrepExecTracker.getParser().main(arg.childArg()); });
     mParser.opt("geometryManagerExecTracker", "...command...", "geometryManagerExecTracker command",
-                [&](Arg &arg) -> bool {
-                    return mGeometryManager->getGeometryManagerExecTracker().getParser().main(arg.childArg());
-                });
+                [&](Arg &arg) { return mGeometryManager->getGeometryManagerExecTracker().getParser().main(arg.childArg()); });
     mParser.opt("renderOutputDriver", "...command...", "renderOutputDriver command",
-                [&](Arg& arg) -> bool {
+                [&](Arg& arg) {
                     if (!mRenderOutputDriver) { return arg.msg("RenderOutputDriver is empty\n"); }
                     return mRenderOutputDriver->getParser().main(arg.childArg());
                 });
     mParser.opt("renderDriver", "...command...", "renderDriver command",
-                [&](Arg& arg) -> bool {
+                [&](Arg& arg) {
                     if (!mDriver) { return arg.msg("RenderDriver is empty\n"); }
                     return mDriver->getParser().main(arg.childArg());
                 });
     mParser.opt("renderOptions", "...command...", "renderOptions command",
-                [&](Arg& arg) -> bool { return mOptions.getParser().main(arg.childArg()); });
+                [&](Arg& arg) { return mOptions.getParser().main(arg.childArg()); });
     mParser.opt("textureSampler", "...command...", "textureSampler command",
-                [&](Arg &arg) -> bool {
-                    return moonray::texture::getTextureSampler()->getParser().main(arg.childArg());
-                });
+                [&](Arg &arg) { return moonray::texture::getTextureSampler()->getParser().main(arg.childArg()); });
     mParser.opt("textureCacheSize", "<MB>", "set texture_cache_size scene_variable. <MB> is unsigned int",
-                [&](Arg& arg) -> bool {
+                [&](Arg& arg) {
                     setSceneVarTextureCacheSize((arg++).as<unsigned int>(0));
                     return arg.msg(getSceneVarTextureCacheSize() + '\n');
                 });
+    mParser.opt("pathVisMgr", "...command...", "path visualizer manager command",
+                [&](Arg& arg) { return mPathVisualizerManager->getParser().main(arg.childArg()); });
     mParser.opt("saveScene", "<filename>", "save scene",
-                [&](Arg& arg) -> bool { return saveSceneCommand(arg); });
+                [&](Arg& arg) { return saveSceneCommand(arg); });
     mParser.opt("showExecMode", "", "show rendering execMode and the reason why",
-                [&](Arg& arg) -> bool { return arg.msg(showExecModeAndReason() + '\n'); });
+                [&](Arg& arg) { return arg.msg(showExecModeAndReason() + '\n'); });
     mParser.opt("showNumThread", "", "show number of thread info",
                 [&](Arg& arg) { return arg.fmtMsg("numTBBThread:%d\n", mcrt_common::getNumTBBThreads()); });
 }
@@ -3559,20 +3584,58 @@ RenderContext::showExecModeAndReason() const
     return ostr.str();
 }
 
-bool RenderContext::runSimulation()
+/// TODO: 
+/// Every time the navigation camera is changed and we want to run the path visualizer simulation, we have to:
+///     1. Cache the navigation camera's xform
+///     2. Reset the camera to the initial camera xform
+///     3. Run the simulation
+///     4. Restore the cached camera xform
+/// In order to process the new camera xform, we have to then restart the full render due to this loadGeometries step. 
+/// This means that, even if the full render has completed, we have to restart the render again. 
+/// Ideally, if the render has completed, and we change a path visualizer parameter, we can just run the simulation, 
+/// without restarting the full render.
+/// One way to do that would be to further explore this forceCameraUpdate() function,
+/// which would only perform the loadGeometries step, without forcing us to call startFrame. 
+/// However, this requires more exploration, as it isn't quite robust enough yet to use.
+void
+RenderContext::forceCameraUpdate()
 {
-    if (mPathVisualizerManager->isInRecordState()) {
-        if (isFrameRendering()) {
-            stopFrame();
-        }
-        // Reset the PathVisualizer
-        mPathVisualizerManager->reset();
+    const std::vector<const scene_rdl2::rdl2::Camera *> activeCameras = mSceneContext->getActiveCameras();
+    initActiveCamera(activeCameras[0]);
+    mPbrScene->updateActiveCamera(mCamera);
 
-        // Restart rendering in debug mode
-        startFrame(true);
-        return true;
-    }
-    return false;
+    // Have to load geometries since it's dependent on the camera
+    RP_RESULT execResult = RP_RESULT::FINISHED;
+    execResult = loadGeometries(rt::ChangeFlag::ALL);
+}
+
+void
+RenderContext::resetCameraXform()
+{
+    // Cache current camera xform
+    mPathVisualizerManager->setCachedCameraXform(mCamera->get(scene_rdl2::rdl2::Node::sNodeXformKey));
+
+    scene_rdl2::rdl2::Camera* camera = const_cast<scene_rdl2::rdl2::Camera*>(mCamera);
+    MNRY_ASSERT(camera);
+
+    // We then add the offset to the given camera xform to set the corresponding
+    // motion transform
+    camera->beginUpdate();
+    camera->set(scene_rdl2::rdl2::Node::sNodeXformKey, mPathVisualizerManager->getInitialCameraXform());
+    camera->endUpdate();
+    mSceneUpdated = true;
+}
+
+void
+RenderContext::restoreCachedCameraXform()
+{
+    scene_rdl2::rdl2::Camera* camera = const_cast<scene_rdl2::rdl2::Camera*>(mCamera);
+    MNRY_ASSERT(camera);
+
+    // Reset camera back to the interactive xform
+    camera->beginUpdate();
+    camera->set(scene_rdl2::rdl2::Node::sNodeXformKey, mPathVisualizerManager->getCachedCameraXform());
+    camera->endUpdate();
 }
 
 } // namespace rndr

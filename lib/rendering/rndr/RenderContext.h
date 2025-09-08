@@ -1,4 +1,4 @@
-// Copyright 2023-2024 DreamWorks Animation LLC
+// Copyright 2023-2025 DreamWorks Animation LLC
 // SPDX-License-Identifier: Apache-2.0
 
 
@@ -170,8 +170,11 @@ public:
      * Starts rendering a frame based on the current state of the scene data.
      * Once rendering begins, no changes to the scene can be made until it is
      * stopped.
+     *
+     * If run in simulationMode, that means that we are running a simplified, 
+     * single-pixel render to gather info for the path visualizer.
      */
-    RP_RESULT startFrame(bool debugMode = false);
+    RP_RESULT startFrame(const bool simulationMode = false);
 
     void invalidateAllTextureResources();
     void invalidateTextureResources(const std::vector<std::string>& resources);
@@ -198,7 +201,7 @@ public:
      * Stops rendering. Blocks until all the rendering threads are parked. The
      * rendered frame can be retrieved using snapshotRenderBuffer().
      */
-    void stopFrame();
+    void stopFrame(const bool simulationMode = false);
 
     double getLastFrameMcrtStartTime() const;
 
@@ -562,12 +565,19 @@ public:
 
     std::string getOiioStats(int level) const; // level=1~5
 
-    bool runSimulation();
+    void resetCameraXform();
+    void restoreCachedCameraXform();
+
+    /// Sync the camera with rdl2 xform info,
+    /// which involves re-calculating the frustums and 
+    /// re-loading the geometries. Intended for use with the
+    /// interactive PathVisualizer.
+    void forceCameraUpdate();
 
 private:
     // Does any pre-render work, like building the spatial accelerator or
-    // initializing any necessary libraries. Called in startFrame()
-    RP_RESULT renderPrep(bool allowUnsupportedXPUFeatures);
+    // initializing any necessary libraries. Called in startFrame().
+    RP_RESULT renderPrep(bool allowUnsupportedXPUFeatures, const bool simulationMode);
 
     // Helper function which loads the scene into the SceneContext.
     void loadScene(std::stringstream &initMessages);
@@ -595,7 +605,10 @@ private:
 
     // Helper function for conditioning scene variables and other state into a
     // constant, fast to access structure for use within renderer inner loops.
-    void buildFrameState(FrameState *fs, double frameStartTime, bool debugMode = false) const;
+    // If run in simulationMode, that means that we are running a single-pixel render
+    // to gather info for the path visualizer, so we shrink the viewport to only the
+    // pathVisualizer's input pixel.
+    void buildFrameState(FrameState *fs, double frameStartTime, const bool simulationMode = false) const;
 
     // Called each frame in startFrame to update the internal state of the integrator.
     void updatePbrState(const FrameState &fs);

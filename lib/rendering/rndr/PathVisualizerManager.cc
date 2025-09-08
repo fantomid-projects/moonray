@@ -14,10 +14,18 @@ namespace moonray {
 namespace rndr {
 
 PathVisualizerManager::PathVisualizerManager(RenderContext* renderContext) 
-    : mPathVisualizer(), mScene(nullptr), mRenderContext(renderContext)
+    : mPathVisualizer(), 
+      mScene(nullptr), 
+      mRenderContext(renderContext), 
+      mOn(false),
+      mInitialCameraXform(), 
+      mCachedCameraXform(), 
+      mCameraXformWasCached(false)
 {
     mParams = std::make_unique<pbr::PathVisualizerParams>();
     mPathVisualizer = std::make_unique<pbr::PathVisualizer>();
+
+    parserConfigure();
 }
 
 PathVisualizerManager::~PathVisualizerManager() {}
@@ -25,10 +33,9 @@ PathVisualizerManager::~PathVisualizerManager() {}
 void PathVisualizerManager::initialize(const scene_rdl2::rdl2::SceneVariables& vars, pbr::Scene* scene)
 {
     // Only create the path visualizer once
-    /// TODO: is there a place we can call initialize that will only be called once? Outside of startFrame?
-    if (!isOff()) { return; }
+    if (!isInNoneState()) { return; }
 
-    float sceneSize = scene_rdl2::math::length(scene->getEmbreeAccelerator()->getBounds().size());
+    const float sceneSize = scene_rdl2::math::length(scene->getEmbreeAccelerator()->getBounds().size());
 
     mPathVisualizer->initialize(vars.getRezedWidth(), vars.getRezedHeight(), mParams.get(), sceneSize);
     
@@ -40,21 +47,28 @@ void PathVisualizerManager::initialize(const scene_rdl2::rdl2::SceneVariables& v
 
 void PathVisualizerManager::startSimulation()
 {
-    // if visualizer hasn't been initialized yet,
-    // we can't run the simulation
-    if (isOff()) { return; }
+    // PathVisualizer is in NONE state if it hasn't been initialized,
+    /// and OFF if it has been turned off by the user
+    if (isInNoneState() || !isOn()) { return; }
 
-    mPathVisualizer->setState(pbr::State::RECORD);
-    if (mRenderContext->isFrameRendering()) {
-        mPathVisualizer->setNeedsRenderRefresh(true);
-    }
-    mRenderContext->runSimulation();
+    mSimulationRecTime.start();
+
+    mPathVisualizer->setState(pbr::State::START_RECORD);
+    mPathVisualizer->reset();
+}
+
+void PathVisualizerManager::setRecordState()
+{
+    MNRY_ASSERT(isInStartRecordState());
+    mPathVisualizer->setState(pbr::State::RECORD);    
 }
 
 void PathVisualizerManager::stopSimulation()
 {
     MNRY_ASSERT(isInRecordState());
     mPathVisualizer->setState(pbr::State::STOP_RECORD);
+
+    mSimulationTime = mSimulationRecTime.end();
 }
 
 void PathVisualizerManager::requestDraw()
@@ -63,39 +77,148 @@ void PathVisualizerManager::requestDraw()
     mPathVisualizer->setState(pbr::State::REQUEST_DRAW);
 }
 
-void PathVisualizerManager::startDraw()
+void PathVisualizerManager::generateLines()
 {
-    MNRY_ASSERT(isDrawRequested());
+    if (!isOn()) { return; }
+
+    scene_rdl2::rec_time::RecTime timer;
+    timer.start();
+    mPathVisualizer->setState(pbr::State::GENERATE_LINES);
+    mPathVisualizer->generateLines(mScene);
     mPathVisualizer->setState(pbr::State::DRAW);
+    mGenerateLinesTime = timer.end();
 }
 
 void PathVisualizerManager::draw(scene_rdl2::fb_util::RenderBuffer* renderBuffer)
 {
+    if (!isOn()) { return; }
+
     MNRY_ASSERT(isInDrawState());
     mPathVisualizer->draw(renderBuffer, mScene);
 }
 
-void PathVisualizerManager::setNeedsRenderRefresh(bool refresh)
+void PathVisualizerManager::printStats() const
+{
+    if (getTotalLines() == 0) { return; }
+
+    const size_t lightSampleRayCount = mPathVisualizer->getLightSampleRayCount();
+    const size_t bsdfSampleRayCount = mPathVisualizer->getBsdfSampleRayCount();
+    const size_t diffuseRayCount = mPathVisualizer->getDiffuseRayCount();
+    const size_t specularRayCount = mPathVisualizer->getSpecularRayCount();
+    const size_t occlRayCount = lightSampleRayCount + bsdfSampleRayCount;
+    const size_t total = occlRayCount + diffuseRayCount + specularRayCount;
+
+    std::cout << "\n\n=====================================\n";
+    std::cout <<   "===     Path Visualizer Stats     ===\n";
+    std::cout <<   "=====================================\n";
+    std::cout << "Total # rays: " << total << std::endl;
+    std::cout << "Total occlusion rays: " << occlRayCount << std::endl;
+    std::cout << "Total light sample rays: " << lightSampleRayCount << std::endl;
+    std::cout << "Total bsdf sample rays: " << bsdfSampleRayCount << std::endl;
+    std::cout << "Total diffuse rays: " << diffuseRayCount << std::endl;
+    std::cout << "Total specular rays: " << specularRayCount << std::endl;
+    std::cout << "\n";
+    std::cout << "Simulation time (s): " << mSimulationTime << std::endl;
+    std::cout << "Generate lines time (s): " << mGenerateLinesTime << std::endl;
+    std::cout << "Avg time per line (ms): " << (mGenerateLinesTime / getTotalLines() * 1000) << std::endl;
+    std::cout << "=====================================\n\n";
+}
+
+void
+PathVisualizerManager::crawlAllLines(const CrawlLineFunc& func)
+{
+    mPathVisualizer->crawlAllLines(func);
+}
+
+size_t
+PathVisualizerManager::getTotalLines() const
+{
+    return mPathVisualizer->getTotalLines();
+}
+
+void PathVisualizerManager::setNeedsRenderRefresh(const bool refresh)
 {
     mPathVisualizer->setNeedsRenderRefresh(refresh);
 }
 
 void PathVisualizerManager::reset()
 {
-    MNRY_ASSERT(!isOff());
+    MNRY_ASSERT(!isInNoneState());
     mPathVisualizer->reset();
+}
+
+void PathVisualizerManager::fillPixelSamples(int& samples) const
+{
+    if (!mParams->mUseSceneSamples) {
+        samples = mParams->mPixelSamples;
+    }
+}
+
+void PathVisualizerManager::fillLightSamples(int& samples) const
+{
+    if (!mParams->mUseSceneSamples) {
+        samples = mParams->mLightSamples;
+    }
+}
+
+void PathVisualizerManager::fillBsdfSamples(int& samples) const
+{
+    if (!mParams->mUseSceneSamples) {
+        samples = mParams->mBsdfSamples;
+    }
+}
+
+void PathVisualizerManager::fillMaxDepth(int& samples) const
+{
+    samples = mParams->mMaxDepth;
+}
+
+void PathVisualizerManager::turnOn()
+{
+    mOn = true;
+    startSimulation();
+}
+void PathVisualizerManager::turnOff()
+{
+    mOn = false;
+}
+
+void PathVisualizerManager::setInitialCameraXform(const scene_rdl2::math::Mat4d& xform)
+{
+    mInitialCameraXform = xform;
+}
+
+void PathVisualizerManager::setCachedCameraXform(const scene_rdl2::math::Mat4d& xform)
+{
+    mCachedCameraXform = xform;
+    mCameraXformWasCached = true;
+}
+
+void PathVisualizerManager::setCameraXformWasCached(const bool cached)
+{
+    mCameraXformWasCached = cached;
 }
 
 /// ----------------------------- Getters ------------------------------------
 
-bool PathVisualizerManager::isOff() const
+bool PathVisualizerManager::isOn() const
 {
-    return mPathVisualizer->getState() == pbr::State::OFF;
+    return mOn;
+}
+
+bool PathVisualizerManager::isInNoneState() const
+{
+    return mPathVisualizer->getState() == pbr::State::NONE;
 }
 
 bool PathVisualizerManager::isInReadyState() const
 {
     return mPathVisualizer->getState() == pbr::State::READY;
+}
+
+bool PathVisualizerManager::isInStartRecordState() const
+{
+    return mPathVisualizer->getState() == pbr::State::START_RECORD;
 }
 
 bool PathVisualizerManager::isInRecordState() const
@@ -123,23 +246,64 @@ bool PathVisualizerManager::getNeedsRenderRefresh() const
     return mPathVisualizer->getNeedsRenderRefresh();
 }
 
+bool PathVisualizerManager::isProcessing() const
+{
+    return isInStartRecordState() || isInRecordState() || isInStopRecordState();
+}
+
 scene_rdl2::math::Vec2i PathVisualizerManager::getPixel() const
 {
     return scene_rdl2::math::Vec2i(mParams->mPixelX, mParams->mPixelY);
 }
 
+scene_rdl2::math::Mat4d 
+PathVisualizerManager::getInitialCameraXform() const
+{
+    return mInitialCameraXform;
+}
+
+scene_rdl2::math::Mat4d 
+PathVisualizerManager::getCachedCameraXform() const
+{
+    return mCachedCameraXform;
+}
+
+bool 
+PathVisualizerManager::getCameraXformWasCached() const
+{
+    return mCameraXformWasCached;
+}
+
+/// ------------------------- UI getters --------------------------------- //
+
+uint32_t PathVisualizerManager::getPixelX() const { return mParams->mPixelX; }
+uint32_t PathVisualizerManager::getPixelY() const { return mParams->mPixelY; }
+uint32_t PathVisualizerManager::getMaxDepth() const { return mParams->mMaxDepth; }
+
+bool PathVisualizerManager::getOcclusionRaysFlag() const { return mParams->mOcclusionRaysOn; }
+bool PathVisualizerManager::getSpecularRaysFlag() const { return mParams->mSpecularRaysOn; }
+bool PathVisualizerManager::getDiffuseRaysFlag() const { return mParams->mDiffuseRaysOn; }
+bool PathVisualizerManager::getBsdfSamplesFlag() const { return mParams->mBsdfSamplesOn; }
+bool PathVisualizerManager::getLightSamplesFlag() const { return mParams->mLightSamplesOn; }
+
+const scene_rdl2::math::Color& PathVisualizerManager::getCameraRayColor() const { return mParams->mCameraRayColor; }
+const scene_rdl2::math::Color& PathVisualizerManager::getSpecularRayColor() const { return mParams->mSpecularRayColor; }
+const scene_rdl2::math::Color& PathVisualizerManager::getDiffuseRayColor() const { return mParams->mDiffuseRayColor; }
+const scene_rdl2::math::Color& PathVisualizerManager::getBsdfSampleColor() const { return mParams->mBsdfSampleColor; }
+const scene_rdl2::math::Color& PathVisualizerManager::getLightSampleColor() const { return mParams->mLightSampleColor; }
+
+uint32_t PathVisualizerManager::getLineWidth() const { return mParams->mLineWidth; }
+
+bool PathVisualizerManager::getUseSceneSamples() const { return mParams->mUseSceneSamples; }
+uint32_t PathVisualizerManager::getPixelSamples() const { return std::sqrt(mParams->mPixelSamples); }
+uint32_t PathVisualizerManager::getLightSamples() const { return std::sqrt(mParams->mLightSamples); }
+uint32_t PathVisualizerManager::getBsdfSamples() const  { return std::sqrt(mParams->mBsdfSamples); }
+
 /// ------------------------- UI setters --------------------------------- //
 
-void PathVisualizerManager::setPixelX(int px) { mParams->mPixelX = px; }
-void PathVisualizerManager::setPixelY(int py) { mParams->mPixelY = py; }
+void PathVisualizerManager::setPixelX(uint32_t px) { mParams->mPixelX = px; }
+void PathVisualizerManager::setPixelY(uint32_t py) { mParams->mPixelY = py; }
 void PathVisualizerManager::setMaxDepth(int depth) { mParams->mMaxDepth = depth; }
-
-void PathVisualizerManager::fillPixelSamples(unsigned int& samples) const
-{
-    if (!mParams->mUseSceneSamples) {
-        samples = mParams->mPixelSamples;
-    }
-}
 
 void PathVisualizerManager::setOcclusionRaysFlag(bool flag) { mParams->mOcclusionRaysOn = flag; }
 void PathVisualizerManager::setSpecularRaysFlag(bool flag) { mParams->mSpecularRaysOn = flag; }
@@ -148,17 +312,30 @@ void PathVisualizerManager::setBsdfSamplesFlag(bool flag) { mParams->mBsdfSample
 void PathVisualizerManager::setLightSamplesFlag(bool flag) { mParams->mLightSamplesOn = flag; }
 
 void PathVisualizerManager::setCameraRayColor(scene_rdl2::math::Color color) { mParams->mCameraRayColor = color; }
-void PathVisualizerManager::setSpecularRayColor(scene_rdl2::math::Color color) {mParams->mSpecularRayColor = color; }
+void PathVisualizerManager::setSpecularRayColor(scene_rdl2::math::Color color) { mParams->mSpecularRayColor = color; }
 void PathVisualizerManager::setDiffuseRayColor(scene_rdl2::math::Color color) { mParams->mDiffuseRayColor = color; }
 void PathVisualizerManager::setBsdfSampleColor(scene_rdl2::math::Color color) { mParams->mBsdfSampleColor = color; }
 void PathVisualizerManager::setLightSampleColor(scene_rdl2::math::Color color) { mParams->mLightSampleColor = color; }
 
-void PathVisualizerManager::setLineWidth(int value) { mParams->mLineWidth = value; }
+void PathVisualizerManager::setLineWidth(uint32_t value) { mParams->mLineWidth = value; }
 
-void PathVisualizerManager::setUseSceneSamples(int useSceneSamples) { mParams->mUseSceneSamples = useSceneSamples; }
-void PathVisualizerManager::setPixelSamples(int samples) { mParams->mPixelSamples = samples * samples; }
-void PathVisualizerManager::setLightSamples(int samples) { mParams->mLightSamples = samples * samples; }
-void PathVisualizerManager::setBsdfSamples(int samples)  { mParams->mBsdfSamples = samples * samples; }
+void PathVisualizerManager::setUseSceneSamples(bool useSceneSamples) { mParams->mUseSceneSamples = useSceneSamples; }
+void PathVisualizerManager::setPixelSamples(uint32_t samples) { mParams->mPixelSamples = samples * samples; }
+void PathVisualizerManager::setLightSamples(uint32_t samples) { mParams->mLightSamples = samples * samples; }
+void PathVisualizerManager::setBsdfSamples(uint32_t samples)  { mParams->mBsdfSamples = samples * samples; }
+
+//------------------------------------------------------------------------------------------
+
+void
+PathVisualizerManager::parserConfigure()
+{
+    mParser.description("PathVisualizerManager command");
+
+    mParser.opt("pathVis", "...command...", "pathVisualizer command",
+                [&](Arg& arg) { return mPathVisualizer->getParser().main(arg.childArg()); });
+    mParser.opt("param", "...command...", "parameters",
+                [&](Arg& arg) { return mParams->getParser().main(arg.childArg()); });
+}
 
 } // end namespace rndr
 } // end namespace moonray

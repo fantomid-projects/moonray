@@ -1,4 +1,4 @@
-// Copyright 2023-2024 DreamWorks Animation LLC
+// Copyright 2023-2025 DreamWorks Animation LLC
 // SPDX-License-Identifier: Apache-2.0
 
 ///
@@ -460,7 +460,7 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
 
     /// ---- Record ray for our path visualizer -------------------------------------------------
     if (hitGeom && fs.mSimulationMode) {
-        scene->recordRegularRay(ray, sp.mPixel, sp.mSubpixelIndex, lobeType);
+        scene->recordRegularRay(ray, sp.mPixel, lobeType);
     }
     /// -----------------------------------------------------------------------------------------
 
