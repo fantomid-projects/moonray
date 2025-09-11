@@ -37,6 +37,7 @@ add_dependencies(${objLib} ${objLib}_make_dir)
 target_link_libraries(${objLib}
     PRIVATE
         ${PROJECT_NAME}::shading_ispc
+        ${PROJECT_NAME}::rendering_shading
         SceneRdl2::scene_rdl2
         SceneRdl2::common_platform)
 
@@ -48,6 +49,7 @@ get_target_property(objLibDeps ${objLib} DEPENDENCY)
 if(NOT objLibDeps STREQUAL "")
     add_dependencies(${objLibDeps}
         ${PROJECT_NAME}::shading_ispc
+        ${PROJECT_NAME}::rendering_shading
         SceneRdl2::scene_rdl2
         SceneRdl2::common_platform
         ${objLib}_make_dir
@@ -86,6 +88,7 @@ target_include_directories(${component}
 target_link_libraries(${component}
     PUBLIC
         ${PROJECT_NAME}::shading_ispc
+        ${PROJECT_NAME}::rendering_shading
         SceneRdl2::scene_rdl2
 )
 
