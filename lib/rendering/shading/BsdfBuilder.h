@@ -58,7 +58,8 @@ public:
     BsdfBuilder(
             Bsdf& bsdf,
             shading::TLState *tls,
-            const State& state);
+            const State& state,
+            const scene_rdl2::rdl2::Shader* const objPtr);
 
     ~BsdfBuilder();
 

@@ -270,7 +270,7 @@ shadeMaterial(mcrt_common::ThreadLocalState *tls, const scene_rdl2::rdl2::Materi
 #endif
 
     const shading::State state(&intersection);
-    shading::BsdfBuilder bsdfBuilder(*bsdf, tls->mShadingTls.get(), state);
+    shading::BsdfBuilder bsdfBuilder(*bsdf, tls->mShadingTls.get(), state, mat);
     mat->shade(tls->mShadingTls.get(), state, bsdfBuilder);
 
     // Evaluate and store the post scatter extra aovs on the bsdf object.

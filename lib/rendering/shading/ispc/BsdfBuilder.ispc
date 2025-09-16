@@ -69,6 +69,8 @@ struct BsdfBuilderImpl
     uniform bool mIsThinGeo;
     uniform bool mPreventLightCulling;
     uniform bool mInAdjacentBlock;
+
+    const uniform SceneObject * uniform  mObjPtr;
 };
 
 void
@@ -76,13 +78,15 @@ BsdfBuilderImpl_init(
         varying BsdfBuilderImpl& me,
         varying Bsdf& bsdf,
         uniform ShadingTLState& tls,
-        const varying State &state)
+        const varying State &state,
+        const uniform SceneObject * uniform  objPtr)
 {
     Bsdf_init(&bsdf);
 
     me.mBsdf    = &bsdf;
     me.mTls     = &tls;
     me.mState   = &state;
+    me.mObjPtr  = objPtr;
 
     memset(me.mActiveAttenuators, 0, BSDF_BUILDER_MAX_ATTENUATORS * sizeof(LobeAttenuator* uniform));
     memset(me.mStagedAttenuators, 0, BSDF_BUILDER_MAX_ATTENUATORS * sizeof(LobeAttenuator* uniform));
@@ -251,6 +255,23 @@ testForVisibility(const varying BsdfBuilderImpl& me,
     return (!isUnder(combineBehavior) || me.mCurrentTransmittance > 0.f);
 }
 
+inline bool
+testLobeLimitExceeded(varying BsdfBuilderImpl& me)
+{
+    if (me.mBsdf->mNumLobes >= BSDF_MAX_LOBE) {
+        // log an error message
+        // address of Shader::mExceededMaxLobesLogEvent
+        const uniform int * uniform ptr = (const uniform int * uniform)
+            (((const uniform int8 * uniform) me.mObjPtr) +
+             SHADER_EXCEEDED_MAX_LOBES_LOG_EVENT);
+        logEvent(me.mObjPtr, *ptr);
+
+        return true;
+    } else {
+        return false;
+    }
+}
+
 varying BsdfLobe * uniform
 placeUnderPreviousLobes(varying BsdfBuilderImpl& me,
                         varying BsdfLobe * uniform lobe)
@@ -302,12 +323,13 @@ void
 BsdfBuilder_init(varying BsdfBuilder& me,
                  varying Bsdf& bsdf,
                  uniform ShadingTLState& tls,
-                 const varying State &state)
+                 const varying State &state,
+                 const uniform SceneObject * uniform  objPtr)
 {
     me.mImpl = (varying BsdfBuilderImpl * uniform)
         Arena_alloc(tls.mArena, sizeof(varying BsdfBuilderImpl));
 
-    BsdfBuilderImpl_init(*me.mImpl, bsdf, tls, state);
+    BsdfBuilderImpl_init(*me.mImpl, bsdf, tls, state, objPtr);
 }
 
 void
@@ -322,6 +344,7 @@ BsdfBuilder_addMicrofacetAnisotropicClearcoat(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     // Adapt normal to prevent reflection ray from self-intersecting this geometry
     const varying Vec3f adaptedNormal =
@@ -390,6 +413,7 @@ BsdfBuilder_addMicrofacetIsotropicClearcoat(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     // Adapt normal to prevent reflection ray from self-intersecting this geometry
     const varying Vec3f adaptedNormal =
@@ -466,6 +490,7 @@ BsdfBuilder_addMirrorClearcoat(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     // Adapt normal to prevent reflection ray from self-intersecting this geometry
     const varying Vec3f adaptedNormal =
@@ -528,6 +553,7 @@ BsdfBuilder_addMirrorBRDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     // Adapt normal to prevent reflection ray from self-intersecting this geometry
     const varying Vec3f adaptedNormal =
@@ -591,6 +617,7 @@ BsdfBuilder_addMirrorBTDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     varying ShaderIor ior;
     ShaderIor_init(*(me.mState), btdf.mEta, &ior, me.mIsThinGeo);
@@ -640,6 +667,7 @@ BsdfBuilder_addMirrorBSDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     const varying float reflWeight  = weight * bsdf.mReflectionWeight;
     const varying float transWeight = weight * bsdf.mTransmissionWeight;
@@ -759,6 +787,7 @@ BsdfBuilder_addMicrofacetAnisotropicBRDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     // Adapt normal to prevent reflection ray from self-intersecting this geometry
     const varying Vec3f adaptedNormal =
@@ -828,6 +857,7 @@ BsdfBuilder_addMicrofacetIsotropicBRDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     // Adapt normal to prevent reflection ray from self-intersecting this geometry
     const varying Vec3f adaptedNormal =
@@ -907,6 +937,7 @@ BsdfBuilder_addMicrofacetAnisotropicBTDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     varying ShaderIor ior;
     ShaderIor_init(*(me.mState), btdf.mEta, &ior, me.mIsThinGeo);
@@ -963,6 +994,7 @@ BsdfBuilder_addMicrofacetIsotropicBTDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     varying ShaderIor ior;
     ShaderIor_init(*(me.mState), btdf.mEta, &ior, me.mIsThinGeo);
@@ -1019,6 +1051,7 @@ BsdfBuilder_addMicrofacetAnisotropicBSDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     const varying float reflWeight  = weight * bsdf.mReflectionWeight;
     const varying float transWeight = weight * bsdf.mTransmissionWeight;
@@ -1171,6 +1204,7 @@ BsdfBuilder_addMicrofacetIsotropicBSDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     const varying float reflWeight  = weight * bsdf.mReflectionWeight;
     const varying float transWeight = weight * bsdf.mTransmissionWeight;
@@ -1350,6 +1384,7 @@ BsdfBuilder_addToonBRDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     varying BsdfLobe * uniform lobe = (varying BsdfLobe * uniform)
         Arena_alloc(me.mTls->mArena, sizeof(varying ToonBsdfLobe));
@@ -1408,6 +1443,7 @@ BsdfBuilder_addHairToonSpecularBRDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     // Adapt normal to prevent reflection ray from self-intersecting this geometry
     const varying Vec3f adaptedNormal =
@@ -1485,6 +1521,7 @@ BsdfBuilder_addToonSpecularBRDF(
     const varying State& state = *(me.mState);
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     // It is common in practice for production to use ToonSpecularBRDF with
     // explicit normals on the geometry for highly-stylized looks, and sometimes
@@ -1586,6 +1623,7 @@ BsdfBuilder_addLambertianBRDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     varying BsdfLobe * uniform lobe = (varying BsdfLobe * uniform)
         Arena_alloc(me.mTls->mArena, sizeof(varying LambertBsdfLobe));
@@ -1638,6 +1676,7 @@ BsdfBuilder_addLambertianBTDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     varying BsdfLobe * uniform lobe = (varying BsdfLobe * uniform)
         Arena_alloc(me.mTls->mArena, sizeof(varying LambertBsdfLobe));
@@ -1690,6 +1729,7 @@ BsdfBuilder_addFlatDiffuseBRDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     varying BsdfLobe * uniform lobe = (varying BsdfLobe * uniform)
         Arena_alloc(me.mTls->mArena, sizeof(varying FlatDiffuseBsdfLobe));
@@ -1746,6 +1786,7 @@ BsdfBuilder_addOrenNayarBRDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     varying BsdfLobe * uniform lobe = (varying BsdfLobe * uniform)
         Arena_alloc(me.mTls->mArena, sizeof(varying OrenNayarBsdfLobe));
@@ -1799,6 +1840,7 @@ BsdfBuilder_addDipoleDiffusion(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     if (!isSubsurfaceAllowed(*me.mState)) {
         LambertianBRDF diffuse;
@@ -1867,6 +1909,7 @@ BsdfBuilder_addNormalizedDiffusion(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     if (!isSubsurfaceAllowed(*me.mState)) {
         LambertianBRDF diffuse;
@@ -1935,6 +1978,7 @@ BsdfBuilder_addRandomWalkSubsurface(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     if (!isSubsurfaceAllowed(*me.mState)) {
         LambertianBRDF diffuse;
@@ -2003,6 +2047,7 @@ BsdfBuilder_addFabricBRDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     varying BsdfLobe * uniform lobe = (varying BsdfLobe * uniform)
         Arena_alloc(me.mTls->mArena, sizeof(varying FabricBsdfLobe));
@@ -2053,6 +2098,7 @@ BsdfBuilder_addVelvetBRDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     varying BsdfLobe * uniform lobe = (varying BsdfLobe * uniform)
         Arena_alloc(me.mTls->mArena, sizeof(varying FabricVelvetBsdfLobe));
@@ -2105,6 +2151,7 @@ BsdfBuilder_addEyeCausticBRDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     varying BsdfLobe * uniform lobe = (varying BsdfLobe * uniform)
         Arena_alloc(me.mTls->mArena, sizeof(varying EyeCausticBsdfLobe));
@@ -2153,6 +2200,7 @@ BsdfBuilder_addHairDiffuseBSDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     varying BsdfLobe * uniform lobe = (varying BsdfLobe * uniform)
         Arena_alloc(me.mTls->mArena, sizeof(varying HairDiffuseBsdfLobe));
@@ -2197,6 +2245,7 @@ BsdfBuilder_addHairBSDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     const varying float minRoughness = getMinRoughness(me);
 
@@ -2286,6 +2335,7 @@ BsdfBuilder_addHairRBRDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     varying BsdfLobe * uniform lobe = (varying BsdfLobe * uniform)
         Arena_alloc(me.mTls->mArena, sizeof(varying HairBsdfLobe));
@@ -2345,6 +2395,7 @@ BsdfBuilder_addHairTRTBRDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     const varying Color hairSigmaA =
             HairUtil_computeAbsorptionCoefficients(brdf.mHairColor,
@@ -2407,6 +2458,7 @@ BsdfBuilder_addHairTTBTDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     const varying Color hairSigmaA =
             HairUtil_computeAbsorptionCoefficients(btdf.mHairColor,
@@ -2467,6 +2519,7 @@ BsdfBuilder_addHairTRRTBRDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     const varying Color hairSigmaA =
             HairUtil_computeAbsorptionCoefficients(brdf.mHairColor,
@@ -2523,6 +2576,7 @@ BsdfBuilder_addGlitterFlakeBRDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     varying BsdfLobe * uniform lobe = (varying BsdfLobe * uniform)
         Arena_alloc(me.mTls->mArena, sizeof(varying GlitterGGXCookTorranceBsdfLobe));
@@ -2582,6 +2636,7 @@ BsdfBuilder_addStochasticFlakesBRDF(
     varying BsdfBuilderImpl& me = *builder.mImpl;
 
     cif (!testForVisibility(me, weight, combineBehavior)) { return; }
+    cif (testLobeLimitExceeded(me)) { return; }
 
     varying BsdfLobe * uniform lobe = (varying BsdfLobe * uniform)
         Arena_alloc(me.mTls->mArena, sizeof(varying StochasticFlakesBsdfLobe));
@@ -2704,10 +2759,11 @@ initBsdfBuilderArray(uniform ShadingTLState * uniform tls,
                      uniform int n,
                      const varying State * const uniform state,
                      varying Bsdf * uniform bsdf,
-                     varying BsdfBuilder * uniform builder)
+                     varying BsdfBuilder * uniform builder,
+                     const uniform SceneObject * uniform  objPtr)
 {
     for (uniform int i = 0; i < n; ++i) {
-        BsdfBuilder_init(builder[i], bsdf[i], *tls, state[i]);
+        BsdfBuilder_init(builder[i], bsdf[i], *tls, state[i], objPtr);
     }
 }
 export void * uniform getBsdfBuilderInitFunc() { return initBsdfBuilderArray; }

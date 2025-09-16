@@ -67,7 +67,8 @@ class BsdfBuilder::Impl
 public:
     Impl(Bsdf& bsdf,
          shading::TLState *tls,
-         const State& state) :
+         const State& state,
+         const scene_rdl2::rdl2::Shader* const objPtr) :
         mBsdf(bsdf),
         mTls(tls),
         mState(state),
@@ -82,7 +83,8 @@ public:
         mWeightAccum(0.f),
         mIsThinGeo(false),
         mPreventLightCulling(false),
-        mInAdjacentBlock(false)
+        mInAdjacentBlock(false),
+        mObjPtr(objPtr)
     {}
 
     Impl(const Impl& other) =delete;
@@ -202,6 +204,18 @@ public:
     {
         if (weight < scene_rdl2::math::sEpsilon) { return false; }
         return (!isUnder(combineBehavior) || mCurrentTransmittance > 0.f);
+    }
+
+    finline bool
+    testLobeLimitExceeded()
+    {
+        if (mBsdf.getLobeCount() >= Bsdf::maxLobes) {
+            scene_rdl2::rdl2::Shader::getLogEventRegistry().log(mObjPtr,
+                                                                mObjPtr->getExceededMaxLobesLogEvent());
+            return true;
+        } else {
+            return false;
+        }
     }
 
     finline BsdfLobe *
@@ -2232,12 +2246,15 @@ private:
     bool mIsThinGeo;
     bool mPreventLightCulling;
     bool mInAdjacentBlock;
+
+    const scene_rdl2::rdl2::Shader* const mObjPtr;
 };
 
 BsdfBuilder::BsdfBuilder(Bsdf& bsdf,
                          shading::TLState *tls,
-                         const State& state) :
-    mImpl(tls->mArena->allocWithArgs<Impl>(bsdf, tls, state))
+                         const State& state,
+                         const scene_rdl2::rdl2::Shader* const objPtr) :
+    mImpl(tls->mArena->allocWithArgs<Impl>(bsdf, tls, state, objPtr))
 {}
 
 BsdfBuilder::~BsdfBuilder()
@@ -2255,6 +2272,7 @@ BsdfBuilder::add##Type(                                                     \
         const scene_rdl2::rdl2::LightSet* lightSet)                         \
 {                                                                           \
     if (!mImpl->testForVisibility(weight, combineBehavior)) { return; }     \
+    if (mImpl->testLobeLimitExceeded()) { return; }                              \
     mImpl->addComponent(component, weight, combineBehavior, label, lightSet); \
     if (!mImpl->getInAdjacentBlock()) {                                     \
         mImpl->accumulateAttenuation();                                     \

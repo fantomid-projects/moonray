@@ -160,7 +160,7 @@ computeLightContributions(mcrt_common::ThreadLocalState *tls, const Scene* scene
     shading::Bsdf bsdf;
     shading::State state(&isect);
     auto shadingTls = tls->mShadingTls.get();
-    shading::BsdfBuilder builder(bsdf, shadingTls, state);
+    shading::BsdfBuilder builder(bsdf, shadingTls, state, material);
     shading::shade(material, shadingTls, state, builder);
 
     // For bssrdf or bsdfs which contain both reflection and transmission lobes

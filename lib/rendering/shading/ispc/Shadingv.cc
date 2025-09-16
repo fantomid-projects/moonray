@@ -82,6 +82,7 @@ typedef void (__cdecl * BsdfBuilderArrayInitFuncv)
      const moonray::shading::Statev* state,
      rdl2::Bsdfv* bsdfv,
      moonray::shading::BsdfBuilderv* bsdfBuilderv,
+     const rdl2::SceneObject* objPtr,
      SIMD_MASK_TYPE implicitMask);
 
 void
@@ -113,7 +114,7 @@ moonray::shading::shadev(const rdl2::Material *material,
         // * shading::TLState -> ispc::ShadingTLState
         // * shading::State   -> ispc::State
         BsdfBuilderArrayInitFuncv initBsdfBuilderArray = (BsdfBuilderArrayInitFuncv)ispc::getBsdfBuilderInitFunc();
-        initBsdfBuilderArray(tls, numStatev, statev, bsdfv, builderv, scene_rdl2::util::sAllOnMask);
+        initBsdfBuilderArray(tls, numStatev, statev, bsdfv, builderv, material, scene_rdl2::util::sAllOnMask);
         material->shadev(tls,
                          numStatev,
                          reinterpret_cast<const rdl2::Statev *>(statev),
