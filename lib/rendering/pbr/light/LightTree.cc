@@ -170,13 +170,18 @@ float LightTree::splitAxis(SplitCandidate& minSplit, int axis, const LightTreeNo
     // populate buckets
     for (int i = node.getStartIndex(); i < node.getStartIndex() + node.getLightCount(); ++i) {
         const Light* const light = mBoundedLights[mLightIndices[i]];
-        float p = light->getPosition(0)[axis];
 
-        // remap position to bucket range, then bin it in a bucket
-        int bucketIndex = scene_rdl2::math::floor(((p - minBound) / range) * NUM_BUCKETS);
-        // TODO: investigate the bug where bucketIndex > 11
-        bucketIndex = scene_rdl2::math::min(bucketIndex, 11);
-
+        // Find which bucket this light belongs to by checking against split planes
+        // This ensures consistency with performSplit() logic
+        int bucketIndex = 0;
+        for (int j = 0; j < numSplits; ++j) {
+            if (splits[j].isOnLeftSide(light)) {
+                bucketIndex = j;
+                break;
+            }
+            bucketIndex = j + 1;
+        }
+        
         // add light to bucket
         LightTreeBucket& bucket = buckets[bucketIndex];
         bucket.addLight(light);

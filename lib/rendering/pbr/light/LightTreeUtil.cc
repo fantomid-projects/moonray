@@ -82,6 +82,11 @@ void LightTreeBucket::addLight(const Light* const light)
 
 /// ----------------------------------------- SplitCandidate -----------------------------------------------------------
 
+bool SplitCandidate::isOnLeftSide(const Light* const light) const
+{
+    return light->getPosition(0)[mAxis.first] <= mAxis.second;
+}
+
 void SplitCandidate::setLeftSide(const LightTreeBucket& leftBucket)
 {
     mLeftEnergy = leftBucket.mEnergy;
@@ -146,9 +151,7 @@ void SplitCandidate::performSplit(LightTreeNode& leftNode, LightTreeNode& rightN
     const auto endIt   = lightIndices.begin() + parent.getStartIndex() + parent.getLightCount();
     const float splitPlane = mAxis.second;
     const auto splitFunc = [&](uint lightIndex) {
-        // Using < instead of <= here because lights that land on the split end 
-        // up in the bucket above it (see splitAxis() where we populate buckets)
-        return lights[lightIndex]->getPosition(0)[mAxis.first] < splitPlane;
+        return isOnLeftSide(lights[lightIndex]);
     };
     const auto rightStartIt = std::partition(startIt, endIt, splitFunc);
 

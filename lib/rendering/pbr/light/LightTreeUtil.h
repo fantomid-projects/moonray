@@ -114,6 +114,9 @@ struct SplitCandidate
     /// Is the right side of this split empty?
     bool rightIsEmpty() const { return mRightBBox.size()[mAxis.first] == 0.f  || mRightEnergy <= 0.f; }
 
+    /// Is this light on the left side of the split?
+    bool isOnLeftSide(const Light* const light) const;
+
     // Populate left-side attributes
     void setLeftSide(const LightTreeBucket& leftBucket);
     void setLeftSide(const SplitCandidate& leftSplit, const LightTreeBucket& leftBucket);
