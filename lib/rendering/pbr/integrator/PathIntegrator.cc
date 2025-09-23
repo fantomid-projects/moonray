@@ -401,7 +401,7 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
         Subpixel &sp, const PathVertex &prevPv, const shading::BsdfLobe *lobe,
         scene_rdl2::math::Color &radiance, float &transparency, VolumeTransmittance& vt,
         unsigned &sequenceID, float *aovs, float *depth,
-        DeepParams* deepParams, CryptomatteParams *cryptomatteParamsPtr,
+        DeepParams* deepParams, CryptomatteBuffer *cryptomatteBuffer,
         CryptomatteParams *reflectedCryptomatteParamsPtr,
         CryptomatteParams *refractedCryptomatteParamsPtr,
         bool ignoreVolumes, bool &hitVolume,
@@ -483,38 +483,6 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
             // included in the lpe, this addition prevents aliasing. 
             aovAccumVisibilityAttempts(pbrTls, aovSchema, lightAovs, totalLightSamples, aovs);
         }
-    }
-
-    // Set the cryptomatte information
-    float cryptoId = 0.f;
-    scene_rdl2::math::Vec2f cryptoUV = isect.getSt();
-    if (hitGeom && (cryptomatteParamsPtr || reflectedCryptomatteParamsPtr || refractedCryptomatteParamsPtr)) {
-        if (mDeepIDAttrIdxs.size() != 0) {
-            // Get the cryptomatte ID if we need it and it's specified
-            shading::TypedAttributeKey<float> deepIDAttrKey(mDeepIDAttrIdxs[0]);
-            if (isect.isProvided(deepIDAttrKey)) {
-                cryptoId = isect.getAttribute<float>(deepIDAttrKey);
-            }
-        }
-        shading::TypedAttributeKey<scene_rdl2::rdl2::Vec2f> cryptoUVAttrKey(mCryptoUVAttrIdx);
-        if (isect.isProvided(cryptoUVAttrKey)) {
-            cryptoUV = isect.getAttribute<scene_rdl2::rdl2::Vec2f>(cryptoUVAttrKey);
-        }
-    }
-    if (hitGeom && cryptomatteParamsPtr) {
-        cryptomatteParamsPtr->mHit = true;
-        if (isect.isProvided(shading::StandardAttributes::sP0)) {
-            cryptomatteParamsPtr->mP0 = scene_rdl2::math::transformPoint(
-                isect.getGeometryObject()->getSceneClass().getSceneContext()->getRender2World()->inverse(),
-                isect.getAttribute(shading::StandardAttributes::sP0));
-        }
-        cryptomatteParamsPtr->mPosition = isect.getP();
-        cryptomatteParamsPtr->mNormal = isect.getN();
-        shading::State sstate(&isect);
-        sstate.getRefP(cryptomatteParamsPtr->mRefP);
-        sstate.getRefN(cryptomatteParamsPtr->mRefN);
-        cryptomatteParamsPtr->mUV = cryptoUV;
-        cryptomatteParamsPtr->mId = cryptoId;
     }
 
     PathVertex pv(prevPv);
@@ -709,12 +677,6 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
     scene_rdl2::math::Color presenceRadiance = scene_rdl2::math::sBlack;
     float presenceTransparency = 0.f;
     if (presence < 1.f - scene_rdl2::math::sEpsilon) {
-
-        // We will record cryptomatte information in this if block if necessary already.
-        // Don't double count by stating that the hit was false:
-        if (cryptomatteParamsPtr) {
-            cryptomatteParamsPtr->mHit = false;
-        }
         float totalPresence = (1.0f - prevPv.totalPresence) * presence;
 
         float rayNear = rayEpsilon;
@@ -773,11 +735,6 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
         pv.aovPathPixelWeight *= presence; // weight of regular shading for aov use
         pv.pathThroughput *= presence;
 
-        // Construct new cryptomatte parameters to handle stacked presence objects.
-        CryptomatteParams newCryptomatteParams;
-        if (cryptomatteParamsPtr) newCryptomatteParams.init(cryptomatteParamsPtr->mCryptomatteBuffer);
-        CryptomatteParams *newCryptomatteParamsPtr = cryptomatteParamsPtr ? &newCryptomatteParams : nullptr;
-
         // Fire continued ray and add in its radiance
         VolumeTransmittance vtPresence;
         unsigned presenceSequenceID = sequenceID;
@@ -785,7 +742,7 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
         computeRadianceRecurse(pbrTls, presenceRay, sp, newPv, lobe,
             presenceRadiance, presenceTransparency, vtPresence,
             presenceSequenceID, aovs, /* depth = */ nullptr, /* DeepParams = */ nullptr,
-            newCryptomatteParamsPtr,
+            cryptomatteBuffer,
             /* reflectedCryptoParamsPtr = */ nullptr,
             /* refractedCryptoParamsPtr = */ nullptr,
             /* ignoreVolumes = */ false, presenceHitVolume,
@@ -794,28 +751,27 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
         radiance += presenceRadiance;
         vt.mTransmittanceE *= vtPresence.mTransmittanceE;
         transparency = (1 - presence) * presenceTransparency;
+    }
 
-        // We need to handle the case where we hit something with a presence of 1.0f (or without a presence) 
-        // as we continue. To handle this case, we just check if the new cryptomatte params have the hit member set.
-        if (newCryptomatteParamsPtr && newCryptomatteParamsPtr->mHit) {
-            unsigned px, py;
-            uint32ToPixelLocation(sp.mPixel, &px, &py);
-            newCryptomatteParamsPtr->mCryptomatteBuffer->addSampleScalar(px, py, newCryptomatteParamsPtr->mId, 
-                                                                                 newPv.pathPixelWeight,
-                                                                                 newCryptomatteParamsPtr->mPosition,
-                                                                                 newCryptomatteParamsPtr->mP0,
-                                                                                 newCryptomatteParamsPtr->mNormal,
-                                                                                 newCryptomatteParamsPtr->mBeauty,
-                                                                                 newCryptomatteParamsPtr->mRefP,
-                                                                                 newCryptomatteParamsPtr->mRefN,
-                                                                                 newCryptomatteParamsPtr->mUV,
-                                                                                 newPv.presenceDepth,
-                                                                                 moonray::pbr::CRYPTOMATTE_TYPE_REGULAR);
+    // Set the cryptomatte information
+    float cryptoId = 0.f;
+    scene_rdl2::math::Vec2f cryptoUV = isect.getSt();
+    if (cryptomatteBuffer || reflectedCryptomatteParamsPtr || refractedCryptomatteParamsPtr) {
+        if (mDeepIDAttrIdxs.size() != 0) {
+            // Get the cryptomatte ID if we need it and it's specified
+            shading::TypedAttributeKey<float> deepIDAttrKey(mDeepIDAttrIdxs[0]);
+            if (isect.isProvided(deepIDAttrKey)) {
+                cryptoId = isect.getAttribute<float>(deepIDAttrKey);
+            }
+        }
+        shading::TypedAttributeKey<scene_rdl2::rdl2::Vec2f> cryptoUVAttrKey(mCryptoUVAttrIdx);
+        if (isect.isProvided(cryptoUVAttrKey)) {
+            cryptoUV = isect.getAttribute<scene_rdl2::rdl2::Vec2f>(cryptoUVAttrKey);
         }
     }
 
     // reflected cryptomatte PART A
-    if (hitGeom && reflectedCryptomatteParamsPtr) {
+    if (reflectedCryptomatteParamsPtr) {
         // reflectedCryptomatteParamsPtr is only non-null if we are on a primary ray path
         // that is passing through reflective materials, or is a camera ray.
         // See the code in PathIntegrator::addIndirectOrDirectVisibleContributions() that
@@ -841,7 +797,7 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
     }
 
     // refracted cryptomatte PART A
-    if (hitGeom && refractedCryptomatteParamsPtr) {
+    if (refractedCryptomatteParamsPtr) {
         // refractedCryptomatteParamsPtr is only non-null if we are on a primary ray path
         // that is passing through transmissive materials, or is a camera ray.
         // See the code in PathIntegrator::addIndirectOrDirectVisibleContributions() that
@@ -919,11 +875,6 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
         if (deepParams) {
             // If we have terminated, don't output anything to the deep buffer
             deepParams->mHitDeep = false;
-        }
-
-        if (cryptomatteParamsPtr) {
-            // If we have terminated, don't output anything to the cryptomatte buffer
-            cryptomatteParamsPtr->mHit = false;
         }
 
         if (reflectedCryptomatteParamsPtr) {
@@ -1113,36 +1064,38 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
         parentLobeLightSets);
 
     // -------------------------------------------------------------------
-    // Add presence fragment to cryptomatte or update beauty for other recursions
-    if (cryptomatteParamsPtr && (presence < 1.f - scene_rdl2::math::sEpsilon)) {
+    if (cryptomatteBuffer) {
+        scene_rdl2::math::Vec3f P0(0.0f);
+        if (isect.isProvided(shading::StandardAttributes::sP0)) {
+            P0 = scene_rdl2::math::transformPoint(
+                isect.getGeometryObject()->getSceneClass().getSceneContext()->getRender2World()->inverse(),
+                isect.getAttribute(shading::StandardAttributes::sP0));
+        }
+
+        scene_rdl2::math::Vec3f refP(0.0f), refN(0.0f);
+        shading::State sstate(&isect);
+        sstate.getRefP(refP);
+        sstate.getRefN(refN);
+
         unsigned px, py;
         uint32ToPixelLocation(sp.mPixel, &px, &py);
 
-        if (pv.pathPixelWeight > 0.01f) {
-            // We divide by pathPixelWeight to compute Cryptomatte beauty.  This can cause fireflies if
-            // the value is small, so we clamp at 0.01.
-            scene_rdl2::math::Color cryptoBeauty = (radiance - presenceRadiance) * (1.f / pv.pathPixelWeight);
-        
-            cryptomatteParamsPtr->mCryptomatteBuffer->addSampleScalar(px, py, cryptomatteParamsPtr->mId,
-                                                                              pv.pathPixelWeight,
-                                                                              cryptomatteParamsPtr->mPosition,
-                                                                              cryptomatteParamsPtr->mP0,
-                                                                              cryptomatteParamsPtr->mNormal,
-                                                                              scene_rdl2::math::Color4(cryptoBeauty),
-                                                                              cryptomatteParamsPtr->mRefP,
-                                                                              cryptomatteParamsPtr->mRefN,
-                                                                              cryptomatteParamsPtr->mUV,
-                                                                              pv.presenceDepth,
-                                                                              moonray::pbr::CRYPTOMATTE_TYPE_REGULAR);
-        }
-    } else if (cryptomatteParamsPtr) {
-        // if non-presence path, we still need to record radiance
+        // We divide by pathPixelWeight to compute Cryptomatte beauty. This can cause fireflies if
+        // the value is small, so we clamp at 0.01.
+        float reciprocalWeight = 1.0f / scene_rdl2::math::max(pv.pathPixelWeight, 0.01f);
+        scene_rdl2::math::Color beauty = (radiance - presenceRadiance) * reciprocalWeight;
 
-        if (pv.pathPixelWeight > 0.01f) {
-            cryptomatteParamsPtr->mBeauty = scene_rdl2::math::Color4(radiance / pv.pathPixelWeight);
-        } else {
-            cryptomatteParamsPtr->mBeauty = scene_rdl2::math::Color4(0, 0, 0, 0);
-        }
+        cryptomatteBuffer->addSampleScalar(px, py, cryptoId,
+                                           pv.pathPixelWeight,
+                                           isect.getP(),
+                                           P0,
+                                           isect.getN(),
+                                           scene_rdl2::math::Color4(beauty),
+                                           refP,
+                                           refN,
+                                           cryptoUV,
+                                           pv.presenceDepth,
+                                           moonray::pbr::CRYPTOMATTE_TYPE_REGULAR);
     }
 
     RAYDB_SET_CONTRIBUTION(pbrTls, radiance / pv.pathThroughput);
@@ -1369,11 +1322,7 @@ PathIntegrator::computeRadiance(pbr::TLState *pbrTls, int pixelX, int pixelY,
     // the volume attenuation along this ray to the first hit (or infinity)
     VolumeTransmittance vt;
 
-    CryptomatteParams cryptomatteParams;
-    cryptomatteParams.init(cryptomatteBuffer);
-    CryptomatteParams *cryptomatteParamsPtr = cryptomatteBuffer ? &cryptomatteParams : nullptr;
-
-    // We maintain another independent set of cryptomatte data for reflections
+    // We maintain an independent set of cryptomatte data for reflections
     CryptomatteParams reflectedCryptomatteParams;
     reflectedCryptomatteParams.init(cryptomatteBuffer);
     CryptomatteParams *reflectedCryptomatteParamsPtr = cryptomatteBuffer ? &reflectedCryptomatteParams : nullptr;
@@ -1407,7 +1356,7 @@ PathIntegrator::computeRadiance(pbr::TLState *pbrTls, int pixelX, int pixelY,
         float deepTransparency;
         computeRadianceRecurse(pbrTls, ray, sp, pv, /* lobe = */ nullptr, deepRadiance,
                                deepTransparency, vt, sequenceID, aovs, depth,
-                               &deepParams, cryptomatteParamsPtr,
+                               &deepParams, cryptomatteBuffer,
                                reflectedCryptomatteParamsPtr, refractedCryptomatteParamsPtr,
                                /* ignoreVolumes = */ false, hitVolume, Rdl2LightSetList());
 
@@ -1444,7 +1393,7 @@ PathIntegrator::computeRadiance(pbr::TLState *pbrTls, int pixelX, int pixelY,
             hitVolume = false;
             computeRadianceRecurse(pbrTls, hsRay, hsSp, hsPv, /* lobe = */ nullptr, hsRadiance,
                                    hsTransparency, vt, hsSequenceID, hsAovs, depth,
-                                   &deepParams, cryptomatteParamsPtr,
+                                   &deepParams, cryptomatteBuffer,
                                    reflectedCryptomatteParamsPtr, refractedCryptomatteParamsPtr,
                                    /* ignoreVolumes = */ true, hitVolume, Rdl2LightSetList());
 
@@ -1484,7 +1433,7 @@ PathIntegrator::computeRadiance(pbr::TLState *pbrTls, int pixelX, int pixelY,
         float transparency;
         bool hitVolume = false;
         computeRadianceRecurse(pbrTls, ray, sp, pv, nullptr, radiance,
-            transparency, vt, sequenceID, aovs, depth, nullptr, cryptomatteParamsPtr,
+            transparency, vt, sequenceID, aovs, depth, nullptr, cryptomatteBuffer,
             reflectedCryptomatteParamsPtr, refractedCryptomatteParamsPtr,
             /* ignoreVolumes = */ false, hitVolume, Rdl2LightSetList());
 
@@ -1496,20 +1445,6 @@ PathIntegrator::computeRadiance(pbr::TLState *pbrTls, int pixelX, int pixelY,
             radiance = scene_rdl2::math::sBlack;
             alpha = -1.0f;
         }
-    }
-
-    if (cryptomatteBuffer && cryptomatteParams.mHit) {
-        cryptomatteBuffer->addSampleScalar(pixelX, pixelY, cryptomatteParams.mId, 
-                                                           1.0f, 
-                                                           cryptomatteParams.mPosition,
-                                                           cryptomatteParams.mP0,
-                                                           cryptomatteParams.mNormal,
-                                                           scene_rdl2::math::Color4(radiance),
-                                                           cryptomatteParams.mRefP,
-                                                           cryptomatteParams.mRefN,
-                                                           cryptomatteParams.mUV,
-                                                           pv.presenceDepth,
-                                                           moonray::pbr::CRYPTOMATTE_TYPE_REGULAR);
     }
 
     if (cryptomatteBuffer && reflectedCryptomatteParams.mHit) {

@@ -493,7 +493,7 @@ private:
             Subpixel &sp, const PathVertex &pv, const shading::BsdfLobe *lobe,
             scene_rdl2::math::Color &radiance, float &transparency, VolumeTransmittance& vt,
             unsigned &sequenceID, float *aovs, float *depth,
-            DeepParams* deepParams, CryptomatteParams *cryptomatteParams,
+            DeepParams* deepParams, CryptomatteBuffer *cryptomatteBuffer,
             CryptomatteParams *reflectedCryptomatteParams,
             CryptomatteParams *refractedCryptomatteParams,
             bool ignoreVolumes, bool &hitVolume,
