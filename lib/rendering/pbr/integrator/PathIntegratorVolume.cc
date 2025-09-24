@@ -194,7 +194,18 @@ PathIntegrator::estimateInScatteringSourceTermIndirect(pbr::TLState *pbrTls, con
     float transparency = 0.0f;
     VolumeTransmittance vt;
     bool hitVolume = true;
-    computeRadianceRecurse(pbrTls, rayIndirect, sp, pv,
+
+    PathVertex newPV = pv;
+    if (newPV.diffuseDepth == 0) {
+        // Scattered volume rays need to have a non-zero depth or they will still be considered
+        // primary rays by the ray switch material.  This causes incorrect missing indirect illumination
+        // when those scattered rays hit the ray switch material and are incorrectly terminated/cut out.
+        // It makes the most intuitive sense to consider volume scattering to be a type of diffuse scattering.
+        // See initIntersectionPhase2() where the depths are checked.
+        newPV.diffuseDepth = 1;
+    }
+
+    computeRadianceRecurse(pbrTls, rayIndirect, sp, newPV,
             /* lobe = */ nullptr,
             Ls, transparency, vt, sequenceID, aovs,
             /* depth = */ nullptr,
