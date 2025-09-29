@@ -274,8 +274,8 @@ ImageMap::sample(const scene_rdl2::rdl2::Map *self, moonray::shading::TLState *t
     }
 
     const float mipBias = 1.0f + evalFloat(me, attrMipBias, tls, state);
-    const Vec2f scale  = me->get(attrScale);
-    const Vec2f offset = me->get(attrOffset);
+    const Vec2f scale  = evalVec2f(me, attrScale, tls, state);
+    const Vec2f offset = evalVec2f(me, attrOffset, tls, state);
     const Vec2f rotationCenter = me->get(attrRotationCenter);
     const float theta = math::deg2rad(me->get(attrRotationAngle));
     int udim = -1;

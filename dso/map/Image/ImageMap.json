@@ -88,12 +88,14 @@
         "attrOffset": {
             "name": "offset",
             "type": "Vec2f",
+            "flags": "FLAGS_BINDABLE",
             "default": "Vec2f(0.0f, 0.0f)",
             "comment": "A constant offset applied to the texture coordinates."
         },
         "attrScale": {
             "name": "scale",
             "type": "Vec2f",
+            "flags": "FLAGS_BINDABLE",
             "default": "Vec2f(1.0f, 1.0f)",
             "comment": "A constant scale applied to the texture coordinates."
         },

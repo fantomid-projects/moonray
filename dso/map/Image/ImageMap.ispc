@@ -205,8 +205,8 @@ sample(const uniform Map* uniform map,
     }
 
     const varying float mipBias = 1.0f + evalAttrMipBias(map, tls, state);
-    const uniform Vec2f scale = getAttrScale(map);
-    const uniform Vec2f offset = getAttrOffset(map);
+    const varying Vec2f scale  = evalAttrScale(map, tls, state);
+    const varying Vec2f offset = evalAttrOffset(map, tls, state);
     const uniform Vec2f rotationCenter = getAttrRotationCenter(map);
     const uniform float theta = deg2rad(getAttrRotationAngle(map));
     varying int udim = -1;
