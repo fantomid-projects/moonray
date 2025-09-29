@@ -39,11 +39,12 @@ LocalMotionBlur::LocalMotionBlur(const GenerateContext& generateContext,
     const SceneVariables& sv = mRdlGeometry->getSceneClass().getSceneContext()->getSceneVariables();
     mFps = sv.get(SceneVariables::sFpsKey);
 
+    mCameraXform = { Xform3f(scene_rdl2::math::one) };
+    mCameraXformDiff = Vec3f(0.f);
     if (useLocalCameraMotionBlur) {
         // Get the inverse of the scene camera's node_xform
         const SceneObject* cameraObject = sv.getCamera();
         const Camera* camera = (cameraObject) ?  cameraObject->asA<Camera>() : nullptr;
-        mCameraXform = { Xform3f(scene_rdl2::math::one) };
         if (camera) {
             const Mat4d m0 = camera->get(Node::sNodeXformKey, TIMESTEP_BEGIN).inverse();
             const Mat4d m1 = camera->get(Node::sNodeXformKey, TIMESTEP_END).inverse();
@@ -56,6 +57,10 @@ LocalMotionBlur::LocalMotionBlur(const GenerateContext& generateContext,
                              m1.vz.x, m1.vz.y, m1.vz.z,
                              m1.vw.x, m1.vw.y, m1.vw.z);
             mCameraXform = {x0, x1};
+
+            Vec3f pOrigin(0.f);
+            mCameraXformDiff = transformPoint(mCameraXform[0].inverse(), pOrigin) -
+                               transformPoint(mCameraXform[1].inverse(), pOrigin);
         }
     }
 
@@ -178,15 +183,13 @@ LocalMotionBlur::apply(const MotionBlurType mbType,
                 Vec3f cameraXformDiff(0.f);
                 if (mUseLocalCameraMotionBlur) {
                     if (mCameraXform.size() > 1) {
-                        cameraXformDiff = transformPoint(mCameraXform[0].inverse(), p1) -
-                                          transformPoint(mCameraXform[1].inverse(), p1);
                     }
                 }
 
                 // Translate the first motion step position towards the second
                 // motion step position(p1) then add the xform difference.
                 vertices(i, 0) = p1 + (p0 - p1) * mbMult  +
-                                 cameraXformDiff * (1.0f - mbMult);
+                                 mCameraXformDiff * (1.0f - mbMult);
 
             }
         }
@@ -216,15 +219,8 @@ LocalMotionBlur::apply(const MotionBlurType mbType,
 
                 const Vec3f& p0 = vertices(i, 0);
 
-                // Account for motion in the camera's node_xform.
-                Vec3f cameraXformDiff(0.f);
-                if (mCameraXform.size() > 1) {
-                    cameraXformDiff = transformPoint(mCameraXform[1], p0) -
-                                      transformPoint(mCameraXform[0], p0);
-                }
-
                 velocityAttr[i] = velocityAttr[i] * mbMult -
-                                  cameraXformDiff * (1.0f - mbMult) * mFps;
+                                  mCameraXformDiff * (1.0f - mbMult) * mFps;
             }
         }
 
@@ -266,18 +262,11 @@ LocalMotionBlur::apply(const MotionBlurType mbType,
 
                 const Vec3f& p0 = vertices(i, 0);
 
-                // Account for motion in the camera's node_xform.
-                Vec3f cameraXformDiff(0.f);
-                if (mCameraXform.size() > 1) {
-                    cameraXformDiff = transformPoint(mCameraXform[1], p0) -
-                                      transformPoint(mCameraXform[0], p0);
-                }
-
                 velocityAttr[i] = velocityAttr[i] * mbMult -
-                                  cameraXformDiff * (1.0f - mbMult) * mFps;
+                                  mCameraXformDiff * (1.0f - mbMult) * mFps;
 
                 accelAttr[i] = accelAttr[i] * mbMult -
-                               cameraXformDiff * (1.0f - mbMult) * mFps;
+                               mCameraXformDiff * (1.0f - mbMult) * mFps;
             }
         }
         break;
@@ -309,23 +298,16 @@ LocalMotionBlur::apply(const MotionBlurType mbType,
             if (!isOne(mbMult)) {
                 const Vec3f& p0 = vertices(i, 0);
 
-                // Account for motion in the camera's node_xform.
-                Vec3f cameraXformDiff(0.f);
-                if (mCameraXform.size() > 1) {
-                    cameraXformDiff = transformPoint(mCameraXform[1], p0) -
-                                      transformPoint(mCameraXform[0], p0);
-                }
-
                 velocity0Attr[i] = velocity0Attr[i] * mbMult -
-                                   cameraXformDiff * (1.0f - mbMult) * mFps;
+                                   mCameraXformDiff * (1.0f - mbMult) * mFps;
 
                 velocity1Attr[i] = velocity1Attr[i] * mbMult -
-                                   cameraXformDiff * (1.0f - mbMult) * mFps;
+                                   mCameraXformDiff * (1.0f - mbMult) * mFps;
 
                 // Translate the first motion step position towards the second
                 // motion step position(p1) then add the xform difference.
                 vertices(i, 0) = p1 + (p0 - p1) * mbMult  +
-                                 cameraXformDiff * (1.0f - mbMult);
+                                 mCameraXformDiff * (1.0f - mbMult);
             }
         }
         break;
