@@ -4,7 +4,6 @@
 #include "DomeMaster3DCamera.h"
 
 #include <moonray/common/mcrt_macros/moonray_static_check.h>
-
 #include <scene_rdl2/scene/rdl2/rdl2.h>
 #include <scene_rdl2/common/math/MathUtil.h>
 
@@ -48,14 +47,16 @@ namespace pbr {
         Camera(rdlCamera), mInterocularOffset(6.5), mImageResolutionWidthReciprocal(1.0f / 1024.0f),
         mImageResolutionHeightReciprocal(1.0f / 1024.0f), mStereoView( StereoView::CENTER ),
         mFOVHorizontalAngleRadians( M_PI * 2.0f ),
-        mFOVVerticalAngleRadians( M_PI ), 
+        mFOVVerticalAngleRadians( M_PI ),
         mZenithMode( false ),
         mFlipRayX( false ),
         mFlipRayY( false ),
         mParallaxDistance( 360.0 ),
         mInterocularDistanceFileName(""),
-        mTextureHandle( nullptr ),
-        mOIIOTextureSystem( nullptr )
+        mTextureHandle( nullptr )
+#       if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
+        , mOIIOTextureSystem( nullptr )
+#       endif
     {
         initAttributeKeys(rdlCamera->getSceneClass());
     }
@@ -114,9 +115,15 @@ namespace pbr {
         mInterocularDistanceFileName = getRdlCamera()->get(sCameraSeparationMapFileNameKey);
 
         texture::TextureSampler* textureSampler = texture::getTextureSampler();
+#       if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
         mTextureOption.swrap = OIIO::TextureOpt::Wrap::WrapClamp;
         mTextureOption.twrap = OIIO::TextureOpt::Wrap::WrapClamp;
         mTextureOption.interpmode = OIIO::TextureOpt::InterpMode::InterpBilinear;
+#       else
+        mTextureOption.swrap = OIIO::TextureOpt::WrapClamp;
+        mTextureOption.twrap = OIIO::TextureOpt::WrapClamp;
+        mTextureOption.interpmode = OIIO::TextureOpt::InterpBilinear;
+#       endif
         mOIIOTextureSystem = textureSampler->getTextureSystem();
         std::string errorString;
         if (mInterocularDistanceFileName != "") {
@@ -126,15 +133,15 @@ namespace pbr {
                                           mOIIOTextureSystem->get_perthread_info() );
             if (mTextureHandle == nullptr) {
                 getRdlCamera()->error("FATAL: DomeMaster3DCamera failed to open texture file \"" ,
-                                      mInterocularDistanceFileName, "\" (" , errorString , 
+                                      mInterocularDistanceFileName, "\" (" , errorString ,
                                       ") at line: %d", __LINE__);
             }
         }
     }
 
-    void 
-    DomeMaster3DCamera::computePhiAndTheta(float x, 
-                                           float y, 
+    void
+    DomeMaster3DCamera::computePhiAndTheta(float x,
+                                           float y,
                                            float& sinPhi,
                                            float& cosPhi,
                                            float& sinTheta,
@@ -155,12 +162,12 @@ namespace pbr {
         sincos(theta, &sinTheta, &cosTheta);
     }
 
-    void 
+    void
     DomeMaster3DCamera::flipXVector(Vec3f& vec) const {
         if (mFlipRayX) vec.x = - vec.x;
     }
 
-    void 
+    void
     DomeMaster3DCamera::flipYVector(Vec3f& vec) const {
         if (mFlipRayY) {
             if (mZenithMode)
@@ -170,7 +177,7 @@ namespace pbr {
         }
     }
 
-    void 
+    void
     DomeMaster3DCamera::applyParallax(Vec3f& vec) const {
         if ((mStereoView != StereoView::CENTER) && (mParallaxDistance > 0.0)) {
             vec *= mParallaxDistance;
@@ -198,12 +205,12 @@ namespace pbr {
 
         float interocularMapDistanceColor[3] = { 1.0, 1.0, 1.0 };
         if (mTextureHandle != nullptr) {
-            mOIIOTextureSystem->texture (mTextureHandle, 
+            mOIIOTextureSystem->texture (mTextureHandle,
                                          mOIIOTextureSystem->get_perthread_info(),
                                          const_cast<OIIO::TextureOpt&>(mTextureOption),
                                          ( x * mImageResolutionWidthReciprocal ),
                                          ( y * mImageResolutionHeightReciprocal ),
-                                         mImageResolutionWidthReciprocal, 0.0, 
+                                         mImageResolutionWidthReciprocal, 0.0,
                                          0.0, mImageResolutionHeightReciprocal,
                                          mImageSpec.nchannels, interocularMapDistanceColor );
         }
@@ -226,8 +233,8 @@ namespace pbr {
 #if 0
         Vec3f rayDirection = createDirection(eyeOrigin, x, y);
         // Head Tilt Support
-        Vec3f headTarget( sinPhi * sinTheta, 
-                          -cosPhi * sinTheta, 
+        Vec3f headTarget( sinPhi * sinTheta,
+                          -cosPhi * sinTheta,
                           rayDirection.z );
         float headTilt = getRdlCamera()->get(sHeadTiltMapKey);
         headTilt = (headTilt - 0.5) * M_PI;
@@ -258,7 +265,7 @@ namespace pbr {
     {
         float sinPhi, cosPhi, sinTheta, cosTheta;
         computePhiAndTheta(x, y,
-                           sinPhi, cosPhi, 
+                           sinPhi, cosPhi,
                            sinTheta, cosTheta);
         Vec3f rayDirection;
         if (mZenithMode) {

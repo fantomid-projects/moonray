@@ -189,7 +189,11 @@ public:
 
         MNRY_ASSERT(mTextureHandles[0]);
 
+#       if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
         OIIO::TextureSystem *textureSystem = textureSampler->getTextureSystem();
+#       else
+        std::shared_ptr<OIIO::TextureSystem> textureSystem = textureSampler->getTextureSystem();
+#       endif
 
         // retrieve resolution and pixel aspect ratio information. This
         // info may be needed in certain contexts, see ProjectCameraMap_v2 shader

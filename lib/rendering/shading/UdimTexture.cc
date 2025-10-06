@@ -26,10 +26,11 @@
 #include <tbb/parallel_for.h>
 #include <tbb/mutex.h>
 
+#include <algorithm>
 #include <dirent.h>
 #include <glob.h>
+#include <memory>
 #include <vector>
-#include <algorithm>
 
 namespace moonray {
 namespace shading {
@@ -383,7 +384,7 @@ public:
         mTextureOptions.clear();
         mTextureHandles.clear();
         mTextureHandleIndices.clear();
-        
+
         mWidths.clear();
         mHeights.clear();
         mPixelAspectRatios.clear();
@@ -494,7 +495,7 @@ private:
                 firstUdimFileFormat, udimFileName, errorMsg)) {
             return false;
         }
-            
+
         if (!checkTextureWindow(textureSampler, handle, udimFileName, errorMsg)) {
             return false;
         }
@@ -513,7 +514,11 @@ private:
         // info may be needed in certain contexts, see ProjectCameraMap_v2 shader
         OIIO::ImageSpec spec;
         OIIO::ustring ufilename(udimFileName.c_str());
+#       if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
         OIIO::TextureSystem *textureSystem = textureSampler->getTextureSystem();
+#       else
+        std::shared_ptr<OIIO::TextureSystem> textureSystem = textureSampler->getTextureSystem();
+#       endif
         textureSystem->get_imagespec(ufilename, 0, spec);
         mIs8bit = (spec.format == OIIO::TypeDesc::UINT8);
         mWidths[idx] = spec.width;
@@ -681,7 +686,7 @@ UdimTexture::setUdimMissingTextureWarningSwitch(bool flag)
     UdimTexture::Impl::setUdimMissingTextureWarningSwitch(flag);
 }
 
-// static function    
+// static function
 bool
 UdimTexture::getUdimMissingTextureWarningSwitch()
 {
@@ -707,7 +712,7 @@ void CPP_oiioUdimTexture(const ispc::UDIM_TEXTURE_Data *tx,
 
     scene_rdl2::rdl2::Shader *shader = reinterpret_cast<scene_rdl2::rdl2::Shader *>(tx->mShader);
 
-    const texture::TextureHandle *textureHandle = (udim >= tx->mNumTextures) ? 
+    const texture::TextureHandle *textureHandle = (udim >= tx->mNumTextures) ?
         nullptr :
         (reinterpret_cast<const texture::TextureHandle **>(tx->mTextureHandles))[udim];
 
@@ -739,7 +744,7 @@ void CPP_oiioUdimTexture(const ispc::UDIM_TEXTURE_Data *tx,
 
     const int index = getTextureOptionIndex(displacement != 0,
         static_cast<shading::Intersection::PathType>(pathType));
-    std::vector<std::unique_ptr<texture::TextureOptions>>& options = 
+    std::vector<std::unique_ptr<texture::TextureOptions>>& options =
         *(reinterpret_cast<std::vector<std::unique_ptr<texture::TextureOptions>>*>(tx->mTextureOptions));
 
     float s = st[0];

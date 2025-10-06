@@ -125,12 +125,18 @@ find_package(OpenImageIO REQUIRED)
 find_package(Random123 REQUIRED)
 find_package(OpenImageIO REQUIRED)
 find_package(TBB REQUIRED)
-# Intel Math Kernel is not required by Moonray itself, but currently it has to
-# be linked into the application if any dsos require it. Therefore we link it
-# if it is available
-find_package(Mkl QUIET)
-if(${Mkl_FOUND})
-    set(MKL Mkl::Mkl)
+
+# Intel Math Kernel Library is not required by Moonray itself, but currently it has to
+# be linked into the application if any dsos require it. Therefore we link it if it is available.
+set(MKL_THREADING tbb_thread) # the default is intel_thread (which requires OMP)
+find_package(MKL CONFIG QUIET) # Look for an official MKL package first
+if(NOT TARGET MKL::MKL)
+    find_package(MKL QUIET) # Fallback to the FindMKL module
+endif()
+if(TARGET MKL::MKL)
+    set(MKL_target "MKL::MKL") # we'll use this in the target_link_libraries calls
+else()
+    message(STATUS "MKL not found, skipping")
 endif()
 
 # Set the RPATH for binaries in the install tree

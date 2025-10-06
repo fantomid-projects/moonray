@@ -17,7 +17,11 @@
 #include <moonray/rendering/shading/Util.h>
 #include <moonray/rendering/shading/bsdf/BsdfSlice.h>
 
-#include <tbb/tbb.h>
+#ifdef TBB_ONEAPI
+#include <oneapi/tbb/info.h>
+#else
+#include <tbb/task_scheduler_init.h>
+#endif
 
 #include <thread>
 #include <vector>
@@ -320,7 +324,7 @@ static void runTest(const TestBsdfSettings& test, int sampleCount, ProducerArgs&
 #if defined(RUN_SINGLE_THREADED)
     const unsigned sTaskCount = 1u;
 #else
-    const unsigned sTaskCount = tbb::task_scheduler_init::default_num_threads() - 1u; // Leave one for producer
+    const unsigned sTaskCount = std::thread::hardware_concurrency(); // Leave one for producer
 #endif
 
     TaskQueueType<Task> taskQueue;

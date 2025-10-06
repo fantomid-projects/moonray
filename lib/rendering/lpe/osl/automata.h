@@ -36,6 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <set>
 #include <map>
 #include <list>
+#include <functional>
 #include <vector>
 
 #include <unordered_map>
@@ -51,12 +52,21 @@ OSL_NAMESPACE_ENTER
 // General container for integer sets
 typedef std::set<int> IntSet; // probably faster to test for equality, unions and so
 
+#if OIIO_VERSION < OIIO_MAKE_VERSION(2,4,8)
 typedef std::unordered_set<ustring, ustringHash> SymbolSet;
 // This is for the transition table used in DfAutomata::State
 typedef std::unordered_map<ustring, int, ustringHash> SymbolToInt;
 // And this is for the transition table in NdfAutomata which
 // has several movements for each symbol
 typedef std::unordered_map<ustring, IntSet, ustringHash> SymbolToIntList;
+#else // OIIO 2.4.8+
+typedef std::unordered_set<ustring, std::hash<ustring>> SymbolSet;
+// This is for the transition table used in DfAutomata::State
+typedef std::unordered_map<ustring, int, std::hash<ustring>> SymbolToInt;
+// And this is for the transition table in NdfAutomata which
+// has several movements for each symbol
+typedef std::unordered_map<ustring, IntSet, std::hash<ustring>> SymbolToIntList;
+#endif
 typedef std::unordered_map<int, int> HashIntInt;
 
 // For the rules in the deterministic states, we don't need a real set

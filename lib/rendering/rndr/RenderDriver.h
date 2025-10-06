@@ -28,7 +28,13 @@
 #include <scene_rdl2/common/grid_util/Parser.h>
 #include <scene_rdl2/render/util/AtomicFloat.h>
 
-#include <tbb/task_scheduler_init.h>
+#ifdef TBB_ONEAPI
+#include <oneapi/tbb/global_control.h>
+#else
+namespace tbb {
+    class task_scheduler_init;
+}
+#endif
 
 //#define SINGLE_THREAD_CRAWLALLPIXELS
 
@@ -40,6 +46,7 @@
 #include <array>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <thread>
 
 // Uncomment to force single threaded rendering.
@@ -116,7 +123,7 @@ class RenderDriver
 {
 public:
     using Arg = scene_rdl2::grid_util::Arg;
-    using Parser = scene_rdl2::grid_util::Parser; 
+    using Parser = scene_rdl2::grid_util::Parser;
 
     ~RenderDriver();
 
@@ -585,7 +592,7 @@ private:
                                          const UIntTable *adaptiveIterationPixSampleIdTable,
                                          const unsigned startTileSampleId);
 
-    static RenderPassesResult 
+    static RenderPassesResult
         checkpointRenderMiniStintLoop(RenderDriver *driver,
                                       const FrameState &fs,
                                       const UIntTable *adaptiveIterationPixSampleIdTable,
@@ -720,7 +727,11 @@ private:
     std::unique_ptr<TileScheduler>  mTileSchedulerCheckpointInitEstimation;
     TileWorkQueue       mTileWorkQueue;
 
-    tbb::task_scheduler_init *mTaskScheduler;
+#   ifdef TBB_ONEAPI
+    std::optional<tbb::global_control> mTbbGlobalControl;
+#   else
+    std::unique_ptr<tbb::task_scheduler_init> mTaskScheduler;
+#   endif
 
     // The is the sample count.
     size_t              mSamplesPerPass[MAX_RENDER_PASSES];
@@ -849,7 +860,7 @@ private:
     // In order to make a smaller minimum requirement cost, we can compute this minimum requirement phase by
     // multiple machines in parallel if we can use multiple backends. Each host only computes partial tiles
     // (i.e. not entire tiles). As a result, the minimum requirement phase cost is smaller and we can achieve
-    // better interactivity in general. 
+    // better interactivity in general.
     // Each backend computes tile by randomly shuffled order and makes an initial snapshot without waiting
     // entire tiles. Snapshot data would be sent to the client. In this case, initial snapshot data includes
     // lots of black tiles. However this is harmless, the initial snapshot data from each backends merged into

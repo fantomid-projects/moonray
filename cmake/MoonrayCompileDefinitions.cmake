@@ -7,10 +7,14 @@ function(${PROJECT_NAME}_cxx_compile_definitions target)
         set(openvdb_abi OPENVDB_ABI_VERSION_NUMBER=7)
     endif()
 
+    if(${TBB_VERSION} VERSION_GREATER_EQUAL "2021.0")
+        set(tbb_oneapi TBB_ONEAPI)
+    endif()
+
     target_compile_definitions(${target}
         PUBLIC
             $<$<CONFIG:DEBUG>:
-                DEBUG                               # Enables extra validation/debugging code
+                DEBUG                                       # Enables extra validation/debugging code
 
                 # Definitions for printing debug info
                 TSLOG_LEVEL=TSLOG_MSG_DEBUG
@@ -19,24 +23,26 @@ function(${PROJECT_NAME}_cxx_compile_definitions target)
                 TSLOG_SHOW_TIME
             >
             $<$<CONFIG:RELWITHDEBINFO>:
-                BOOST_DISABLE_ASSERTS               # Disable BOOST_ASSERT macro
+                BOOST_DISABLE_ASSERTS                       # Disable BOOST_ASSERT macro
             >
             $<$<CONFIG:RELEASE>:
-                BOOST_DISABLE_ASSERTS               # Disable BOOST_ASSERT macro
+                BOOST_DISABLE_ASSERTS                       # Disable BOOST_ASSERT macro
             >
 
         PUBLIC
             ${GLOBAL_COMPILE_DEFINITIONS}
             ${GLOBAL_CPP_FLAGS}
-            GL_GLEXT_PROTOTYPES=1                   # This define makes function symbols to be available as extern declarations.
-            TBB_SUPPRESS_DEPRECATED_MESSAGES        # Suppress 'deprecated' messages from TBB
+            GL_GLEXT_PROTOTYPES=1                           # This define makes function symbols to be available as extern declarations.
+            TBB_SUPPRESS_DEPRECATED_MESSAGES                # Suppress 'deprecated' messages from TBB
 
             # OpenVdb defs should probably propagate to users of some lib/rendering headers
-            ${openvdb_abi}                          # Which version of the openvdb ABI to use
-            OPENVDB_USE_BLOSC                       # Denotes whether VDB was built with Blosc support. Shouldn't this be defined by openvdb?
-            OPENVDB_USE_LOG4CPLUS                   # Should openvdb use log4cplus (vs. std::cerr) for log messages?
-            _LIBCPP_ENABLE_CXX17_REMOVED_AUTO_PTR=1 # Clang - enable auto_ptr when targeting c++17
-            _LIBCPP_ENABLE_CXX17_REMOVED_RANDOM_SHUFFLE=1 # Clang - ensure std::random_shuffle is available
+            ${openvdb_abi}                                  # Which version of the openvdb ABI to use
+            OPENVDB_USE_BLOSC                               # Denotes whether VDB was built with Blosc support. Shouldn't this be defined by openvdb?
+            OPENVDB_USE_LOG4CPLUS                           # Should openvdb use log4cplus (vs. std::cerr) for log messages?
+            OPENVDB_USE_DEPRECATED_ABI_10                   # TODO: Better yet, stop using the deprecated openvdb 10 abi altogether
+            _LIBCPP_ENABLE_CXX17_REMOVED_AUTO_PTR=1         # Clang - enable auto_ptr when targeting c++17
+            _LIBCPP_ENABLE_CXX17_REMOVED_RANDOM_SHUFFLE=1   # Clang - ensure std::random_shuffle is available
+            ${tbb_oneapi}                                   # define TBB_ONEAPI if TBB version >= 2021.0
     )
     if(MOONRAY_DWA_BUILD)
         target_compile_definitions(${target}

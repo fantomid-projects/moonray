@@ -3,16 +3,18 @@
 
 //
 //
+// TODO: Can we remove this header inclusion?  Or at least explain why it's needed?
 #include <scene_rdl2/render/util/AtomicFloat.h> // Needs to be included before any OpenImageIO file
-#include <moonray/rendering/pbr/core/Scene.h>
 
 #include "AdaptiveRenderTilesTable.h"
-#include "RenderDriver.h"
-#include "RenderContext.h"
+#include "PathVisualizerManager.h"
 #include "PixelBufferUtils.h"
+#include "RenderContext.h"
+#include "RenderDriver.h"
 #include "RenderOutputDriver.h"
 #include "RenderOutputHelper.h"
 #include "TileScheduler.h"
+
 #include <moonray/common/mcrt_macros/moonray_static_check.h>
 #include <moonray/rendering/shading/ShadingTLState.h>
 #include <moonray/rendering/geom/prim/GeomTLState.h>
@@ -20,12 +22,17 @@
 #include <moonray/rendering/mcrt_common/AffinityManager.h>
 #include <moonray/rendering/pbr/core/Aov.h>
 #include <moonray/rendering/pbr/core/DebugRay.h>
+#include <moonray/rendering/pbr/core/Scene.h>
 #include <moonray/rendering/pbr/handlers/XPURayHandlers.h>
 #include <moonray/rendering/rt/gpu/GPUAccelerator.h>
 #include <scene_rdl2/common/fb_util/VariablePixelBuffer.h>
-#include "PathVisualizerManager.h"
-
 #include <scene_rdl2/render/util/Memory.h>
+
+#ifdef TBB_ONEAPI
+#include <oneapi/tbb/info.h>
+#else
+#include <tbb/task_scheduler_init.h>
+#endif
 
 #include <random>
 
@@ -521,7 +528,6 @@ RenderDriver::RenderDriver(const TLSInitParams &initParams) :
     mLastCoarsePassIdx(0),
     mTileScheduler(nullptr),
     mTileSchedulerCheckpointInitEstimation(nullptr),
-    mTaskScheduler(nullptr),
     mPrimaryRaysSubmitted(MAX_RENDER_PASSES, 0),
     mReadyForDisplay(false),
     mCoarsePassesComplete(false),
@@ -555,7 +561,7 @@ RenderDriver::RenderDriver(const TLSInitParams &initParams) :
     setProcCpuAffinity(tlsInitParams);
 
     if (tlsInitParams.mDesiredNumTBBThreads == 0) {
-        tlsInitParams.mDesiredNumTBBThreads = tbb::task_scheduler_init::default_num_threads();
+        tlsInitParams.mDesiredNumTBBThreads = std::thread::hardware_concurrency();
     }
 
 #ifdef FORCE_SINGLE_THREADED_RENDERING
@@ -567,13 +573,17 @@ RenderDriver::RenderDriver(const TLSInitParams &initParams) :
     tlsInitParams.initShadingTls = shading::TLState::allocTls;
     tlsInitParams.initTLSTextureSupport = shading::initTexturingSupport;
 
+#   ifdef TBB_ONEAPI
+    mTbbGlobalControl.emplace(oneapi::tbb::global_control::max_allowed_parallelism, tlsInitParams.mDesiredNumTBBThreads);
+#   else
     // There are 2 task_scheduler_init objects created in this class. Both are
     // essential. This first call sets the number of threads for the frame
     // building phase to that specified in the TLSInitParams.
     // The second is used by the threads for the MCRT stage. However, MCRT threads
     // itself is not using the TBB thread pool anymore and use MoonRay own thread
     // pool due to we need CPU affinity control for them.
-    mTaskScheduler = new tbb::task_scheduler_init(int(tlsInitParams.mDesiredNumTBBThreads));
+    mTaskScheduler = std::make_unique<tbb::task_scheduler_init>(tlsInitParams.mDesiredNumTBBThreads);
+#   endif
 
     mFilm = alignedMallocCtor<Film>(CACHE_LINE_SIZE);
 
@@ -642,6 +652,12 @@ RenderDriver::~RenderDriver()
 
     freeXPUQueues();
 
+#   ifdef TBB_ONEAPI
+    // TODO: We may need to call tbb::finalize() here if we experience similar
+    // crashes as with the old TBB when cleaning up TLS below.
+    // tbb::finalize() seems to be the modern TBB equivalent of task_scheduler_init::terminate()
+    mTbbGlobalControl.reset();
+#else
     // Terminate task scheduler and wait for tbb worker threads to finish.
     // We need worker threads to exit before the TLS cleanup which is where
     // we cleanup OpenImageIO. Otherwise we get a crash in that library when
@@ -652,8 +668,9 @@ RenderDriver::~RenderDriver()
     // when building this library, and also to make sure that no other
     // tbb::task_scheduler_init or other higher-level task scheduler objects
     // (i.e. tbb::task_group, etc.) are active in the process.
-    MNRY_VERIFY(mTaskScheduler)->terminate();
-    delete mTaskScheduler;
+    MNRY_VERIFY(mTaskScheduler.get())->terminate();
+    mTaskScheduler.reset();
+#   endif
 
     cleanUpTLS();
 }
@@ -952,7 +969,7 @@ RenderDriver::setupMultiMachineTileScheduler(unsigned pixW, unsigned pixH)
     //    3   true  true
     bool flipX = (flipId & 0x1) != 0x0;
     bool flipY = (flipId & 0x2) != 0x0;
-                
+
     auto randIntRange = [](int maxVal) {
         std::random_device rnd;
         std::mt19937 mt(rnd());
@@ -989,7 +1006,7 @@ RenderDriver::setupMultiMachineTileScheduler(unsigned pixW, unsigned pixH)
     //    3   true  true
     bool flipX = (flipId & 0x1) != 0x0;
     bool flipY = (flipId & 0x2) != 0x0;
-                
+
     unsigned numRenderNodes = mFs.mNumRenderNodes;
     unsigned halfNumRenderNodes = numRenderNodes / 2;
 
@@ -1057,7 +1074,7 @@ RenderDriver::stopFrame()
         return;
     }
 
-    mFrameEndTime = scene_rdl2::util::getSeconds(); 
+    mFrameEndTime = scene_rdl2::util::getSeconds();
     gCancelFlag.set(true);
 
     // Wait on the cancellation to propagate.
@@ -2314,7 +2331,14 @@ RenderDriver::renderThread(RenderDriver *driver,
     // thread itself is not using the TBB thread anymore due to we need CPU-affinity
     // control. We still keep tbb::task_scheduler for other TBB thread requirements
     // we might create during the MCRT stage.
-    tbb::task_scheduler_init scheduler(int(initParams.mDesiredNumTBBThreads));
+    // TODO: This extra tbb::task_scheduler_init/global_control doesn't seem to be necessary,
+    // but we should confirm that the initParams.mDesiredNumTBBThreads here is the same as
+    // it is in the constructor of RenderDriver.
+#   ifdef TBB_ONEAPI
+    oneapi::tbb::global_control(oneapi::tbb::global_control::max_allowed_parallelism, initParams.mDesiredNumTBBThreads);
+#   else
+    tbb::task_scheduler_init scheduler(initParams.mDesiredNumTBBThreads);
+#   endif
 
     // TLS initialization.
     initTLS(initParams);
@@ -2354,7 +2378,9 @@ RenderDriver::renderThread(RenderDriver *driver,
         case RenderThreadState::KILL_RENDER_THREAD:
             // This is a sub-tbb scheduler init, we still have the main one to
             // clean up later, which happens in the RenderDriver destructor.
+#           ifndef TBB_ONEAPI
             scheduler.terminate();
+#           endif
             driver->mRenderThreadState.set(RenderThreadState::KILL_RENDER_THREAD, RenderThreadState::DEAD);
             quit = true;
             break;

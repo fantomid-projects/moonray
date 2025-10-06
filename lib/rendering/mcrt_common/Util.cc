@@ -3,11 +3,13 @@
 
 //
 #include "Util.h"
+
 #include <execinfo.h>  // backtrace
-#include <tbb/mutex.h>
 #include <sys/syscall.h>
+#include <tbb/mutex.h>
 
 #include <cstring>
+#include <thread>
 
 namespace moonray {
 namespace mcrt_common {
@@ -21,7 +23,7 @@ threadSleep()
 void
 threadYield()
 {
-    __TBB_Yield();
+    std::this_thread::yield();
 }
 
 void

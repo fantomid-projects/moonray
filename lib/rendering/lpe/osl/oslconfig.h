@@ -47,7 +47,9 @@ OSL_NAMESPACE_ENTER
 
 // And some other things we borrow from OIIO...
 using OIIO::ustring;
+#if OIIO_VERSION < OIIO_MAKE_VERSION(2,4,8)
 using OIIO::ustringHash;
+#endif
 using OIIO::string_view;
 
 OSL_NAMESPACE_EXIT

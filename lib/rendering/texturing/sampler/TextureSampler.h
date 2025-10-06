@@ -11,9 +11,9 @@
 #include <scene_rdl2/common/grid_util/Parser.h>
 #include <scene_rdl2/common/math/Color.h>
 
-#include <tbb/recursive_mutex.h>
-
 // system
+#include <memory>
+#include <mutex>
 #include <string>
 #include <set>
 
@@ -91,7 +91,11 @@ public:
     // limits the number of open files OIIO uses.
     void setOpenFileLimit(int count);
 
+#   if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
     OIIO::TextureSystem* getTextureSystem() { return mTextureSystem; }
+#   else
+    std::shared_ptr<OIIO::TextureSystem> getTextureSystem() { return mTextureSystem; }
+#   endif
 
     void registerMapForInvalidation(const std::string &filename,
                                     scene_rdl2::rdl2::Shader *map,
@@ -125,7 +129,11 @@ protected:
     //------------------------------
 
     // The oiio system.
-    OIIO::TextureSystem*  mTextureSystem;
+#   if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
+    OIIO::TextureSystem *mTextureSystem;
+#   else
+    std::shared_ptr<OIIO::TextureSystem> mTextureSystem;
+#   endif
 
     //
     // Used to notify ImageMaps of invalidated textures.
@@ -137,7 +145,7 @@ protected:
     // For the udim case, a single ImageMap may reference multiple texture files.
     std::multimap<scene_rdl2::rdl2::Shader *, OIIO::ustring> mShaderToName;
 
-    tbb::recursive_mutex mMutex;
+    std::recursive_mutex mMutex;
 
     Parser mParser;
 };

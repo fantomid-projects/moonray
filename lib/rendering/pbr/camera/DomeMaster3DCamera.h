@@ -3,16 +3,18 @@
 
 #pragma once
 
-#include <moonray/rendering/texturing/sampler/TextureSampler.h>
+#include "Camera.h"
 
+#include <moonray/rendering/texturing/sampler/TextureSampler.h>
 #include <scene_rdl2/common/math/Mat4.h>
 #include <scene_rdl2/common/math/Vec3.h>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
+#include <OpenImageIO/texture.h>
 
-#include "Camera.h"
+#include <memory>
 
 namespace moonray {
 namespace pbr {
@@ -42,7 +44,7 @@ private:
     inline scene_rdl2::math::Vec3f createDirection(const scene_rdl2::math::Vec3f& camOrigin, float x, float y) const;
     // utility helper function
     inline void computePhiAndTheta(float x,
-                                   float y, 
+                                   float y,
                                    float& sinPhi,
                                    float& cosPhi,
                                    float& sinTheta,
@@ -83,7 +85,11 @@ private:
 
     // OIIO Functionality used to sample mInterocularDistance map distance
     texture::TextureHandle* mTextureHandle;
+#   if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
     OIIO::TextureSystem* mOIIOTextureSystem;
+#   else
+    std::shared_ptr<OIIO::TextureSystem> mOIIOTextureSystem;
+#   endif
     OIIO::ImageSpec mImageSpec;
     OIIO::TextureOpt mTextureOption;
 };

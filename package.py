@@ -29,17 +29,13 @@ help = ('For assistance, '
         "please contact the folio's owner at: moonbase-dev@dreamworks.com")
 
 variants = [
-    ['os-rocky-9',  'opt_level-optdebug', 'refplat-vfx2023.1', 'openimageio-2.3.20.0.x.0.3.0.3', 'gcc-11.x',       'openvdb-11', 'zlib-1.2.11.x'],
-    ['os-rocky-9',  'opt_level-debug',    'refplat-vfx2023.1', 'openimageio-2.3.20.0.x.0.3.0.3', 'gcc-11.x',       'openvdb-11', 'zlib-1.2.11.x'],
-    # openvdb-11 requires llvm-15 which conflicts with clang-17's llvm-17, so it stays at
-    # openvdb-10.
-    ['os-rocky-9',  'opt_level-optdebug', 'refplat-vfx2023.1', 'openimageio-2.3.20.0.x.0.3.0.3', 'clang-17.0.6.x', 'openvdb-10', 'zlib-1.2.11.x'],
-    ['os-rocky-9',  'opt_level-optdebug', 'refplat-vfx2023.1', 'openimageio-2.4.8.0.x',          'gcc-11.x',       'openvdb-11', 'zlib-1.2.11.x'],
-    ['os-rocky-9',  'opt_level-optdebug', 'refplat-vfx2022.0', 'openimageio-2.3.20.0.x.0.3.0.3', 'gcc-9.3.x.1',    'openvdb-9',  'zlib-1.2.11.x', 'opensubdiv-3.5.0.x.0'],
-    ['os-rocky-9',  'opt_level-optdebug', 'refplat-vfx2024.0', 'openimageio-2.4.8.0.x',          'gcc-11.x',       'openvdb-11', 'zlib-1.2.11.x'],
-
-    ['os-CentOS-7', 'opt_level-optdebug', 'refplat-vfx2022.0', 'openimageio-2.3.20.0.x.0.3.0.3', 'gcc-9.3.x.1',    'openvdb-9',  'zlib-1.2.8.x.2', 'opensubdiv-3.5.0.x.0'],
-    ['os-CentOS-7', 'opt_level-debug',    'refplat-vfx2022.0', 'openimageio-2.3.20.0.x.0.3.0.3', 'gcc-9.3.x.1',    'openvdb-9',  'zlib-1.2.8.x.2', 'opensubdiv-3.5.0.x.0'],
+    ['os-rocky-9',  'opt_level-optdebug', 'refplat-vfx2023.1', 'openimageio-2.4.8.0.x',  'gcc-11.x',       'openvdb-11', 'zlib-1.2.11.x'],
+    ['os-rocky-9',  'opt_level-debug',    'refplat-vfx2023.1', 'openimageio-2.4.8.0.x',  'gcc-11.x',       'openvdb-11', 'zlib-1.2.11.x'],
+    # openvdb-11 requires llvm-15 which conflicts with clang-17's llvm-17, so it stays at openvdb-10.
+    ['os-rocky-9',  'opt_level-optdebug', 'refplat-vfx2023.1', 'openimageio-2.4.8.0.x',  'clang-17.0.6.x', 'openvdb-10', 'zlib-1.2.11.x'],
+    ['os-rocky-9',  'opt_level-optdebug', 'refplat-vfx2024.0', 'openimageio-2.4.8.0.x',  'gcc-11.x',       'openvdb-11', 'zlib-1.2.11.x'],
+    ['os-rocky-9',  'opt_level-optdebug', 'refplat-vfx2025.0', 'openimageio-3.0',        'gcc-11.x',       'openvdb-12', 'zlib-1.2.11.x'],
+    ['os-rocky-9',  'opt_level-optdebug', 'refplat-vfx2022.0', 'openimageio-2.3.20.0.x', 'gcc-9.3.x.1',    'openvdb-9',  'zlib-1.2.11.x', 'opensubdiv-3.5.0.x.0'],
 ]
 
 conf_rats_variants = variants[0:2]

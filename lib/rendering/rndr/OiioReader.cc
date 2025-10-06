@@ -23,7 +23,13 @@ OiioReader::readData(const int subImageId)
         return false;           // internal pixels buffer resize failed
     }
 
+#   if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
     mIn->read_image(OIIO::TypeDesc::FLOAT, mPixels.data());
+#   else
+    const int mipLevel = 0;
+    const int chBegin = 0;
+    mIn->read_image(subImageId, mipLevel, chBegin, spec.nchannels, OIIO::TypeDesc::FLOAT, mPixels.data());
+#   endif
     return true;
 }
 

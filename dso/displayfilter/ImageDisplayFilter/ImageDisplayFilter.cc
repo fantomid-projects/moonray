@@ -30,6 +30,9 @@
 #include <OpenImageIO/imagecache.h>
 #include <OpenImageIO/imageio.h>
 
+#include <memory>
+#include <string>
+
 using namespace moonray;
 using namespace scene_rdl2::math;
 
@@ -56,7 +59,11 @@ private:
     ispc::ImageDisplayFilter mIspc;
     std::vector<float> mPixelBuf;           // buffer to temporarily hold pixel data
 
+#   if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
     OIIO::ImageCache* mImageCache;
+#   else
+    std::shared_ptr<OIIO::ImageCache> mImageCache;
+#   endif
 
 RDL2_DSO_CLASS_END(ImageDisplayFilter)
 
@@ -68,7 +75,7 @@ ImageDisplayFilter::ImageDisplayFilter(
 {
     mFilterFuncv = (DisplayFilterFuncv) ispc::ImageDisplayFilter_getFilterFunc();
 
-    mIspc.mDisplayType = static_cast<ispc::DisplayType>(0); 
+    mIspc.mDisplayType = static_cast<ispc::DisplayType>(0);
     mIspc.mPixels = nullptr;
     mIspc.mChannels = 0;
     mIspc.mMask = false;
@@ -85,14 +92,16 @@ ImageDisplayFilter::ImageDisplayFilter(
 
 ImageDisplayFilter::~ImageDisplayFilter()
 {
+#if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
     OIIO::ImageCache::destroy(mImageCache);
+#endif
 }
 
 /** Used for cases where we want to stretch the image to fill a plane of width x height
  * @param src - reference to image buffer that contains the image data to be processed
  * @param width, @param height - render dimensions
  */
-void ImageDisplayFilter::stretchAndSave(OIIO::ImageBuf &src, int width, int height) 
+void ImageDisplayFilter::stretchAndSave(OIIO::ImageBuf &src, int width, int height)
 {
     // resize image to given dimensions
     OIIO::ROI roi (0, width, 0, height, 0, 1, 0, src.nchannels());
@@ -110,17 +119,17 @@ void ImageDisplayFilter::stretchAndSave(OIIO::ImageBuf &src, int width, int heig
  *  @param imgWidth, @param imgHeight - loaded image dimensions
  */
 void ImageDisplayFilter::fitAndSave(OIIO::ImageBuf &src, int width, int height,
-                                    int imgWidth, int imgHeight, int fitMode) 
+                                    int imgWidth, int imgHeight, int fitMode)
 {
     // find the horizontally/vertically scaled-up (or down) dimensions
-    float scale = fitMode == HORIZONTAL_SCALE ? (float) width / imgWidth 
+    float scale = fitMode == HORIZONTAL_SCALE ? (float) width / imgWidth
                                               : (float) height / imgHeight;
     int xDim = scale * imgWidth;
     int yDim = scale * imgHeight;
 
     // offsets to center the cropped image
     int xOffset = (xDim - width) / 2;
-    int yOffset = (yDim - height) / 2; 
+    int yOffset = (yDim - height) / 2;
 
     // uniformly scale the image so that it fits the desired horizontal/vertical dimension
     OIIO::ROI roi_resize(0, xDim, 0, yDim, 0, 1, 0, src.nchannels());
@@ -135,15 +144,15 @@ void ImageDisplayFilter::fitAndSave(OIIO::ImageBuf &src, int width, int height,
 }
 
 // Simplify the display type to four possibilites: STRETCH, FIT_HORIZONTAL, FIT_VERTICAL, NO_SCALE
-ispc::DisplayType ImageDisplayFilter::getDisplayType(int width, int height, 
-                                                     int imgWidth, int imgHeight) 
+ispc::DisplayType ImageDisplayFilter::getDisplayType(int width, int height,
+                                                     int imgWidth, int imgHeight)
 {
     ispc::DisplayType displayType = static_cast<ispc::DisplayType>(get(attrDisplayType));
 
     // if same aspect ratio, just use stretch method
     if ((imgWidth / (float) width) == (imgHeight / (float) height)) {
         return ispc::STRETCH;
-    } 
+    }
 
     switch (displayType) {
         case ispc::FIT_BY_SMALLEST_DIM:
@@ -164,10 +173,10 @@ ispc::DisplayType ImageDisplayFilter::getDisplayType(int width, int height,
 }
 
 // Resize the input image and save to ispc float buffer
-void ImageDisplayFilter::resizeImage(OIIO::ImageBuf &src, int width, int height) 
+void ImageDisplayFilter::resizeImage(OIIO::ImageBuf &src, int width, int height)
 {
     int imgWidth = src.xend(), imgHeight = src.yend();
-    mIspc.mDisplayType = getDisplayType(width, height, imgWidth, imgHeight); 
+    mIspc.mDisplayType = getDisplayType(width, height, imgWidth, imgHeight);
 
     mPixelBuf.clear();
     mPixelBuf.reserve(width*height*src.nchannels());
@@ -194,7 +203,7 @@ void ImageDisplayFilter::resizeImage(OIIO::ImageBuf &src, int width, int height)
 }
 
 // Process the image file and save it to a pixel buffer
-bool ImageDisplayFilter::loadImageFile(int renderWidth, int renderHeight) 
+bool ImageDisplayFilter::loadImageFile(int renderWidth, int renderHeight)
 {
     // read in file
     std::string filename = get(attrImagePath);
@@ -210,7 +219,7 @@ bool ImageDisplayFilter::loadImageFile(int renderWidth, int renderHeight)
     return true;
 }
 
-void ImageDisplayFilter::update() 
+void ImageDisplayFilter::update()
 {
     if (get(attrInput) == nullptr) {
         fatal("Missing \"input\" attribute");

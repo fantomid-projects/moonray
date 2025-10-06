@@ -26,8 +26,10 @@
 // #include <OpenImageIO/imageio.h>
 // #include <OpenImageIO/imagebuf.h>
 // #include <OpenImageIO/imagebufalgo.h>
+#include <OpenImageIO/texture.h>
 
-#include <string.h>
+#include <memory>
+#include <string>
 
 namespace scene_rdl2 {
 
@@ -260,9 +262,14 @@ BakeCamera::updateImpl(const scene_rdl2::math::Mat4d &world2render)
         if (!filename.empty() && needNormals()) {
             // allocate new handle
             texture::TextureSampler *textureSampler = texture::getTextureSampler();
+
+#           if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
             OIIO::TextureSystem *textureSystem = textureSampler->getTextureSystem();
+#           else
+            std::shared_ptr<OIIO::TextureSystem> textureSystem = textureSampler->getTextureSystem();
+#           endif
             std::string errorString;
-            texture::TextureHandle *textureHandle = 
+            texture::TextureHandle *textureHandle =
                 textureSampler->getHandle(filename, errorString, textureSystem->get_perthread_info());
             if (textureHandle) {
                 // all good
@@ -387,7 +394,7 @@ BakeCamera::computeDpdu(const scene_rdl2::math::Vec3f &P, const scene_rdl2::math
             return true;
         }
     }
-    
+
     // we failed.... no data
     return false;
 }
@@ -404,7 +411,7 @@ BakeCamera::interpolatePosMap(const scene_rdl2::math::Vec2f &uv, scene_rdl2::mat
 
     // bi-linear interpolation.
     //               bbox.upper
-    //        +---------+ 
+    //        +---------+
     //        |         |
     //        |  xf,yf  |
     //        |         |
@@ -601,9 +608,15 @@ BakeCamera::createRayImpl(mcrt_common::RayDifferential *dstRay,
     if (needNormals() && haveNormalMap()) {
         scene_rdl2::math::Vec3f nMap; // sampled value from map
         OIIO::TextureOpt textureOpt;
+#if     OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
         textureOpt.swrap = OIIO::TextureOpt::Wrap::WrapClamp;
         textureOpt.twrap = OIIO::TextureOpt::Wrap::WrapClamp;
         textureOpt.interpmode = OIIO::TextureOpt::InterpMode::InterpBilinear;
+#       else
+        textureOpt.swrap = OIIO::TextureOpt::WrapClamp;
+        textureOpt.twrap = OIIO::TextureOpt::WrapClamp;
+        textureOpt.interpmode = OIIO::TextureOpt::InterpBilinear;
+#       endif
         bool res = mNormalMap.mTextureSystem->texture(mNormalMap.mTextureHandle,
                                                       mNormalMap.mTextureSystem->get_perthread_info(),
                                                       textureOpt,

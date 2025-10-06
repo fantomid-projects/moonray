@@ -12,7 +12,11 @@
 #include <scene_rdl2/render/util/StrUtil.h>
 #include <scene_rdl2/scene/rdl2/rdl2.h>
 
+#ifdef TBB_ONEAPI
+#include <oneapi/tbb/info.h>
+#else
 #include <tbb/task_scheduler_init.h>
+#endif
 
 #include <algorithm>
 #include <cctype>
@@ -685,7 +689,7 @@ RenderOptions::getThreads() const
     }
 
     // Last-ditch default.
-    return tbb::task_scheduler_init::default_num_threads();
+    return std::thread::hardware_concurrency();
 }
 
 void

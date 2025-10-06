@@ -5,13 +5,19 @@
 #include "TestInterpolator.h"
 #include <moonray/rendering/mcrt_common/ThreadLocalState.h>
 #include <scene_rdl2/pdevunit/pdevunit.h>
+
+#ifdef TBB_ONEAPI
+#include <oneapi/tbb/info.h>
+#else
 #include <tbb/task_scheduler_init.h>
+#endif
+
 int
 main(int argc, char *argv[])
 {
     moonray::mcrt_common::TLSInitParams initParams;
     initParams.mUnitTests = true;
-    initParams.mDesiredNumTBBThreads = tbb::task_scheduler_init::default_num_threads();
+    initParams.mDesiredNumTBBThreads = std::thread::hardware_concurrency();
     moonray::mcrt_common::initTLS(initParams);
 
     CPPUNIT_TEST_SUITE_REGISTRATION(moonray::geom::unittest::TestRenderingPrimAttr);

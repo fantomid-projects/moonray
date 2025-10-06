@@ -14,8 +14,7 @@
 #include <moonray/rendering/geom/PrimitiveGroup.h>
 #include <moonray/rendering/geom/PrimitiveVisitor.h>
 
-#include <tbb/atomic.h>
-
+#include <atomic>
 #include <numeric>
 
 namespace moonray {

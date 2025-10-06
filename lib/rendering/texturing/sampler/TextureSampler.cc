@@ -77,7 +77,9 @@ TextureSampler::TextureSampler()
 
 TextureSampler::~TextureSampler()
 {
+#   if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
     OIIO::TextureSystem::destroy(mTextureSystem, false);
+#   endif
 }
 
 TextureHandle*
@@ -108,29 +110,29 @@ TextureSampler::getHandle(const std::string& fileName,
     return textureHandle;
 }
 
-bool 
+bool
 TextureSampler::getTextureInfo(TextureHandle* handle,
                                const std::string& data_name,
                                int *data) {
-    // Reference of Supported Names.  See OIIO imagecache.cpp get_image_info 
+    // Reference of Supported Names.  See OIIO imagecache.cpp get_image_info
     // for complete list
-    // ("exists"), ("broken"), ("channels"), ("subimages"), 
+    // ("exists"), ("broken"), ("channels"), ("subimages"),
     // ("miplevels"), ("format"), ("cachedformat"), ("cachedpixeltype");
 
     OIIO::TypeDesc type;
     if (data_name == "channels" || data_name == "format") {
-        type = OIIO::TypeDesc::TypeInt;
+        type = OIIO::TypeInt;
     } else if (data_name == "datawindow" || data_name == "displaywindow") {
         type = OIIO::TypeDesc(OIIO::TypeDesc::INT, OIIO::TypeDesc::SCALAR, 4);
     } else {
         MNRY_ASSERT(0 && "unknown OIIO::TypeDesc for requested texture info");
     }
 
-    return 
+    return
         mTextureSystem->get_texture_info(handle,
                                          mTextureSystem->get_perthread_info(),
                                          0 /* subimage */,
-                                         (OIIO::ustring)data_name, 
+                                         (OIIO::ustring)data_name,
                                          type,
                                          (void*) data);
 }
@@ -156,7 +158,7 @@ TextureSampler::getStatistics(const std::string& prepend, std::ostream& outs, bo
 void
 TextureSampler::getStatisticsForCsv(std::ostream& outs, bool athenaFormat) const
 {
-    std::string stats = mTextureSystem->getstats(5 /* logging level 1-5 */, 
+    std::string stats = mTextureSystem->getstats(5 /* logging level 1-5 */,
                                                  true /* output cache stats */);
 
     moonray_stats::StatsTable<2> textureStatsTable("OpenImageIO Texture Statistics");
@@ -209,23 +211,23 @@ TextureSampler::getStatisticsForCsv(std::ostream& outs, bool athenaFormat) const
             textureStatsTable.emplace_back("Environment queries", tokens[2]);
             textureStatsTable.emplace_back("Environment batches", tokens[5]);
         }
-        // closest : 123 
+        // closest : 123
         else if (tokens.size() == 3 && tokens[0] == "closest" && tokens[1] == ":") {
             textureStatsTable.emplace_back("Closest interpolations", tokens[2]);
         }
-        // bilinear : 123 
+        // bilinear : 123
         else if (tokens.size() == 3 && tokens[0] == "bilinear" && tokens[1] == ":") {
             textureStatsTable.emplace_back("Bilinear interpolations", tokens[2]);
         }
-        // bicubic : 123 
+        // bicubic : 123
         else if (tokens.size() == 3 && tokens[0] == "bicubic" && tokens[1] == ":") {
             textureStatsTable.emplace_back("Bicubic interpolations", tokens[2]);
         }
-        // Average anisotropic probes : 123 
+        // Average anisotropic probes : 123
         else if (tokens.size() == 5 && tokens[0] == "Average" && tokens[1] == "anisotropic") {
             textureStatsTable.emplace_back("Average anisotropic probes", tokens[4]);
         }
-        // Max anisotropy in the wild : 123 
+        // Max anisotropy in the wild : 123
         else if (tokens.size() == 7 && tokens[0] == "Max" && tokens[1] == "anisotropy") {
             textureStatsTable.emplace_back("Max anisotropy in the wild", tokens[6]);
         }
@@ -243,7 +245,7 @@ TextureSampler::getStatisticsForCsv(std::ostream& outs, bool athenaFormat) const
             icStatsTable.emplace_back("ImageInputs created", tokens[2]);
             icStatsTable.emplace_back("ImageInputs current", tokens[4]);
             icStatsTable.emplace_back("ImageInputs peak", tokens[6]);
-        }     
+        }
         // Total pixel data size of all images referenced : 1.1 GB
         else if (tokens.size() == 11 && tokens[0] == "Total" && tokens[1] == "pixel") {
             icStatsTable.emplace_back("Total size of all images referenced (" + tokens[10] + ")", tokens[9]);
@@ -257,7 +259,7 @@ TextureSampler::getStatisticsForCsv(std::ostream& outs, bool athenaFormat) const
             icStatsTable.emplace_back("File I/O time (s)", tokens[4].substr(0, tokens[4].length() - 1));
             tokens[5].pop_back(); // remove 's'
             icStatsTable.emplace_back("File I/O time per thread average (s)", tokens[5]);
-        }       
+        }
         // File open time only : 0.0s
         else if (tokens.size() == 6 && tokens[0] == "File" && tokens[1] == "open") {
             tokens[5].pop_back(); // remove 's'
@@ -268,27 +270,27 @@ TextureSampler::getStatisticsForCsv(std::ostream& outs, bool athenaFormat) const
             icStatsTable.emplace_back("Tiles created", tokens[1]);
             icStatsTable.emplace_back("Tiles current", tokens[3]);
             icStatsTable.emplace_back("Tiles peak", tokens[5]);
-        }  
-        // total tile requests : 73364396 
+        }
+        // total tile requests : 73364396
         else if (tokens.size() == 5 && tokens[0] == "total" && tokens[1] == "tile") {
             icStatsTable.emplace_back("Total tile requests", tokens[4]);
-        }   
-        // micro-cache misses : 29209283 39.814%    
+        }
+        // micro-cache misses : 29209283 39.814%
         else if (tokens.size() == 5 && tokens[0] == "micro-cache" && tokens[1] == "misses") {
             icStatsTable.emplace_back("Micro-cache misses", tokens[3]);
             tokens[4].pop_back(); // remove '%'
             icStatsTable.emplace_back("Micro-cache misses (%)", tokens[4]);
-        }   
-        // main cache misses : 14655 0.0199756%     
+        }
+        // main cache misses : 14655 0.0199756%
         else if (tokens.size() == 6 && tokens[0] == "main" && tokens[1] == "cache") {
             icStatsTable.emplace_back("Main cache misses", tokens[4]);
             tokens[5].pop_back(); // remove '%'
             icStatsTable.emplace_back("Main cache misses (%)", tokens[5]);
-        }   
-        // Peak cache memory : 165.5 MB        
+        }
+        // Peak cache memory : 165.5 MB
         else if (tokens.size() == 6 && tokens[0] == "Peak" && tokens[1] == "cache") {
             icStatsTable.emplace_back("Peak cache memory (" + tokens[5] + ")", tokens[4]);
-        }   
+        }
         // Tot: 5 12999 165.3 0 0.0 25.9s
         else if (tokens.size() == 7 && tokens[0] == "Tot:") {
             summaryTable.emplace_back("Total opens", tokens[1]);
@@ -296,8 +298,8 @@ TextureSampler::getStatisticsForCsv(std::ostream& outs, bool athenaFormat) const
             summaryTable.emplace_back("Total size read (MB)", tokens[3]);
             tokens[6].pop_back(); // remove 's'
             summaryTable.emplace_back("Total I/O time (s)", tokens[6]);
-        }  
-        // 1 1 3256 38.2 1.0s 8192x8192x3.u8 /work/rd/raas/maps/toothless/oiio/DIF.tx MIP-COUNT[1871,850,338,125,45,16,4,1,1,1,1,1,1,1]       
+        }
+        // 1 1 3256 38.2 1.0s 8192x8192x3.u8 /work/rd/raas/maps/toothless/oiio/DIF.tx MIP-COUNT[1871,850,338,125,45,16,4,1,1,1,1,1,1,1]
         else if (tokens.size() == 8 && std::isdigit(tokens[0][0])) {
             imageFileTable.emplace_back(tokens[6], // file
                                         tokens[1], // opens
@@ -329,7 +331,7 @@ TextureSampler::getMainCacheMissFraction() const
 //
 // This stats string parsing is only tested for OIIO version 1.7.7 but there is no runtime version check
 // logic. We should check this parsing logic properly working if we use other version of OIIO.
-//    
+//
 {
     float f = -1.0f;
 
@@ -349,7 +351,7 @@ void
 TextureSampler::getMainCacheInfo(const std::string& prepend, std::ostream& outs) const
 {
     using scene_rdl2::str_util::byteStr;
-    
+
     float memSizeMB = getMemoryUsage();
     size_t memSizeByte = static_cast<size_t>(memSizeMB * 1024.0f * 1024.0f);
     outs << prepend
@@ -369,7 +371,7 @@ TextureSampler::showStatsFileIOTimeAveragePerThread() const
 //
 // Returns file I/O time (average per thread value) as a string.
 // Returns "?" if error.
-// 
+//
 // This stats string parsing is only tested for OIIO version 1.7.7 but there is no runtime version check
 // logic. We should check this parsing logic properly working if we use other version of OIIO.
 //
@@ -377,7 +379,7 @@ TextureSampler::showStatsFileIOTimeAveragePerThread() const
     std::string timeStr("?");
 
     std::string statsData = showStats(1, true);
-    
+
     // The format should be like this
     // File I/O time : 1h 53m 15.2s (3m8.8s average per thread)
     //                               ^^^^^^ return this
@@ -424,7 +426,7 @@ TextureSampler::getMemoryUsage() const
     mTextureSystem->getattribute("max_memory_MB", mb);
     return mb;
 }
-    
+
 void
 TextureSampler::setOpenFileLimit(int count)
 {
@@ -454,7 +456,7 @@ void
 TextureSampler::invalidateAllResources() const
 {
     MNRY_ASSERT(isValid());
-    
+
     std::set<scene_rdl2::rdl2::Shader *> mapsToUpdate;
 
     // 1st pass, grab list of maps which need updating.
@@ -473,8 +475,8 @@ TextureSampler::registerMapForInvalidation(const std::string &fileName, scene_rd
 {
 
     // Textures could be loaded in parallel, use mutex to avoid data race.
-    tbb::recursive_mutex::scoped_lock lock(mMutex);
-    
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+
     OIIO::ustring oiioFileName(fileName);
 
     auto range = mShaderToName.equal_range(map);
@@ -499,7 +501,7 @@ TextureSampler::registerMapForInvalidation(const std::string &fileName, scene_rd
 void
 TextureSampler::unregisterMapForInvalidation(scene_rdl2::rdl2::Shader *map)
 {
-    tbb::recursive_mutex::scoped_lock lock(mMutex);
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
     MNRY_ASSERT(isValid());
 
     auto mapRange = mShaderToName.equal_range(map);

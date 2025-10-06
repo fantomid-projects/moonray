@@ -368,7 +368,11 @@ RenderDriver::runDisplayFiltersEndOfPass(RenderDriver *driver, const FrameState 
     fs.mRenderContext->snapshotAovsForDisplayFilters(true, true);
     const DisplayFilterDriver& displayFilterDriver = driver->getDisplayFilterDriver();
     simpleLoop (true, 0u, (unsigned int)driver->getTiles()->size() - 1u, [&](unsigned tileIdx) {
-        int threadId = tbb::task_arena::current_thread_index();
+#       ifdef TBB_ONEAPI
+        const int threadId = oneapi::tbb::this_task_arena::current_thread_index();
+#       else
+        const int threadId = tbb::task_arena::current_thread_index();
+#       endif
         displayFilterDriver.runDisplayFilters(tileIdx, threadId);
     });
 }

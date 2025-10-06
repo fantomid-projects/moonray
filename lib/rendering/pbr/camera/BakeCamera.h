@@ -19,6 +19,8 @@
 
 #include <string>
 
+namespace OIIO { class TextureSystem; }
+
 namespace moonray {
 
 namespace mcrt_common { class RayDifferential; }
@@ -39,13 +41,20 @@ private:
     class NormalMap
     {
     public:
-        NormalMap(): mFilename(""), mTextureHandle(nullptr), mTextureSystem(nullptr)
+        NormalMap()
+#           if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
+            : mTextureHandle(nullptr)
+#           endif
         {
         }
 
         std::string mFilename;
         texture::TextureHandle *mTextureHandle;
-        OIIO::TextureSystem *mTextureSystem;
+#       if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
+        OIIO::TextureSystem* mTextureSystem;
+#       else
+        std::shared_ptr<OIIO::TextureSystem> mTextureSystem;
+#       endif
     };
 
     // These need to match up with the enum declared in

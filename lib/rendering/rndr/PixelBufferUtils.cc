@@ -136,7 +136,14 @@ readPixelBuffer(Buffer& buf, const std::string& filename,
 
     MNRY_ASSERT_REQUIRE(tmpBufferSrc);
 
+#   if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
     if (!in->read_image(imageSpec.format, tmpBufferSrc)) {
+#   else
+    const int subImg = 0;
+    const int mipLevel = 0;
+    const int chBegin = 0;
+    if (!in->read_image(subImg, mipLevel, chBegin, imageSpec.nchannels, imageSpec.format, tmpBufferSrc)) {
+#   endif
         free(tmpBufferSrc);
         throw scene_rdl2::except::IoError("Cannot read image file: \"" + filename +
                   "\" (" + in->geterror() + ")");

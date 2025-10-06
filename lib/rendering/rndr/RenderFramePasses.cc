@@ -51,7 +51,7 @@
 // Debug message display for adaptive sampling stage rendering
 //#define PRINT_DEBUG_MESSAGE_ADAPTIVE_STAGE
 
-// Debug message display RayState info for vector mode 
+// Debug message display RayState info for vector mode
 //#define DEBUG_MSG_VECTOR_RAYSTATE
 
 // Enable debugSamplesRecArray logic (record/playback all computeRadiance() result for beauty AOV)
@@ -127,7 +127,7 @@ RenderDriver::renderPasses(RenderDriver *driver, const FrameState &fs,
     MNRY_ASSERT(mcrt_common::AffinityManager::get());
     MNRY_ASSERT(mcrt_common::AffinityManager::get()->getCpu());
     std::shared_ptr<mcrt_common::CpuAffinityManager> cpuAff = mcrt_common::AffinityManager::get()->getCpu();
-    
+
     auto calcCpuIdSequential = [&](size_t threadId) -> size_t { return threadId; };
     auto calcCpuIdByTbl = [&](size_t threadId) -> size_t { return (cpuAff->getAffinityCpuIdTbl())[threadId]; };
     scene_rdl2::ThreadPoolExecutor::CalcCpuIdFunc calcCpuIdFunc = nullptr;
@@ -150,7 +150,7 @@ RenderDriver::renderPasses(RenderDriver *driver, const FrameState &fs,
                  << "  " << cpuAff->getMcrtMessage() << '\n'
                  << "  " << mcrt_common::AffinityManager::get()->getMem()->getMcrtMessage() << '\n'
                  << "}";
-            std::string msg = ostr.str(); 
+            std::string msg = ostr.str();
 
             scene_rdl2::logging::Logger::info(msg);
             if (isatty(STDOUT_FILENO)) std::cerr << msg << '\n';
@@ -273,7 +273,7 @@ RenderDriver::renderPasses(RenderDriver *driver, const FrameState &fs,
 
             unsigned long long processedTilesTotal = 0ULL;
             unsigned long long processedSampleTotal = 0ULL;
-                            
+
             // We have to track the condition of stopAtPassBoundary each thread independently
             // in order to properly flush the radiance queue under vector mode.
             bool stopAtPassBoundaryThreadLocal = false;
@@ -776,7 +776,7 @@ RenderDriver::renderTileUniformSamples(RenderDriver *driver,
 #       endif // end RUNTIME_VERIFY0
 #       ifdef RUNTIME_VERIFY1
         PixSampleSpanRuntimeVerify::get()->add(px, py, currStartSampleIdx, currEndSampleIdx);
-#       endif // end RUNTIME_VERIFY1        
+#       endif // end RUNTIME_VERIFY1
 
         // Get the number of samples for this pixel.
         unsigned totalNumSamples = computeTotalNumSamples(fs, 0, px, py);

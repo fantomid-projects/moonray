@@ -1537,7 +1537,11 @@ RenderContext::runDisplayFiltersBatch() const
     }
     snapshotAovsForDisplayFilters(true, true);
     simpleLoop (/*parallel*/ true, 0u, (unsigned)mDriver->getTiles()->size(), [&](unsigned tileIdx) {
-        int threadId = tbb::task_arena::current_thread_index();
+#       ifdef TBB_ONEAPI
+        const int threadId = oneapi::tbb::this_task_arena::current_thread_index();
+#       else
+        const int threadId = tbb::task_arena::current_thread_index();
+#       endif
         displayFilterDriver.runDisplayFilters(tileIdx, threadId);
     });
 }

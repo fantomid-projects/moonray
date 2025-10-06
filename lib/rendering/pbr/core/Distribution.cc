@@ -12,12 +12,13 @@
 #include <moonray/rendering/pbr/core/ImageColorCorrect_ispc_stubs.h>
 #include <moonray/rendering/pbr/core/Util_ispc_stubs.h>
 #include <moonray/rendering/rndr/OiioUtils.h>
-
 #include <scene_rdl2/common/except/exceptions.h>
 #include <scene_rdl2/common/math/MathUtil.h>
 #include <scene_rdl2/render/logging/logging.h>
 #include <scene_rdl2/render/util/Memory.h>
 #include <scene_rdl2/common/platform/HybridUniformData.h>
+
+#include <OpenImageIO/texture.h>
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
@@ -887,7 +888,14 @@ ImageDistribution::init(const std::string &mapFilename,
         heightLevelAbove = inputLevelHeight;
 
         // Read image in floating point format
+#       if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
         bool readOk = in->read_image(OIIO::TypeDesc::FLOAT, inputPixelBuffer);
+#       else
+        const int subimage = 0; // only one subimage supported
+        const int chBegin = 0;
+        const int chEnd = -1; // all channels
+        bool readOk = in->read_image(subimage, mipLevel, chBegin, chEnd, OIIO::TypeDesc::FLOAT, inputPixelBuffer);
+#       endif
 
         // Error if it wasn't read properly
         if (!readOk) {

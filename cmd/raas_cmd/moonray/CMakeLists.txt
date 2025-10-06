@@ -26,7 +26,7 @@ target_link_libraries(${target}
         SceneRdl2::render_util
         SceneRdl2::scene_rdl2
         OpenImageIO::OpenImageIO
-        ${MKL}
+        ${MKL_target}
         ${PlatformSpecificLibs}
 )
 

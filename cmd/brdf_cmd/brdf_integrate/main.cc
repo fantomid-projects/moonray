@@ -71,7 +71,7 @@ static const int sTaskCount = 1;
 // This gives the scheduler enough granularity to load balance well, but not
 // too much that it causes contention on the atomics / mutexes at the end of
 // each task
-static const int sTaskCount = tbb::task_scheduler_init::default_num_threads() * 4;
+static const int sTaskCount = std::thread::hardware_concurrency() * 4;
 #endif
 
 

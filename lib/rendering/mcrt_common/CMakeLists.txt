@@ -48,7 +48,7 @@ endif()
 get_target_property(ISPC_TARGET_OBJECTS ${objLib} TARGET_OBJECTS)
 target_sources(${component}
     PRIVATE
-	AffinityManager.cc
+        AffinityManager.cc
         Frustum.cc
         ProfileAccumulator.cc
         ProfileAccumulatorHandles.cc

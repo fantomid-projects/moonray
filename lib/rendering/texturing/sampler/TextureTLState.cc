@@ -55,13 +55,17 @@ TLState::initTexturingSupport()
     MNRY_ASSERT(mOIIOThreadData);
 }
 
-TLState::TLState(mcrt_common::ThreadLocalState *tls, 
+TLState::TLState(mcrt_common::ThreadLocalState *tls,
                  const mcrt_common::TLSInitParams &initParams,
                  bool okToAllocBundledResources) :
     BaseTLState(tls->mThreadIdx, tls->mArena, tls->mSubpixelArena, tls->mPixelArena)
 {
     mTextureSampler = MNRY_VERIFY(gPrivate.mTextureSampler);
+#   if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
     mTextureSystem = MNRY_VERIFY(mTextureSampler->mTextureSystem);
+#   else
+    mTextureSystem = MNRY_VERIFY(mTextureSampler->mTextureSystem.get());
+#   endif
     mOIIOThreadData = nullptr;
 }
 
@@ -71,7 +75,7 @@ TLState::initPrivate(const mcrt_common::TLSInitParams &initParams)
     MNRY_ASSERT(!gPrivate.mTextureSampler);
 
     // Initialize Texture system.
-    MOONRAY_THREADSAFE_STATIC_WRITE(gPrivate.mTextureSampler 
+    MOONRAY_THREADSAFE_STATIC_WRITE(gPrivate.mTextureSampler
                                   = new TextureSampler());
 }
 

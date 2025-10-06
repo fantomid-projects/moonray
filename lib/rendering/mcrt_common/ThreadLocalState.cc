@@ -10,8 +10,13 @@
 #include <moonray/rendering/mcrt_common/AffinityManager.h>
 #include <scene_rdl2/render/logging/logging.h>
 #include <scene_rdl2/render/util/Memory.h>
-#include <tbb/enumerable_thread_specific.h>
+
+#ifdef TBB_ONEAPI
+#include <tbb/info.h>
+#else
 #include <tbb/task_scheduler_init.h>
+#endif
+#include <tbb/enumerable_thread_specific.h>
 
 #include <thread>
 
@@ -305,7 +310,7 @@ initTLS(const TLSInitParams &initParams)
     gPrivate.mInitParams = initParams;
 
     if (gPrivate.mInitParams.mDesiredNumTBBThreads == 0) {
-        gPrivate.mInitParams.mDesiredNumTBBThreads = tbb::task_scheduler_init::default_num_threads();
+        gPrivate.mInitParams.mDesiredNumTBBThreads = std::thread::hardware_concurrency();
     }
 
     MNRY_ASSERT_REQUIRE(gPrivate.mInitParams.mDesiredNumTBBThreads);

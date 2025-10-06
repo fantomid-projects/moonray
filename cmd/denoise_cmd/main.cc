@@ -62,9 +62,18 @@ readImage(const std::string &filename, scene_rdl2::fb_util::RenderBuffer *buffer
 
     buffer->init(imageSpec.width, imageSpec.height);
 
+    // TODO: Should we check the number of channels here?
     std::vector<float> tmpBuffer(imageSpec.width * imageSpec.height * 4);
 
+#   if OIIO_VERSION < OIIO_MAKE_VERSION(3,0,0)
     if (!in->read_image(OIIO::TypeDesc::FLOAT, tmpBuffer.data())) {
+#   else
+    const int subImg = 0;
+    const int mipLevel = 0;
+    const int chBegin = 0;
+    if (!in->read_image(subImg, mipLevel, chBegin, imageSpec.nchannels,
+                        OIIO::TypeDesc::FLOAT, tmpBuffer.data())) {
+#   endif
         throw scene_rdl2::except::IoError("Cannot read image file: \"" + filename +
                   "\" (" + in->geterror() + ")");
     }
