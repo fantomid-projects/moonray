@@ -28,6 +28,7 @@
 #include <utility>
 #include <vector>
 #include <stdint.h>
+#include <thread>
 
 #ifndef MOONRAY_EXEC_MODE_DEFAULT
 #define MOONRAY_EXEC_MODE_DEFAULT AUTO

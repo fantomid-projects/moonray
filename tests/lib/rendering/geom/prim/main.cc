@@ -6,11 +6,7 @@
 #include <moonray/rendering/mcrt_common/ThreadLocalState.h>
 #include <scene_rdl2/pdevunit/pdevunit.h>
 
-#ifdef TBB_ONEAPI
-#include <oneapi/tbb/info.h>
-#else
-#include <tbb/task_scheduler_init.h>
-#endif
+#include <thread>
 
 int
 main(int argc, char *argv[])

@@ -17,9 +17,9 @@
 #include <scene_rdl2/common/math/Vec3fa.h>
 #include <scene_rdl2/scene/rdl2/Types.h>
 
-#include <string>
+#include <OpenImageIO/texture.h>
 
-namespace OIIO { class TextureSystem; }
+#include <string>
 
 namespace moonray {
 

@@ -35,6 +35,7 @@
 #endif
 
 #include <random>
+#include <thread>
 
 // Quick way to force a single sample per pixel. For debugging.
 // This define doesn't affect realtime mode.
