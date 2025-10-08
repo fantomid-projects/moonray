@@ -140,10 +140,17 @@ TextureSampler::getTextureInfo(TextureHandle* handle,
 void
 TextureSampler::getStatistics(const std::string& prepend, std::ostream& outs, bool verbose) const
 {
-
     int level = verbose ? 5 : 1;
+
+#   if OIIO_VERSION == OIIO_MAKE_VERSION(2, 4, 8)
+    // no cache stats if no files opened, else OIIO 2.4.8 crashes
+    bool outputCacheStats = mNameToShader.size() > 0;
+#   else
+    bool outputCacheStats = true;
+#   endif
+
     std::string stats = mTextureSystem->getstats(level /* logging level 1-5 */,
-                                                 true /* output cache stats */);
+                                                 outputCacheStats /* output cache stats */);
 
     // Split apart the stats string into individual lines and prepend each line
     std::string delimiter = "\n";
@@ -158,8 +165,15 @@ TextureSampler::getStatistics(const std::string& prepend, std::ostream& outs, bo
 void
 TextureSampler::getStatisticsForCsv(std::ostream& outs, bool athenaFormat) const
 {
+#   if OIIO_VERSION == OIIO_MAKE_VERSION(2, 4, 8)
+    // no cache stats if no files opened, else OIIO 2.4.8 crashes
+    bool outputCacheStats = mNameToShader.size() > 0;
+#   else
+    bool outputCacheStats = true;
+#   endif
+
     std::string stats = mTextureSystem->getstats(5 /* logging level 1-5 */,
-                                                 true /* output cache stats */);
+                                                 outputCacheStats /* output cache stats */);
 
     moonray_stats::StatsTable<2> textureStatsTable("OpenImageIO Texture Statistics");
     moonray_stats::StatsTable<2> icStatsTable("OpenImageIO ImageCache Statistics");
