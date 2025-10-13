@@ -197,7 +197,7 @@ float LightTree::splitAxis(SplitCandidate& minSplit, int axis, const LightTreeNo
     populateSplitsRightSide(finalSplits, finalBuckets, finalSplitCount);
 
     // find lowest cost split candidate and return
-    return getCheapestSplit(minSplit, finalSplitCount, finalSplits, node);
+    return getCheapestSplit(minSplit, finalSplitCount, finalSplits, finalBuckets, node);
 }
 
 

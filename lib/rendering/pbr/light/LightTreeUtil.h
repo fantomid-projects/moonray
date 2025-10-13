@@ -37,9 +37,9 @@ struct LightTreeCone
     /// Full Constructor
     LightTreeCone(const scene_rdl2::math::Vec3f& axis, float cosThetaO, float cosThetaE, bool isTwoSided) 
         : mAxis(axis), 
-          mCosThetaO(cosThetaO),
-          mSinThetaO(scene_rdl2::math::sqrt(1.f - cosThetaO*cosThetaO)),
-          mCosThetaE(cosThetaE),
+          mCosThetaO(scene_rdl2::math::clamp(cosThetaO, -1.f, 1.f)),
+          mSinThetaO(scene_rdl2::math::sqrt(1.f - mCosThetaO*mCosThetaO)),
+          mCosThetaE(scene_rdl2::math::clamp(cosThetaE, -1.f, 1.f)),
           mTwoSided(isTwoSided) {}
 
     /// Copy Constructor
@@ -53,9 +53,9 @@ struct LightTreeCone
     /// Constructor using light properties
     LightTreeCone(const Light* const light)
         : mAxis(light->getDirection(0.f)),
-          mCosThetaO(scene_rdl2::math::cos(light->getThetaO())),
-          mSinThetaO(scene_rdl2::math::sin(light->getThetaO())),
-          mCosThetaE(scene_rdl2::math::cos(light->getThetaE())),
+          mCosThetaO(scene_rdl2::math::clamp(scene_rdl2::math::cos(light->getThetaO()), -1.f, 1.f)),
+          mSinThetaO(scene_rdl2::math::clamp(scene_rdl2::math::sin(light->getThetaO()), -1.f, 1.f)),
+          mCosThetaE(scene_rdl2::math::clamp(scene_rdl2::math::cos(light->getThetaE()), -1.f, 1.f)),
           mTwoSided(light->isTwoSided()) {}
 
     /// Is this LightTreeCone empty?
@@ -92,6 +92,7 @@ struct LightTreeBucket
     float mEnergy                   = 0.f;
     scene_rdl2::math::BBox3f mBBox  = scene_rdl2::math::BBox3f(scene_rdl2::util::empty);
     LightTreeCone mCone;
+    uint32_t mNumLights             = 0;
 };
 
 

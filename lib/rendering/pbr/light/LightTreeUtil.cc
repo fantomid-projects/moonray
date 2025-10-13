@@ -77,6 +77,7 @@ void LightTreeBucket::addLight(const Light* const light)
     LightTreeCone cone(light->getDirection(0.f), scene_rdl2::math::cos(light->getThetaO()), 
               scene_rdl2::math::cos(light->getThetaE()), light->isTwoSided());
     mCone = combineCones(cone, mCone);
+    mNumLights++;
 }
 
 
@@ -116,16 +117,25 @@ void SplitCandidate::setRightSide(const SplitCandidate& rightSplit, const LightT
 
 float SplitCandidate::calcOrientationTerm(const LightTreeCone& cone) const
 {
-    const float theta_o = cone.getThetaO();
-    const float theta_w = scene_rdl2::math::min(theta_o + cone.getThetaE(), sPi);
-    const float sinThetaO = scene_rdl2::math::sqrt(1 - cone.mCosThetaO*cone.mCosThetaO);
+    // Handle empty or invalid cones
+    if (cone.isEmpty()) {
+        return 4.0f * sPi; // Full sphere
+    }
 
+    const float theta_o = cone.getThetaO();
+    const float theta_e = cone.getThetaE();
+
+    // Calculate theta_w = min(theta_o + theta_e, π)
+    const float theta_w = scene_rdl2::math::min(theta_o + theta_e, sPi);
+    
+    // Paper formula: MΩ = 2π (1 − cos θo) + (π/2) [2θw sin θo − cos(θo − 2θw) − 2θo sin θo + cos θo]
     const float orientationTermLeft = 2.f * sPi * (1.f - cone.mCosThetaO);
     const float orientationTermRight = 0.5f * sPi * (
-                                       (2.f * theta_w * sinThetaO) - 
-                                       scene_rdl2::math::cos(theta_o - 2.f * theta_w) -
-                                       (2.f * theta_o * sinThetaO) + cone.mCosThetaO
-                                    );
+                                      (2.0f * theta_w * cone.mSinThetaO) - 
+                                      scene_rdl2::math::cos(theta_o - 2.0f * theta_w) -
+                                      (2.0f * theta_o * cone.mSinThetaO) + cone.mCosThetaO
+    );
+    
     return orientationTermLeft + orientationTermRight;
 }
 
@@ -133,13 +143,22 @@ float SplitCandidate::cost(const BBox3f& parentBBox, const LightTreeCone& parent
 {
     // regularization factor Kr = length_max / length_axis
     const float length_max = parentBBox.size()[maxDim(parentBBox.size())];
-    const float length_axis = parentBBox.size()[mAxis.first];
+    const float length_axis = scene_rdl2::math::max(parentBBox.size()[mAxis.first], sEpsilon);
     const float kr = length_max / length_axis;
 
-    const float numeratorL = mLeftEnergy  * bboxArea(mLeftBBox)  * calcOrientationTerm(mLeftCone);
-    const float numeratorR = mRightEnergy * bboxArea(mRightBBox) * calcOrientationTerm(mRightCone);
-    const float denominator = bboxArea(parentBBox) * calcOrientationTerm(parentCone);
+    // Calculate areas and orientation terms
+    const float leftArea = bboxArea(mLeftBBox);
+    const float rightArea = bboxArea(mRightBBox);
+    const float parentArea = bboxArea(parentBBox);
 
+    const float leftOrientation = calcOrientationTerm(mLeftCone);
+    const float rightOrientation = calcOrientationTerm(mRightCone);
+    const float parentOrientation = calcOrientationTerm(parentCone);
+
+    const float numeratorL = mLeftEnergy * leftArea * leftOrientation;
+    const float numeratorR = mRightEnergy * rightArea * rightOrientation;
+    const float denominator = parentArea * parentOrientation;
+    
     return kr * ( (numeratorL + numeratorR) / denominator );
 }
 

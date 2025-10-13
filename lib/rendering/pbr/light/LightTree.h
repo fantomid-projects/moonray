@@ -109,9 +109,15 @@ private:
         int oldSplitCount = oldBucketCount - 1;
 
         for (int i = 0; i < oldBucketCount; ++i) {
-            if (!oldBuckets[i].mBBox.empty()) {
+            // if there are no lights in bucket, purge bucket
+            // otherwise, add it and the split to the right
+            if (oldBuckets[i].mNumLights != 0) {
                 newBuckets[newBucketCount] = oldBuckets[i];
                 if (i < oldSplitCount) {
+                    // if we are on the last split, and the number of lights in the next
+                    // bucket is zero, we can't add this split, as it will have no righthand bucket
+                    // NOTE: this should never happen, but just to be safe
+                    if (i == oldSplitCount - 1 && oldBuckets[i+1].mNumLights == 0) { break; }
                     newSplits[newBucketCount] = oldSplits[i];
                 }
                 ++newBucketCount;
@@ -156,22 +162,54 @@ private:
 
     // Finds the lowest-cost split of the node along the given axis
     inline float getCheapestSplit(SplitCandidate& minSplit, int splitCount, 
-                                  const SplitCandidate* const splits, const LightTreeNode& node) const
+                                  const SplitCandidate* const splits, 
+                                  const LightTreeBucket* buckets,
+                                  const LightTreeNode& node) const
     {
         float minCost = std::numeric_limits<float>::max();
         for (int i = 0; i < splitCount; ++i) {
             const SplitCandidate& split = splits[i];
             // make sure neither node would be empty
-            if (split.leftIsEmpty() || split.rightIsEmpty()) {
+            if (buckets[i].mNumLights == 0 || buckets[i+1].mNumLights == 0) {
                 continue;
             }
             float cost = split.cost(node.getBBox(), node.getCone());
-            if (cost < minCost) {
+            if (i == 0 || cost < minCost) {
                 minCost = cost;
                 minSplit = split;
             }
         }
         return minCost;
+    }
+
+    // Print the given splits out in the format:
+    // |   b0   |   b1   |   b2   |   ...   |   bn   |
+    //          s0       s1       s2       s(n-1)
+    // Where b0, b1, etc are replaced by the number of lights in the bucket
+    inline void printSplits(const LightTreeBucket* buckets, SplitCandidate* splits, uint32_t numBuckets) const
+    {
+        std::cout << "|";
+        std::string splitsString = "";
+        for (int i = 0; i < numBuckets; ++i) {
+            int numDigits = std::to_string(buckets[i].mNumLights).length();
+            std::cout << "   " << buckets[i].mNumLights << "   |";
+            splitsString += "  ";
+            for (int j = 0; j < numDigits; ++j) {
+                splitsString += " ";
+            }
+            splitsString += "   ";
+            if (i < numBuckets - 1) {
+                splitsString += "s";
+                splitsString += std::to_string(i);
+            } 
+        }
+        std::cout << "\n" << splitsString << std::endl;
+
+        std::cout << "axes: [";
+        for (int j = 0; j < numBuckets - 1; ++j) {
+            std::cout << "(" << splits[j].mAxis.first << "," << splits[j].mAxis.second << "), "; 
+        }
+        std::cout << "]\n";
     }
 
 /// ------------------------------------- Function Declarations ---------------------------------------
