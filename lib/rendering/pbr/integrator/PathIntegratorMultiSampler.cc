@@ -19,6 +19,7 @@
 #include <moonray/rendering/pbr/core/DebugRay.h>
 #include <moonray/rendering/pbr/core/RayState.h>
 #include <moonray/rendering/pbr/core/PathVisualizer.h>
+#include <scene_rdl2/common/rec_time/RecTime.h>
 #include "VolumeTransmittance.h"
 
 // using namespace scene_rdl2::math; // can't use this as it breaks openvdb in clang.
@@ -333,6 +334,10 @@ PathIntegrator::addDirectVisibleLightSampleContributions(pbr::TLState* pbrTls, S
     }
 }
 
+#ifndef PLATFORM_APPLE
+static const double tscSecPerCycle = scene_rdl2::rec_time::RecTimeRDTSC::getSecPerCycle();
+#endif // end of Not PLATFORM_APPLE
+
 void
 PathIntegrator::sampleAndAddDirectLightContributions(pbr::TLState* pbrTls,
         Subpixel const& sp, const PathVertex& pv,
@@ -353,6 +358,10 @@ PathIntegrator::sampleAndAddDirectLightContributions(pbr::TLState* pbrTls,
             sp.mSubpixelIndex, sequenceID);
     IntegratorSample1D rrSamples;
     rrSamples.resume(sid, pv.nonMirrorDepth * sampleCount);
+
+#ifndef PLATFORM_APPLE
+    scene_rdl2::rec_time::RecTimeRDTSC recTime;
+#endif // end of Not PLATFORM_APPLE
 
     for (int lightIndex = 0; lightIndex < lightCount; ++lightIndex) {
 
@@ -376,7 +385,11 @@ PathIntegrator::sampleAndAddDirectLightContributions(pbr::TLState* pbrTls,
         }
 
         // ------------------------------ Set up light stats -----------------------------------------------------------
+#ifdef PLATFORM_APPLE
         RenderTimer timer(pbrTls->mStatistics.mLightSamplingTime[light->getSceneIndex()]);
+#else // else of PLATFORM_APPLE
+        recTime.start();
+#endif // end of Not PLATFORM_APPLE
         pbrTls->mStatistics.incCounter(STATS_NUM_LIGHTS_CHOSEN);
         // -------------------------------------------------------------------------------------------------------------
 
@@ -400,6 +413,10 @@ PathIntegrator::sampleAndAddDirectLightContributions(pbr::TLState* pbrTls,
         // ---------------- Trace shadow rays and add any light sample contributions -----------------------------------
         addDirectVisibleLightSampleContributions(pbrTls, sp, pv, lSampler, lsmp, parentRay, rayEpsilon, 
                                                  shadowRayEpsilon, radiance, sequenceID, aovs, isect, light);
+
+#ifndef PLATFORM_APPLE
+        pbrTls->mStatistics.mLightSamplingTime[light->getSceneIndex()] += (double)recTime.end() * tscSecPerCycle;
+#endif // end of Not PLATFORM_APPLE
     }
 
     // tldr; Add inactive lights to the visibility aov
