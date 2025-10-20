@@ -804,7 +804,7 @@ PolyMesh::computeTessellationFactor(const scene_rdl2::rdl2::Layer *pRdlLayer,
                                     frustums[0].mViewport[1];
         } else {
             MNRY_ASSERT_REQUIRE(!fishtums.empty());
-            pixelsPerScreenHeight = fishtums[0].mHeight;
+            pixelsPerScreenHeight = fishtums[0].mApertureWindowHeight;
         }
         float pixelsPerEdge = mAdaptiveError;
         float edgesPerScreenHeight = pixelsPerScreenHeight /

@@ -739,7 +739,7 @@ OpenSubdivMesh::computeSubdTessellationFactor(const scene_rdl2::rdl2::Layer *pRd
                                     frustums[0].mViewport[1];
         } else {
             MNRY_ASSERT_REQUIRE(!fishtums.empty());
-            pixelsPerScreenHeight = fishtums[0].mHeight;
+            pixelsPerScreenHeight = fishtums[0].mApertureWindowHeight;
         }
 
         const float pixelsPerEdge = mAdaptiveError;

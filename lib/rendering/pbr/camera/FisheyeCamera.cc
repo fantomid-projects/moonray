@@ -186,11 +186,15 @@ void
 FisheyeCamera::computeFishtumImpl(mcrt_common::Fishtum *f, float t,
                                       bool useRenderRegion) const
 {
-    f->mRadialScale = mRadialScale;
-    f->mDerivScale  = mDerivScale;
-    f->mMapping     = mMapping;
-    f->mWidth       = useRenderRegion ? (int)getRegionWindowWidth()  : (int)getApertureWindowWidth();
-    f->mHeight      = useRenderRegion ? (int)getRegionWindowHeight() : (int)getApertureWindowHeight();
+    f->mRadialScale          = mRadialScale;
+    f->mDerivScale           = mDerivScale;
+    f->mMapping              = mMapping;
+    f->mApertureWindowWidth  = getApertureWindowWidth();
+    f->mApertureWindowHeight = getApertureWindowHeight();
+    f->mRegionWindowXMin     = getRegionToApertureOffsetX();
+    f->mRegionWindowYMin     = getRegionToApertureOffsetY();
+    f->mRegionWindowXMax     = getRegionToApertureOffsetX() + getRegionWindowWidth();
+    f->mRegionWindowYMax     = getRegionToApertureOffsetY() + getRegionWindowHeight();
 }
 
 } // namespace pbr

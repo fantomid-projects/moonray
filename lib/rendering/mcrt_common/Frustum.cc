@@ -301,11 +301,8 @@ Fishtum::projectPoint(const Vec3f &v) const
     float X = D * cosphi;
     float Y = D * sinphi;
 
-    const float w = mWidth;
-    const float h = mHeight;
-
-    X += 0.5f * w;
-    Y += 0.5f * h;
+    X += 0.5f * mApertureWindowWidth;
+    Y += 0.5f * mApertureWindowHeight;
 
     return Vec2f(X, Y);
 }
@@ -315,7 +312,8 @@ bool
 Fishtum::isInView(const Vec3f &v) const
 {
     Vec2f V = projectPoint(v);
-    return (V.x >= 0.0f) && (V.y >= 0.0f) && (V.x <= mWidth) && (V.y <= mHeight);
+    return (V.x >= mRegionWindowXMin) && (V.y >= mRegionWindowYMin) &&
+           (V.x <= mRegionWindowXMax) && (V.y <= mRegionWindowYMax);
 }
 
 

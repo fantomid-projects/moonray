@@ -105,8 +105,12 @@ struct Fishtum {
     float mRadialScale;
     float mDerivScale;
     int mMapping;
-    int mWidth;
-    int mHeight;
+    float mApertureWindowWidth;
+    float mApertureWindowHeight;
+    float mRegionWindowXMin;
+    float mRegionWindowYMin;
+    float mRegionWindowXMax;
+    float mRegionWindowYMax;
 };
 
 } // namespace mcrt_common
