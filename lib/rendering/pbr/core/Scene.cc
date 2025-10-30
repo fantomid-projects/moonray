@@ -187,7 +187,7 @@ void setAttributeTableOnMeshLight(MeshLight* meshLight, const std::string& refGe
 }
 
 void
-Scene::generateMeshLightGeometry(Light* light)
+Scene::generateMeshLightGeometry(Light* light, mcrt_common::ExecutionMode executionMode)
 {
     MeshLight* meshLight = (MeshLight*) light;
     rdl2::Geometry* refGeom = meshLight->getReferenceGeometry();
@@ -211,7 +211,7 @@ Scene::generateMeshLightGeometry(Light* light)
     // This builds the sampling BVH and does any other computation that occurs
     // after all meshes have been submitted. If no meshes were submitted
     // then this turns the light off.
-    meshLight->finalize();
+    meshLight->finalize(executionMode);
 
     // Get hold of the geometry accelerator's embree device
     const RTCDevice& rtcDevice = mEmbreeAccel->getRTCDevice();
@@ -246,7 +246,7 @@ Scene::preFrame(const LightAovs &lightAovs, mcrt_common::ExecutionMode execution
     bool updateLights = mRdlLayer->lightSetsChanged() || vars.hasChanged(rdl2::SceneVariables::sFrameKey) ||
         vars.hasChanged(rdl2::SceneVariables::sEnableMotionBlur);
     if (updateLights) {
-        updateLightList();
+        updateLightList(executionMode);
     } else {
         for (int i = 0; i < getLightCount(); ++i) {
             Light *light = getLight(i);
@@ -256,7 +256,7 @@ Scene::preFrame(const LightAovs &lightAovs, mcrt_common::ExecutionMode execution
                     // global setting, then the mesh light's geometry or map shader could have changed without any
                     // rdl attributes changing. We must completely update the mesh light.
                     light->update(getWorld2Render());
-                    generateMeshLightGeometry(light);
+                    generateMeshLightGeometry(light, executionMode);
                 } else {
                     // The attribute table is always updated in the render context. Therefore
                     // we must always set the attribute table to the mesh light even if the
@@ -631,7 +631,8 @@ Scene::createLightFromRdlLight(const rdl2::Light* rdlLight)
 }
 
 // Create all runtime lights and create mapping from corresponding rdl2 lights.
-void Scene::populateLightList(size_t lightCount, size_t lightSetCount, std::set<const rdl2::Light *> rdlLights)
+void Scene::populateLightList(size_t lightCount, size_t lightSetCount, std::set<const rdl2::Light *> rdlLights,
+                              mcrt_common::ExecutionMode executionMode)
 {
     mLightList.reserve(lightCount);
 
@@ -655,7 +656,7 @@ void Scene::populateLightList(size_t lightCount, size_t lightSetCount, std::set<
                 light->setSceneIndex(mLightList.size());
 
                 if (className == "MeshLight") {
-                    generateMeshLightGeometry(light.get());
+                    generateMeshLightGeometry(light.get(), executionMode);
                 }
                 if (light->isOn()) {
                     std::hash<std::string> name_hash;
@@ -693,7 +694,7 @@ void Scene::populateLightList(size_t lightCount, size_t lightSetCount, std::set<
 // TODO: optimize to handle incremental updates instead
 
 void
-Scene::updateLightList()
+Scene::updateLightList(mcrt_common::ExecutionMode executionMode)
 {
     clearLightList();
 
@@ -726,7 +727,7 @@ Scene::updateLightList()
     }
 
     size_t lightCount = rdlLights.size();
-    populateLightList(lightCount, lightSetCount, rdlLights);
+    populateLightList(lightCount, lightSetCount, rdlLights, executionMode);
 
     // Hookup newly created lights to the relevant light sets.
     for (const rdl2::LightSet* const rdlLightSet : rdlLightSets) {

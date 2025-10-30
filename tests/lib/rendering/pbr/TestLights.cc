@@ -1115,7 +1115,7 @@ TestLights::setUp()
 
     // set cube to mesh light
     meshLight->setMesh(pImpl);
-    meshLight->finalize();
+    meshLight->finalize(mcrt_common::ExecutionMode::SCALAR);
 
     mMeshLightTesters.push_back(std::make_shared<MeshLightTester>(
             meshLight, "cube"));
@@ -1125,7 +1125,7 @@ TestLights::setUp()
         "mesh A", &mContext, meshXform, color, texturePath.c_str(), true)));
     meshLight->update(Mat4d(one));
     meshLight->setMesh(pImpl);
-    meshLight->finalize();
+    meshLight->finalize(mcrt_common::ExecutionMode::SCALAR);
     mMeshLightTesters.push_back(std::make_shared<MeshLightTester>(
             meshLight, "cube with texture"));
 }

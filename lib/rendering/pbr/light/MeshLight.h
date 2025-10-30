@@ -108,7 +108,7 @@ public:
     void setMesh(geom::internal::Primitive* prim);
 
     // Builds BVH
-    void finalize();
+    void finalize(mcrt_common::ExecutionMode executionMode);
 
     // get rdl geometry. Used after MeshLight is finalized during mcrt.
     const scene_rdl2::rdl2::Geometry* getRdlGeometry() const

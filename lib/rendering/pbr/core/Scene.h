@@ -331,12 +331,13 @@ private:
     static Light* createLightFromRdlLight(const scene_rdl2::rdl2::Light* rdlLight);
 
     /// Rebuild Light list if any Lightsets have changed (called during preFrame())
-    void updateLightList();
-    void populateLightList(size_t lightCount,  size_t lightSetCount, std::set<const scene_rdl2::rdl2::Light *> rdlLights);
+    void updateLightList(mcrt_common::ExecutionMode executionMode);
+    void populateLightList(size_t lightCount,  size_t lightSetCount, std::set<const scene_rdl2::rdl2::Light *> rdlLights,
+                           mcrt_common::ExecutionMode executionMode);
     void clearLightList();
 
     // Generate the geometry for the mesh light if the mesh light needs to be updated (called during preFrame())
-    void generateMeshLightGeometry(Light* light);
+    void generateMeshLightGeometry(Light* light, mcrt_common::ExecutionMode executionMode);
 
     /// Create or update the SDG dag and SHADER we keep per part.
     void updatePartUserData();

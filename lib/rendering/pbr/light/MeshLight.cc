@@ -881,16 +881,37 @@ MeshLight::setMesh(geom::internal::Primitive* prim)
 }
 
 void
-MeshLight::finalize() {
-    // first check if there are any faces. If not, mOn is false.
+MeshLight::finalize(mcrt_common::ExecutionMode executionMode)
+{
+    // Quit if there are no faces
     if (mFaces.empty()) {
+        mRdlLight->warn("MeshLight contains no faces.");
         mOn = false;
         return;
     }
 
+    // Quit if the area is zero
     if (scene_rdl2::math::isZero(mArea)) {
+        mRdlLight->warn("MeshLight has zero surface area.");
         mOn = false;
         return;
+    }
+
+    // Quit if the number of faces is too big to proceed with a vector/xpu render.
+    if (executionMode != mcrt_common::ExecutionMode::SCALAR) {
+        // When the meshlight bvh builds, it will contain 2*numFaces-1 Nodes, since it is a binary tree with
+        // the faces as leaves. The Nodes array cannot exceed 2^31 bytes in vector mode, since for an array
+        // with a varying index in MeshLight.ispc, the ispc compiler will by default generate 8x32-bit AVX2
+        // gather instructions with signed offsets which wrap to negative at 2^31.
+        // With sizeof(Node)==64, this translates to a limit of 2^24 = 16,777,216 faces.
+        uint64_t numFaces = static_cast<uint64_t>(mFaces.size());
+        uint64_t numNodes = 2*numFaces - 1;
+        uint64_t nodeArraySize = numNodes * static_cast<uint64_t>(sizeof(Node));
+        if (nodeArraySize > (1ULL << 31)) {
+            mRdlLight->warn("MeshLight exceeds maximum face count for a vector or xpu render.");
+            mOn = false;
+            return;
+        }
     }
 
     mInvArea = 1.0f / mArea;
@@ -902,12 +923,14 @@ MeshLight::finalize() {
          scene_rdl2::rdl2::Light::sIntensityKey, scene_rdl2::rdl2::Light::sExposureKey, sNormalizedKey,
          sApplySceneScaleKey, mInvArea);
 
+    // Quit if the computed radiance is effectively zero
     if (isBlack(mRadiance)) {
+        mRdlLight->warn("MeshLight radiance is zero (to within a tolerance).");
         mOn = false;
         return;
     }
 
-    // build the mesh light bvh
+    // Build the mesh light bvh
     mBVH.clear();
     buildBVHRecurse(mLocalSpaceBounds, mFaces, 0, mFaceCount, 0);
     MNRY_ASSERT(verifyBuild(0));
