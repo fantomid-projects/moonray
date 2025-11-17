@@ -201,6 +201,21 @@ PathVisualizer::PathVisualizer()
 
 PathVisualizer::~PathVisualizer() {}
 
+scene_rdl2::math::Color
+PathVisualizer::getColorByFlags(const uint8_t& flags) const
+//
+// This function is used when the backend computation transfers Path Visualizer information and needs to
+// determine the color based on the line’s attribute flags. The core issue here is that the flag
+// representing the rayType in PathVisualizer is not exposed as a public enum. Therefore, this function
+// currently assumes that the uint8_t flags argument represents the PathVisualizer::Flags and performs
+// the conversion based on that assumption.
+// Ultimately, the flags representing the RayType should be made public. This is one of the improvements
+// planned for the next Path Visualizer update.
+//
+{
+    return getRayColor(static_cast<Flags>(flags));
+}
+
 void PathVisualizer::initialize(const unsigned int width, const unsigned int height, 
                                 const PathVisualizerParams* params, const float sceneSize) 
 {

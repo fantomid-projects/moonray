@@ -73,6 +73,9 @@ public:
     void crawlAllLines(const CrawlLineFunc& func);
     size_t getTotalLines() const;
 
+    // Gets the color associated with the given ray flag
+    scene_rdl2::math::Color getColorByFlags(const uint8_t& flags) const;
+
     // Indicates whether we need to restart rendering after recording ray data
     void setNeedsRenderRefresh(bool refresh);
 
@@ -139,11 +142,14 @@ public:
     uint32_t getPixelY() const;
     uint32_t getMaxDepth() const;
 
-    bool getOcclusionRaysFlag() const;
-    bool getSpecularRaysFlag() const;
-    bool getDiffuseRaysFlag() const;
-    bool getBsdfSamplesFlag() const;
-    bool getLightSamplesFlag() const;
+    // Whether to show the ray with the given flag
+    // based on the visibility flags
+    bool showRay(const uint8_t& flag) const;
+
+    bool getShowSpecularRays() const;
+    bool getShowDiffuseRays() const;
+    bool getShowBsdfSamples() const;
+    bool getShowLightSamples() const;
 
     const scene_rdl2::math::Color& getCameraRayColor() const;
     const scene_rdl2::math::Color& getSpecularRayColor() const;
@@ -160,15 +166,15 @@ public:
 
     /// ------------------------- UI setters --------------------------------- //
 
-    void setPixelX(uint32_t px);
-    void setPixelY(uint32_t py);
-    void setMaxDepth(int depth);
+    void setPixelX(uint32_t px, bool update = false);
+    void setPixelY(uint32_t py, bool update = false);
+    void setPixel(uint32_t px, uint32_t py, bool update = false);
+    void setMaxDepth(int depth, bool update = false);
 
-    void setOcclusionRaysFlag(bool flag);
-    void setSpecularRaysFlag(bool flag);
-    void setDiffuseRaysFlag(bool flag);
-    void setBsdfSamplesFlag(bool flag);
-    void setLightSamplesFlag(bool flag);
+    void setShowSpecularRays(bool flag);
+    void setShowDiffuseRays(bool flag);
+    void setShowBsdfSamples(bool flag);
+    void setShowLightSamples(bool flag);
 
     void setCameraRayColor(scene_rdl2::math::Color color);
     void setSpecularRayColor(scene_rdl2::math::Color color);
@@ -178,10 +184,10 @@ public:
 
     void setLineWidth(uint32_t value);
 
-    void setUseSceneSamples(bool useSceneSamples);
-    void setPixelSamples(uint32_t samples);
-    void setLightSamples(uint32_t samples);
-    void setBsdfSamples(uint32_t samples);
+    void setUseSceneSamples(bool useSceneSamples, bool update = false);
+    void setPixelSamples(uint32_t samples, bool update = false);
+    void setLightSamples(uint32_t samples, bool update = false);
+    void setBsdfSamples(uint32_t samples, bool update = false);
 
     /// ------------------------------
 

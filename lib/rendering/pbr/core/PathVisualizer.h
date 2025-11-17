@@ -214,6 +214,8 @@ public:
 
     size_t getTotalLines() const { return mLines.size(); }
 
+    scene_rdl2::math::Color getColorByFlags(const uint8_t& flags) const;
+
     /// Clears all ray data
     void reset();
 

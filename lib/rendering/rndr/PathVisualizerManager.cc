@@ -127,6 +127,7 @@ void PathVisualizerManager::printStats() const
 void
 PathVisualizerManager::crawlAllLines(const CrawlLineFunc& func)
 {
+    if (!mPathVisualizer) return;
     mPathVisualizer->crawlAllLines(func);
 }
 
@@ -134,6 +135,12 @@ size_t
 PathVisualizerManager::getTotalLines() const
 {
     return mPathVisualizer->getTotalLines();
+}
+
+scene_rdl2::math::Color
+PathVisualizerManager::getColorByFlags(const uint8_t& flags) const
+{
+    return mPathVisualizer->getColorByFlags(flags);
 }
 
 void PathVisualizerManager::setNeedsRenderRefresh(const bool refresh)
@@ -280,11 +287,23 @@ uint32_t PathVisualizerManager::getPixelX() const { return mParams->mPixelX; }
 uint32_t PathVisualizerManager::getPixelY() const { return mParams->mPixelY; }
 uint32_t PathVisualizerManager::getMaxDepth() const { return mParams->mMaxDepth; }
 
-bool PathVisualizerManager::getOcclusionRaysFlag() const { return mParams->mOcclusionRaysOn; }
-bool PathVisualizerManager::getSpecularRaysFlag() const { return mParams->mSpecularRaysOn; }
-bool PathVisualizerManager::getDiffuseRaysFlag() const { return mParams->mDiffuseRaysOn; }
-bool PathVisualizerManager::getBsdfSamplesFlag() const { return mParams->mBsdfSamplesOn; }
-bool PathVisualizerManager::getLightSamplesFlag() const { return mParams->mLightSamplesOn; }
+bool PathVisualizerManager::showRay(const uint8_t& flag) const
+{
+    switch (static_cast<pbr::PathVisualizer::Flags>(flag)) {
+        case pbr::PathVisualizer::Flags::CAMERA:        return true;
+        case pbr::PathVisualizer::Flags::SPECULAR:      return getShowSpecularRays();
+        case pbr::PathVisualizer::Flags::DIFFUSE:       return getShowDiffuseRays();
+        case pbr::PathVisualizer::Flags::BSDF_SAMPLE:   return getShowBsdfSamples();
+        case pbr::PathVisualizer::Flags::LIGHT_SAMPLE:  return getShowLightSamples();
+        case pbr::PathVisualizer::Flags::INACTIVE:      return getShowLightSamples();
+        default:                                        return false;
+    }
+}
+
+bool PathVisualizerManager::getShowSpecularRays() const { return mParams->mSpecularRaysOn; }
+bool PathVisualizerManager::getShowDiffuseRays() const { return mParams->mDiffuseRaysOn; }
+bool PathVisualizerManager::getShowBsdfSamples() const { return mParams->mBsdfSamplesOn; }
+bool PathVisualizerManager::getShowLightSamples() const { return mParams->mLightSamplesOn; }
 
 const scene_rdl2::math::Color& PathVisualizerManager::getCameraRayColor() const { return mParams->mCameraRayColor; }
 const scene_rdl2::math::Color& PathVisualizerManager::getSpecularRayColor() const { return mParams->mSpecularRayColor; }
@@ -301,15 +320,32 @@ uint32_t PathVisualizerManager::getBsdfSamples() const  { return std::sqrt(mPara
 
 /// ------------------------- UI setters --------------------------------- //
 
-void PathVisualizerManager::setPixelX(uint32_t px) { mParams->mPixelX = px; }
-void PathVisualizerManager::setPixelY(uint32_t py) { mParams->mPixelY = py; }
-void PathVisualizerManager::setMaxDepth(int depth) { mParams->mMaxDepth = depth; }
+void PathVisualizerManager::setPixelX(uint32_t px, bool update)
+{
+    mParams->mPixelX = px;
+    if (update) { startSimulation(); }
+}
+void PathVisualizerManager::setPixelY(uint32_t py, bool update)
+{
+    mParams->mPixelY = py;
+    if (update) { startSimulation(); }
+}
+void PathVisualizerManager::setPixel(uint32_t px, uint32_t py, bool update)
+{
+    mParams->mPixelX = px;
+    mParams->mPixelY = py;
+    if (update) { startSimulation(); }
+}
+void PathVisualizerManager::setMaxDepth(int depth, bool update)
+{
+    mParams->mMaxDepth = depth;
+    if (update) { startSimulation(); }
+}
 
-void PathVisualizerManager::setOcclusionRaysFlag(bool flag) { mParams->mOcclusionRaysOn = flag; }
-void PathVisualizerManager::setSpecularRaysFlag(bool flag) { mParams->mSpecularRaysOn = flag; }
-void PathVisualizerManager::setDiffuseRaysFlag(bool flag) { mParams->mDiffuseRaysOn = flag; }
-void PathVisualizerManager::setBsdfSamplesFlag(bool flag) { mParams->mBsdfSamplesOn = flag; }
-void PathVisualizerManager::setLightSamplesFlag(bool flag) { mParams->mLightSamplesOn = flag; }
+void PathVisualizerManager::setShowSpecularRays(bool flag) { mParams->mSpecularRaysOn = flag; }
+void PathVisualizerManager::setShowDiffuseRays(bool flag) { mParams->mDiffuseRaysOn = flag; }
+void PathVisualizerManager::setShowBsdfSamples(bool flag) { mParams->mBsdfSamplesOn = flag; }
+void PathVisualizerManager::setShowLightSamples(bool flag) { mParams->mLightSamplesOn = flag; }
 
 void PathVisualizerManager::setCameraRayColor(scene_rdl2::math::Color color) { mParams->mCameraRayColor = color; }
 void PathVisualizerManager::setSpecularRayColor(scene_rdl2::math::Color color) { mParams->mSpecularRayColor = color; }
@@ -319,10 +355,26 @@ void PathVisualizerManager::setLightSampleColor(scene_rdl2::math::Color color) {
 
 void PathVisualizerManager::setLineWidth(uint32_t value) { mParams->mLineWidth = value; }
 
-void PathVisualizerManager::setUseSceneSamples(bool useSceneSamples) { mParams->mUseSceneSamples = useSceneSamples; }
-void PathVisualizerManager::setPixelSamples(uint32_t samples) { mParams->mPixelSamples = samples * samples; }
-void PathVisualizerManager::setLightSamples(uint32_t samples) { mParams->mLightSamples = samples * samples; }
-void PathVisualizerManager::setBsdfSamples(uint32_t samples)  { mParams->mBsdfSamples = samples * samples; }
+void PathVisualizerManager::setUseSceneSamples(bool useSceneSamples, bool update)
+{ 
+    mParams->mUseSceneSamples = useSceneSamples; 
+    if (update) { startSimulation(); }
+}
+void PathVisualizerManager::setPixelSamples(uint32_t samples, bool update)
+{ 
+    mParams->mPixelSamples = samples * samples; 
+    if (update) { startSimulation(); }
+}
+void PathVisualizerManager::setLightSamples(uint32_t samples, bool update)
+{ 
+    mParams->mLightSamples = samples * samples; 
+    if (update) { startSimulation(); }
+}
+void PathVisualizerManager::setBsdfSamples(uint32_t samples, bool update)
+{ 
+    mParams->mBsdfSamples = samples * samples; 
+    if (update) { startSimulation(); }
+}
 
 //------------------------------------------------------------------------------------------
 
