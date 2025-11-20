@@ -551,9 +551,9 @@ Worley::checkCell(const int ix, const int iy, const int iz,
 
     const int pointCount = getPointCount(hash);
     for (int i = 0; i < pointCount; i++) {
-        position.x = static_cast<float>(ix) + mIspcWorley.mPointsX[hash] * jitter;
-        position.y = static_cast<float>(iy) + mIspcWorley.mPointsY[hash] * jitter;
-        position.z = static_cast<float>(iz) + mIspcWorley.mPointsZ[hash] * jitter;
+        position.x = static_cast<float>(ix) + 0.5f + (mIspcWorley.mPointsX[hash] - 0.5f) * jitter;
+        position.y = static_cast<float>(iy) + 0.5f + (mIspcWorley.mPointsY[hash] - 0.5f) * jitter;
+        position.z = static_cast<float>(iz) + 0.5f + (mIspcWorley.mPointsZ[hash] - 0.5f) * jitter;
 
         diff = pos - position;
         gradient = position - pos;

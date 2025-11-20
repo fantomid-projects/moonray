@@ -471,9 +471,9 @@ checkCell(const uniform NOISE_Worley * uniform n,
 
     const int pointCount = getPointCount(n, hash);
     for (int i = 0; i < pointCount; i++) {
-        position.x = (float)ix + n->mPointsX[hash] * jitter;
-        position.y = (float)iy + n->mPointsY[hash] * jitter;
-        position.z = (float)iz + n->mPointsZ[hash] * jitter;
+        position.x = (float)(ix) + 0.5f + (n->mPointsX[hash] - 0.5f) * jitter;
+        position.y = (float)(iy) + 0.5f + (n->mPointsY[hash] - 0.5f) * jitter;
+        position.z = (float)(iz) + 0.5f + (n->mPointsZ[hash] - 0.5f) * jitter;
 
         diff = pos - position;
         gradient = position - pos;
