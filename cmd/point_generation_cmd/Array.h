@@ -5,7 +5,6 @@
 #include <type_traits>
 #include <cassert>
 #include <cstddef>
-#include <type_traits>
 #include <utility>
 
 #include <iostream>

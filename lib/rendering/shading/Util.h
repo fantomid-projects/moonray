@@ -13,7 +13,6 @@
 #include <scene_rdl2/common/math/Mat4.h>
 #include <scene_rdl2/common/math/Math.h>
 #include <scene_rdl2/common/math/MathUtil.h>
-#include <moonray/rendering/shading/ispc/Util_ispc_stubs.h>
 #include <moonray/rendering/shading/ispc/RampControl_ispc_stubs.h>
 
 namespace moonray {
