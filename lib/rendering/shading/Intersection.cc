@@ -175,7 +175,7 @@ Intersection::adaptNormal(const scene_rdl2::math::Vec3f &Ns) const
 
     // compute a bent reflection vector that is just
     // slightly (based on eps) above the Ng horizon
-    const float eps = 0.01f;
+    const float eps = 0.001f;
     if (rDotNg < eps) {
         // this appears to work, but has the wrong normalization
         // if this becomes a problem, the correct normalization can be

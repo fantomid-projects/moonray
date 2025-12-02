@@ -48,7 +48,7 @@ Intersection_adaptNormal(const varying Intersection &isect, const varying Vec3f 
 
     // compute a bent reflection vector that is just
     // slightly (based on eps) above the Ng horizon
-    const float eps = 0.01f;
+    const float eps = 0.001f;
     if (rDotNg < eps) {
 
         // this appears to work, but has the wrong normalization
