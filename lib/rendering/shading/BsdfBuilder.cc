@@ -25,9 +25,12 @@
 #include "bssrdf/Bssrdf.h"
 #include "bssrdf/VolumeSubsurface.h"
 
+#include <moonray/rendering/shading/AovLabels.h>
+#include <moonray/rendering/shading/Geometry.h>
 #include <moonray/rendering/shading/Ior.h>
 #include <moonray/rendering/shading/Iridescence.h>
 #include <moonray/rendering/shading/LobeAttenuator.h>
+#include <moonray/rendering/shading/Material.h>
 #include <moonray/rendering/shading/Shading.h>
 
 #include <moonray/rendering/shading/ShadingTLState.h>
@@ -2226,6 +2229,18 @@ public:
         return &mBsdf;
     }
 
+    shading::TLState*
+    getTls() const
+    {
+        return mTls;
+    }
+
+    const State&
+    getState() const
+    {
+        return mState;
+    }
+
 private:
     Bsdf&                  mBsdf;
     shading::TLState*      mTls;
@@ -2367,11 +2382,84 @@ BsdfBuilder::setPreventLightCulling(bool isPrevented)
     mImpl->setPreventLightCulling(isPrevented);
 }
 
-
-const Bsdf*
-BsdfBuilder::getBsdf() const
+void
+BsdfBuilder::showBsdf(const std::string& className,
+                      const std::string& name,
+                      std::ostream& os) const
 {
-    return mImpl->getBsdf();
+    mImpl->getBsdf()->show(className, name, os);
+}
+
+void
+BsdfBuilder::applyMaterialLabels(const scene_rdl2::rdl2::Material *material,
+                                 int parentLobeCount)
+{
+    auto bsdf = const_cast<Bsdf*>(mImpl->getBsdf());
+
+    if (material->hasExtension()) {
+        const auto &ext = material->get<shading::Material>();
+        const scene_rdl2::rdl2::Geometry *geometry = mImpl->getState().getGeometryObject();
+        int geomLabelId = -1;
+        MNRY_ASSERT(geometry);
+        MNRY_ASSERT(geometry->hasExtension());
+        if (geometry && geometry->hasExtension()) {
+            geomLabelId = geometry->get<shading::Geometry>().getGeomLabelId();
+        }
+        bsdf->setLabelIds(ext.getMaterialLabelId(), ext.getLpeMaterialLabelId(),
+                          geomLabelId);
+    }
+
+    // Transform the shader local aov labels to global aov label ids
+    if (material->hasExtension()) {
+        const auto &ext = material->get<shading::Material>();
+        const int  materialLabelId    = ext.getMaterialLabelId();
+        const auto &lobeLabelIds      = ext.getLobeLabelIds();
+        const int  lpeMaterialLabelId = ext.getLpeMaterialLabelId();
+        const auto &lpeLobeLabelIds   = ext.getLpeLobeLabelIds();
+
+        for (int i = parentLobeCount; i < bsdf->getLobeCount(); ++i) {
+            BsdfLobe *lobe = bsdf->getLobe(i);
+            lobe->setLabel(aovEncodeLabels(lobe->getLabel(),
+                                           materialLabelId, lpeMaterialLabelId,
+                                           lobeLabelIds, lpeLobeLabelIds));
+        }
+
+        for (int i = 0; i < bsdf->getBssrdfCount(); ++i) {
+            Bssrdf *bssrdf = bsdf->getBssrdf(i);
+            bssrdf->setLabel(aovEncodeLabels(bssrdf->getLabel(),
+                                             materialLabelId, lpeMaterialLabelId,
+                                             lobeLabelIds, lpeLobeLabelIds));
+        }
+
+        VolumeSubsurface *vs = bsdf->getVolumeSubsurface();
+        if (vs) {
+            vs->setLabel(aovEncodeLabels(vs->getLabel(),
+                                         materialLabelId, lpeMaterialLabelId,
+                                         lobeLabelIds, lpeLobeLabelIds));
+        }
+    }
+}
+
+void
+BsdfBuilder::shadeMaterial(const scene_rdl2::rdl2::Material *material)
+{
+    MNRY_ASSERT(material);
+    MNRY_ASSERT(material->hasExtension());
+
+    int parentLobeCount = const_cast<Bsdf*>(mImpl->getBsdf())->getLobeCount();
+    material->shade(mImpl->getTls(), mImpl->getState(), *this);
+    applyMaterialLabels(material, parentLobeCount);
+}
+
+void
+BsdfBuilder::shadeMaterial(const scene_rdl2::rdl2::Material *parent,
+                           const scene_rdl2::rdl2::Material *material)
+{
+    MNRY_ASSERT(material);
+
+    int parentLobeCount = const_cast<Bsdf*>(mImpl->getBsdf())->getLobeCount();
+    material->shade(mImpl->getTls(), mImpl->getState(), *this);
+    applyMaterialLabels(material, parentLobeCount);
 }
 
 } // end namespace shading

@@ -325,17 +325,25 @@ public:
     // This is useful for certain NPR effects
     void setPreventLightCulling(bool isPrevented);
 
-    // Temporary function to allow certain legacy materials direct
-    // access to the Bsdf. This is required for now because we
-    // do not support Schlick Fresnel through our shading API. This function
-    // should be considered deprecated and removed as part of MOONSHINE-999.
-    [[deprecated]]
-    const Bsdf* getBsdf() const;
+    // Shade a root material from the rendering application
+    void shadeMaterial(const scene_rdl2::rdl2::Material *material);
+
+    // Shade a child material from a parent material
+    void shadeMaterial(const scene_rdl2::rdl2::Material *parent,
+                       const scene_rdl2::rdl2::Material *material);
+
+    // Show BSDF debug information
+    void showBsdf(const std::string& className,
+                  const std::string& name,
+                  std::ostream& os) const;
 
     BsdfBuilder(const BsdfBuilder& other) =delete;
     BsdfBuilder& operator=(const BsdfBuilder& other) =delete;
 
 private:
+    void applyMaterialLabels(const scene_rdl2::rdl2::Material *material,
+                              int parentLobeCount);
+
     class Impl;
 
     Impl* mImpl;

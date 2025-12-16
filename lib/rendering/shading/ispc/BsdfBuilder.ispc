@@ -30,13 +30,13 @@
 #include "bssrdf/NormalizedDiffusion.isph"
 #include "bssrdf/VolumeSubsurface.isph"
 
-#include <moonray/rendering/shading/ispc/Closure.isph>
 #include <moonray/rendering/shading/ispc/Ior.isph>
 #include <moonray/rendering/shading/ispc/LobeAttenuator.isph>
 
 #include <moonray/rendering/shading/ispc/Intersection.isph>
 #include <moonray/rendering/shading/ispc/ShadingTLState.isph>
 #include <moonray/rendering/shading/ispc/State.isph>
+#include <scene_rdl2/scene/rdl2/rdl2.isph>
 
 // this limit is tied to the maximum number of lobes
 // supported in Moonray. Keep in sync w/ scalar BsdfBuilder
@@ -2726,14 +2726,6 @@ BsdfBuilder_endAdjacentComponents(varying BsdfBuilder& builder)
     accumulateAttenuation(me);
 }
 
-varying Closure * uniform
-BsdfBuilder_getClosure(const varying BsdfBuilder& builder)
-{
-    varying BsdfBuilderImpl& me = *builder.mImpl;
-
-    return asClosure(me.mBsdf);
-}
-
 void
 BsdfBuilder_show(varying BsdfBuilder& builder,
                  const uniform Material * const uniform material)
@@ -2767,5 +2759,51 @@ initBsdfBuilderArray(uniform ShadingTLState * uniform tls,
     }
 }
 export void * uniform getBsdfBuilderInitFunc() { return initBsdfBuilderArray; }
+
+// ----------------------------------------------------------------------------------
+// Material shading function
+// ----------------------------------------------------------------------------------
+
+typedef void (*ShadePtr)(const uniform Material *          uniform material,
+                               uniform ShadingTLState *    uniform tls,
+                               uniform int                         numState,
+                         const varying State * const       uniform state,
+                               varying BsdfBuilder *       uniform bsdfBuilder);
+
+extern "C" void
+CPP_setBsdfLabels(const uniform Material * uniform material,
+                  uniform ShadingTLState * uniform tls,
+                  const uniform int nstate,
+                  const varying State * const uniform state,
+                  varying Bsdf * uniform bsdf,
+                  const uniform int parentLobeCount);
+
+void
+BsdfBuilder_shadeMaterial(const uniform Material * uniform material,
+                           uniform ShadingTLState * uniform tls,
+                           const uniform int nstate,
+                           const varying State * const uniform state,
+                           varying BsdfBuilder * uniform bsdfBuilder)
+{
+    varying BsdfBuilderImpl& me = *bsdfBuilder->mImpl;
+
+    int64 * uniform matObjPtr = (int64 * uniform) material;
+    int64 * uniform ptr = (int64 * uniform) *(matObjPtr + (MATERIAL_SHADEFUNCV_OFFSET / 8));
+    assert(ptr != NULL);
+
+    const uniform int parentLobeCount = Bsdf_getLobeCount(me.mBsdf);
+
+    ShadePtr shadeFn = (ShadePtr) ptr;
+    shadeFn(material, tls, nstate, state, bsdfBuilder);
+
+
+    // hack in the bsdf label ids
+    CPP_setBsdfLabels(material,
+                      tls,
+                      nstate,
+                      state,
+                      me.mBsdf,
+                      parentLobeCount);
+}
 
 

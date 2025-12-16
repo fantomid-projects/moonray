@@ -6,7 +6,7 @@
 // this should be <rendering/shading/Shading.isph>
 // for anything other than the unittest
 #include <moonray/rendering/shading/ispc/Shading.isph>
-#include <moonray/rendering/shading/ispc/Closure.isph>
+#include <moonray/rendering/shading/ispc/BsdfComponent.isph>
 #include "attributes.isph"
 
 static void
@@ -15,33 +15,15 @@ shade(const uniform Material *      uniform  me,
       const varying State                    &state,
             varying BsdfBuilder              &bsdfBuilder)
 {
-    varying Closure * uniform closure = BsdfBuilder_getClosure(bsdfBuilder);
-
     // evaluate color
-    Color c1 = evalAttrColorNonComp(me, tls, state);
-    Color c2 = evalCompColor(me, tls, state);
-
-    // non-component color as the scale on the first lobe
-    Closure_addLambertBsdfLobe(closure, tls, state,
-                               /* scale = */ c1,
-                               /* fresnel = */ NULL,
-                               /* underFresnel = */ NULL,
-                               /* normal = */ state.mN,
-                               /* albedo = */ (const varying Color)sWhite,
-                               /* isReflection = */ true,
-                               /* labels = */ 0);
-
-
-    // component color as the scale on the second lobe
-    Closure_addCookTorranceBsdfLobe(closure, tls, state,
-                                    /* scale = */ c2,
-                                    /* fresnel = */ NULL,
-                                    /* underFresnel = */ NULL,
-                                    /* normal = */ state.mN,
-                                    /* roughness = */ 1.f,
-                                    /* favg */ sWhite,
-                                    /* favgInv */ sWhite,
-                                    /* labels = */ 0);
+    const varying Color albedo = evalAttrColor(me, tls, state);
+    LambertianBRDF lambertian;
+    LambertianBRDF_init(lambertian, state.mN, albedo);
+    BsdfBuilder_addLambertianBRDF(bsdfBuilder,
+                                  lambertian,
+                                  1.0f, // weight
+                                  BSDFBUILDER_PHYSICAL,
+                                  0); // label
 }
 
 DEFINE_MATERIAL_SHADER(TestMaterial, shade)

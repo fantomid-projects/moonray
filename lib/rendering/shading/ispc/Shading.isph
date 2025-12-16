@@ -102,12 +102,17 @@
  * shade(const uniform Material *      uniform  material,
  *             uniform ShadingTLState *uniform  tls,
  *       const varying State &                  state,
- *             varying Closure  *      uniform  closure)
+ *             varying BsdfBuilder &bsdfBuilder)
  * {
  *     // evaluate Diffuse component
  *     Color c = evalCompDiffuse(material, tls, state);
  *
- *     Closure_addLambertLobe(closure, tls, state, scale, NULL, NULL, state.mN, c);
+ *       LambertianBRDF diffuseRefl;
+ *       LambertianBRDF_init(diffuseRefl, state.mN, c);
+ *       BsdfBuilder_addLambertianBRDF(bsdfBuilder,
+ *                                     diffuseRefl,
+ *                                     1.0f, // weight
+ *                                     BSDFBUILDER_PHYSICAL);
  * }
  *
  * DEFINE_MATERIAL_SHADER(TestMaterial, shade)

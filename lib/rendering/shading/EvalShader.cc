@@ -124,12 +124,9 @@ shade(const scene_rdl2::rdl2::Material *material, shading::TLState *tls,
             MNRY_VERIFY(material->getThreadLocalObjectState())[threadIndex].mShaderCallStat);
 #endif
 
-    auto bsdf = const_cast<Bsdf*>(bsdfBuilder.getBsdf());
-    int parentLobeCount = bsdf->getLobeCount();
-    material->shade(tls, state, bsdfBuilder);
-    setBsdfLabels(*material, state, bsdf, parentLobeCount);
+    bsdfBuilder.shadeMaterial(material);
 #ifdef SHADING_PRINT_DEBUG_BSDF_INFO_ENABLED
-    bsdf->show(material->getSceneClass().getName(), material->getName(), std::cout);
+    bsdfBuilder.showBsdf(material->getSceneClass().getName(), material->getName(), std::cout);
 #endif
 }
 
@@ -169,9 +166,7 @@ shade(const scene_rdl2::rdl2::Material *parent, const scene_rdl2::rdl2::Material
             MNRY_VERIFY(parent->getThreadLocalObjectState())[threadIndex].mShaderCallStat);
 #endif
 
-    int parentLobeCount = bsdfBuilder.getBsdf()->getLobeCount();
-    material->shade(tls, state, bsdfBuilder);
-    setBsdfLabels(*material, state, const_cast<Bsdf*>(bsdfBuilder.getBsdf()), parentLobeCount);
+    bsdfBuilder.shadeMaterial(parent, material);
 }
 
 

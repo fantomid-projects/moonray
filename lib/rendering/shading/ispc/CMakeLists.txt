@@ -148,7 +148,6 @@ add_library(${PROJECT_NAME}::shading_ispc ALIAS shading_ispc)
 set(sources00
         BsdfBuilder.ispc
         BsdfComponent.ispc
-        Closure.ispc
         EvalShader.ispc
         LobeAttenuator.ispc
         PbrValidity.ispc
@@ -383,7 +382,6 @@ set_property(TARGET shading_ispc
         BasicTexture.isph
         BsdfBuilder.isph
         BsdfComponent.isph
-        Closure.isph
         EvalAttribute.isph
         EvalShader.isph
         MapApi.isph

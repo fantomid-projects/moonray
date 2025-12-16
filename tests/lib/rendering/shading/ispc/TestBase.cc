@@ -30,7 +30,7 @@ TestBase::shade()
     scene_rdl2::rdl2::SceneContext ctx;
     ctx.setDsoPath(ctx.getDsoPath() + ":" + RDL2DSO_PATH + ":dso/material");
     scene_rdl2::rdl2::Material *material =
-        ctx.createSceneObject("BaseMaterial", "/base")->asA<scene_rdl2::rdl2::Material>();
+        ctx.createSceneObject("UsdPreviewSurface", "/base")->asA<scene_rdl2::rdl2::Material>();
     material->applyUpdates();
 
     // all defaults, nothing varying
@@ -67,38 +67,39 @@ TestBase::shade()
     material->shadev(tls, 1, reinterpret_cast<const scene_rdl2::rdl2::Statev *>(statev), reinterpret_cast<scene_rdl2::rdl2::BsdfBuilderv *>(builderv));
     CPPUNIT_ASSERT(bsdfv->mNumLobes == 2);
     // specular
-    CPPUNIT_ASSERT(bsdfv->mLobes[0]->mName == BsdfLobeName::BSDF_LOBE_COOK_TORRANCE);
+    CPPUNIT_ASSERT(bsdfv->mLobes[0]->mName == BsdfLobeName::BSDF_LOBE_GGX_COOK_TORRANCE);
     int allmask = 0;
     for (unsigned int i = 0; i < VLEN; ++i) {
         allmask |= (1 << i);
     }
     CPPUNIT_ASSERT(bsdfv->mLobes[0]->mMask == allmask);
     CPPUNIT_ASSERT(bsdfv->mLobes[0]->mFresnel != NULL);
-    CPPUNIT_ASSERT(bsdfv->mLobes[0]->mFresnel->mType == FresnelType::FRESNEL_TYPE_SCHLICK_FRESNEL);
-    const SchlickFresnelv *specFresnel = reinterpret_cast<const SchlickFresnelv *>(bsdfv->mLobes[0]->mFresnel);
+    CPPUNIT_ASSERT(bsdfv->mLobes[0]->mFresnel->mType == FresnelType::FRESNEL_TYPE_DIELECTRIC_FRESNEL);
+    const DielectricFresnelv *specFresnel = reinterpret_cast<const DielectricFresnelv *>(bsdfv->mLobes[0]->mFresnel);
     CPPUNIT_ASSERT(specFresnel->mMask == allmask);
+    // In UsdPreviewSurface, DielectricFresnel is used, which has mEtaI, mEtaT, and mWeight (not mSpec/mFactor like SchlickFresnel)
     for (unsigned int i = 0; i < VLEN; ++i) {
-        CPPUNIT_ASSERT(specFresnel->mSpec.r[i] == 0.1f &&
-                       specFresnel->mSpec.g[i] == 0.1f &&
-                       specFresnel->mSpec.b[i] == 0.1f);
-        CPPUNIT_ASSERT(specFresnel->mFactor[i] == 1.0f);
+        // UsdPreviewSurface uses physical IOR values
+        CPPUNIT_ASSERT(specFresnel->mWeight[i] == 1.0f);
+        CPPUNIT_ASSERT(specFresnel->mEtaI[i] == 1.5f);
+        CPPUNIT_ASSERT(specFresnel->mEtaT[i] == 1.0f);
     }
     // directional diffuse is black
     // translucency is black
     // transmission is black
     // diffuse
-    CPPUNIT_ASSERT(bsdfv->mLobes[1]->mName == BsdfLobeName::BSDF_LOBE_LAMBERT);
+    CPPUNIT_ASSERT(bsdfv->mLobes[1]->mName == BsdfLobeName::BSDF_LOBE_UNDER);
     CPPUNIT_ASSERT(bsdfv->mLobes[1]->mMask == allmask);
     CPPUNIT_ASSERT(bsdfv->mLobes[1]->mFresnel != NULL);
     CPPUNIT_ASSERT(bsdfv->mLobes[1]->mFresnel->mType ==
-                   FresnelType::FRESNEL_TYPE_ONE_MINUS_ROUGH_SCHLICK_FRESNEL);
-    const OneMinusRoughSchlickFresnelv *omrsf =
-        reinterpret_cast<const OneMinusRoughSchlickFresnelv *>(bsdfv->mLobes[1]->mFresnel);
-    CPPUNIT_ASSERT(omrsf->mMask == allmask);
+                   FresnelType::FRESNEL_TYPE_ONE_MINUS_ROUGH_FRESNEL);
+    const OneMinusRoughFresnelv *omrf =
+        reinterpret_cast<const OneMinusRoughFresnelv *>(bsdfv->mLobes[1]->mFresnel);
+    CPPUNIT_ASSERT(omrf->mMask == allmask);
     for (unsigned int i = 0; i < VLEN; ++i) {
-        CPPUNIT_ASSERT(omrsf->mSpecRoughness[i] == 0.09f);
+        CPPUNIT_ASSERT(omrf->mSpecRoughness[i] == 0.25f);
     }
-    CPPUNIT_ASSERT(omrsf->mTopFresnel == specFresnel);
+    CPPUNIT_ASSERT(omrf->mTopFresnel == reinterpret_cast<const Fresnelv *>(specFresnel));
     // self-emission
     for (unsigned int i = 0; i < VLEN; ++i) {
         CPPUNIT_ASSERT(bsdfv->mSelfEmission.r[i] == 0.0f &&

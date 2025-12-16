@@ -48,7 +48,6 @@ enum BsdfBuilderBehavior
 // ---------------------------------------------------------------------------
 // Misc forward declarations
 struct Bsdf;
-struct Closure;
 struct Fresnel;
 struct LightSet;
 struct LobeAttenuator;
@@ -421,11 +420,13 @@ void BsdfBuilder_init(
         uniform ShadingTLState& tls,
         const varying State &state);
 
-// Temporary function to allow certain legacy materials direct
-// access to the Closire. This is required for now because we
-// do not support Schlick Fresnel through our shading API. This function
-// should be considered deprecated and removed as part of MOONSHINE-999.
-varying Closure * uniform
-BsdfBuilder_getClosure(const varying BsdfBuilder& builder);
+// Shade the material using the given BsdfBuilder. This function is typically only called from
+// inside the shade() function of some other utility material, such as from the RaySwitch material.
+void
+BsdfBuilder_shadeMaterial(const uniform Material * uniform material,
+                          uniform ShadingTLState * uniform tls,
+                          const uniform int nstate,
+                          const varying State * const uniform state,
+                          varying BsdfBuilder * uniform bsdfBuilder);
 
 #endif // BSDFBUILDER_ISPH

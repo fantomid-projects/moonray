@@ -115,7 +115,7 @@ make_test_dso(TestMaterial dso/material/TestMaterial)
 # ---------------------------------------------------
 # This test needs to load certain other DSOs at runtime
 set(dsoTargets
-        BaseMaterial
+        UsdPreviewSurface
 )
 
 # Make sure the DSOs are built when this target is built

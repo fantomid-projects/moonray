@@ -36,23 +36,17 @@ private:
 SceneSetup::SceneSetup()
 {
     mCtx.setDsoPath(mCtx.getDsoPath() + ":dso/map:dso/material");
-    mMap =
-        mCtx.createSceneObject("TestMap", "/map")->asA<scene_rdl2::rdl2::Map>();
+    mMap = mCtx.createSceneObject("TestMap", "/map")->asA<scene_rdl2::rdl2::Map>();
     {
         scene_rdl2::rdl2::SceneObject::UpdateGuard update(mMap);
         mMap->set("mult", 1.0f);
     }
-    mMaterial =
-        mCtx.createSceneObject("TestMaterial", "/mat")->asA<scene_rdl2::rdl2::Material>();
+
+    mMaterial = mCtx.createSceneObject("TestMaterial", "/mat")->asA<scene_rdl2::rdl2::Material>();
     {
         scene_rdl2::rdl2::SceneObject::UpdateGuard update(mMaterial);
-        mMaterial->set("color non-comp", scene_rdl2::rdl2::Rgb(0, 1, 0));
-        mMaterial->setBinding("color non-comp", mMap);
-
-        mMaterial->set("color", true);
-        mMaterial->set("color color", scene_rdl2::rdl2::Rgb(1, 0, 0));
-        mMaterial->setBinding("color color", mMap);
-        mMaterial->set("color factor", .5f);
+        mMaterial->set("color", scene_rdl2::rdl2::Rgb(0, 1, 0));
+        mMaterial->setBinding("color", mMap);
     }
     mMaterial->applyUpdates();
 }
@@ -117,10 +111,8 @@ SceneSetup::shade()
     // * moonray::shading::State   -> ispc::State
     BsdfBuilderArrayInitFuncv initBsdfBuilderArray = (BsdfBuilderArrayInitFuncv)ispc::getBsdfBuilderInitFunc();
     initBsdfBuilderArray(tls, 1, statev, reinterpret_cast<scene_rdl2::rdl2::Bsdfv*>(bsdfv), builderv, scene_rdl2::util::sAllOnMask);
-
     mMaterial->shadev(tls, 1, reinterpret_cast<const scene_rdl2::rdl2::Statev *>(statev), reinterpret_cast<scene_rdl2::rdl2::BsdfBuilderv *>(builderv));
-    CPPUNIT_ASSERT(bsdfv->mNumLobes == 2); // evalColor and
-                                               // evalColorComponent
+    CPPUNIT_ASSERT(bsdfv->mNumLobes == 1); // evalColor
     return bsdfv;
 }
 
@@ -132,59 +124,27 @@ TestEvalAttribute::testEvalColor()
     SceneSetup scene;
     Bsdfv &bsdf = *(scene.shade());
 
+    const float tol = 0.006f;
+
     // evalColor test results are in lobe0
     CPPUNIT_ASSERT(bsdf.mLobes[0]->mName == BsdfLobeName::BSDF_LOBE_LAMBERT);
     LambertBsdfLobev &lobe = *(LambertBsdfLobev *) bsdf.mLobes[0];
 
     // lane0
-    CPPUNIT_ASSERT(lobe.mScale.r[0] == 0.0 &&
-                   lobe.mScale.g[0] == 0.5 &&
-                   lobe.mScale.b[0] == 0.0);
+    CPPUNIT_ASSERT(scene_rdl2::math::isEqual(lobe.mAlbedo.r[0], 0.0f, tol) &&
+                   scene_rdl2::math::isEqual(lobe.mAlbedo.g[0], 0.5f, tol) &&
+                   scene_rdl2::math::isEqual(lobe.mAlbedo.b[0], 0.0f, tol));
     CPPUNIT_ASSERT(lobe.mFrame.mZ.x[0] == 1.0 &&
                    lobe.mFrame.mZ.y[0] == 0.0 &&
                    lobe.mFrame.mZ.z[0] == 0.0);
 
     // lane1
-    CPPUNIT_ASSERT(lobe.mScale.r[1] == 0.0  &&
-                   lobe.mScale.g[1] == 0.25 &&
-                   lobe.mScale.b[1] == 0.0);
+    CPPUNIT_ASSERT(scene_rdl2::math::isEqual(lobe.mAlbedo.r[1], 0.0f, tol) &&
+                   scene_rdl2::math::isEqual(lobe.mAlbedo.g[1], 0.25f, tol) &&
+                   scene_rdl2::math::isEqual(lobe.mAlbedo.b[1], 0.0f, tol));
     CPPUNIT_ASSERT(lobe.mFrame.mZ.x[1] == 0.0 &&
                    lobe.mFrame.mZ.y[1] == 1.0 &&
                    lobe.mFrame.mZ.z[1] == 0.0);
-}
-
-void
-TestEvalAttribute::testEvalColorComponent()
-{
-    SceneSetup scene;
-    Bsdfv &bsdf = *(scene.shade());
-
-    // evalColorComponent results are in lobe1
-    CPPUNIT_ASSERT(bsdf.mLobes[1]->mName == BsdfLobeName::BSDF_LOBE_COOK_TORRANCE);
-    CookTorranceBsdfLobev &lobe = *(CookTorranceBsdfLobev *) bsdf.mLobes[1];
-
-    // When testing mFrame we use isEqual() due to minor error
-    // introduced in adaptNormal() during lobe creation
-
-    const float tol = 0.006f;// things have gotten sloppier when moving to ispc-1.14.1
-
-    // lane0
-    CPPUNIT_ASSERT(lobe.mScale.r[0] == 0.25 &&
-                   lobe.mScale.g[0] == 0.0  &&
-                   lobe.mScale.b[0] == 0.0);
-    CPPUNIT_ASSERT(scene_rdl2::math::isEqual(lobe.mFrame.mZ.x[0], 1.f, tol) &&
-                   scene_rdl2::math::isEqual(lobe.mFrame.mZ.y[0], 0.f, tol) &&
-                   scene_rdl2::math::isEqual(lobe.mFrame.mZ.z[0], 0.f, tol));
-    CPPUNIT_ASSERT(lobe.mRoughness[0] == 1.0);
-
-    // lane1
-    CPPUNIT_ASSERT(lobe.mScale.r[1] == 0.125 &&
-                   lobe.mScale.g[1] == 0.0   &&
-                   lobe.mScale.b[1] == 0.0);
-    CPPUNIT_ASSERT(scene_rdl2::math::isEqual(lobe.mFrame.mZ.x[1], 0.f, tol) &&
-                   scene_rdl2::math::isEqual(lobe.mFrame.mZ.y[1], 1.f, tol) &&
-                   scene_rdl2::math::isEqual(lobe.mFrame.mZ.z[1], 0.f, tol));
-    CPPUNIT_ASSERT(lobe.mRoughness[1] == 1.0);
 }
 
 void

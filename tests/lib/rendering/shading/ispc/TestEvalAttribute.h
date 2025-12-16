@@ -31,7 +31,6 @@ public:
 
     CPPUNIT_TEST_SUITE(TestEvalAttribute);
     CPPUNIT_TEST(testEvalColor);
-    CPPUNIT_TEST(testEvalColorComponent);
     CPPUNIT_TEST(testGetBool);
     CPPUNIT_TEST(testGetInt);
     CPPUNIT_TEST(testGetFloat);
