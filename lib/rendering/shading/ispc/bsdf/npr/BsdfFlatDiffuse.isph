@@ -60,9 +60,9 @@ FlatDiffuseBsdfLobe_show(const varying BsdfLobe * const uniform lobe,
     const varying Fresnel * const uniform fresnel = me->mOrenNayar.mFresnel;
 
     if (BsdfLobe_matchesFlag(lobe, BSDF_LOBE_TYPE_REFLECTION)) {
-        BsdfUtil_indent(ntab);   print("[LambertBsdfLobe] (reflection) mask: %\n", lobe->mMask);
+        BsdfUtil_indent(ntab);   print("[FlatDiffuseBsdfLobe] (reflection) mask: %\n", lobe->mMask);
     } else {
-        BsdfUtil_indent(ntab);   print("[LambertBsdfLobe] (transmission) mask: %\n", lobe->mMask);
+        BsdfUtil_indent(ntab);   print("[FlatDiffuseBsdfLobe] (transmission) mask: %\n", lobe->mMask);
     }
 
     BsdfUtil_indent(ntab+1); print("scale: % % %\n", BSDF_UTIL_EXTRACT(me->mOrenNayar.mScale.r),

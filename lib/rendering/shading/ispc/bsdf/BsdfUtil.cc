@@ -3,6 +3,7 @@
 
 /// @file BsdfUtil.cc
 
+#include <scene_rdl2/scene/rdl2/LightSet.h>
 #include <scene_rdl2/scene/rdl2/Material.h>
 
 #include <iostream>
@@ -22,6 +23,12 @@ void CPP_printBsdfHeader(const scene_rdl2::rdl2::Material * const material,
         << material->getName() << "'\n";
     std::cout << "==========================================================\n";
     std::cout << "\n";
+}
+
+extern "C"
+void CPP_printLightSetInfo(const scene_rdl2::rdl2::LightSet * const lightSet)
+{
+    std::cout << "<LightSet> : '" << lightSet->getName() << "'\n";
 }
 
 } // namespace internal

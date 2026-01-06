@@ -133,6 +133,7 @@ RenderOptions::RenderOptions() :
     mExecutionMode(mcrt_common::ExecutionMode::MOONRAY_EXEC_MODE_DEFAULT),
     mTileProgress(true),
     mApplyColorRenderTransform(false),
+    mPrintBsdf(false),
     mAthenaTagsString(""),
     mGUID(scene_rdl2::util::GUID::nil()),
     mDebugConsolePort(-1), // negative value means debug console = off
@@ -449,6 +450,21 @@ RenderOptions::parseFromCommandLine(int argc, char* argv[])
             foundAtIndex = args.getFlagValues("-debug_console", 1, values, foundAtIndex + 1);
         }
 
+        foundAtIndex = args.getFlagValues("-print_bsdf", 2, values);
+        validFlags.push_back("-print_bsdf");
+        while (foundAtIndex >= 0) {
+            setPrintBsdf(true);
+            // Set some other overrides to make the print_bsdf mode useful.
+            addOverride(overrides, "__SceneVariables__", "print_bsdf", "true", "", true);
+            addOverride(overrides, "__SceneVariables__", "debug pixel", values[0] + ", " + values[1], "", true);
+            addOverride(overrides, "__SceneVariables__", "max_depth", "0", "", true);
+            addOverride(overrides, "__SceneVariables__", "pixel_samples", "1", "", true);
+            addOverride(overrides, "__SceneVariables__", "bsdf_samples", "1", "", true);
+            addOverride(overrides, "__SceneVariables__", "sampling_mode", "0", "", true);
+            setThreads(1);
+            foundAtIndex = args.getFlagValues("-print_bsdf", 2, values, foundAtIndex + 1);
+        }
+
         if (!overrides.empty()) {
             setAttributeOverrides(overrides);
         }
@@ -637,6 +653,10 @@ RenderOptions::getUsageMessage(const std::string& programName, bool guiMode)
 "    -stats filename.csv\n"
 "        Enable logging of statistics to a formatted file.\n"
 "\n"
+"    -print_bsdf x y\n"
+"        Enables printing the BSDF configuration for each material during render.\n"
+"        Only render this one pixel for debugging. Overrides viewport.\n"
+"\n"
 "    -athena_tags \"TAG1=VALUE1 TAG2=VALUE2 ... TAGN=VALUEN\" \n"
 "        Provided string will be sent to Athena Log Server and can be used to access stats on this render\n"
 "        Intended to be used for storing user specific data of interest such as RATS tests, testmaps, etc\n"
@@ -791,7 +811,7 @@ RenderOptions::setDesiredExecutionMode(const std::string &execMode)
 void
 RenderOptions::setFastGeometry()
 {
-    // not the cleanest but lets see if this fixes our segfaul..
+    // not the cleanest but lets see if this fixes our segfault..
     std::vector<AttributeOverride> overrides;
     addOverride(overrides, "__SceneVariables__", "fast geometry update", "true", "", true);
     if (!overrides.empty()) {
@@ -946,6 +966,7 @@ RenderOptions::show() const
          << "  mExecutionMode:" << showExecutionMode(mExecutionMode) << '\n'
          << "  mTileProgress:" << ((mTileProgress) ? "true" : "false") << '\n'
          << "  mApplyColorRenderTransform:" << ((mApplyColorRenderTransform) ? "true" : "false") << '\n'
+         << "  mPrintBsdf:" << ((mPrintBsdf) ? "true" : "false") << '\n'
          << "  mSnapshotPath:" << mSnapshotPath << '\n'
          << "  mColorRenderTransformOverrideLut:" << mColorRenderTransformOverrideLut << '\n'
          << "  mAttenaTagsString:" << mAthenaTagsString << '\n'

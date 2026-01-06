@@ -32,12 +32,6 @@ struct Material;
 #define SHADING_END_CLOCK(OBJ, TLS, NUM_ITEMS)
 #endif
 
-#ifdef SHADING_PRINT_DEBUG_BSDF_INFO_ENABLED
-#define SHADING_PRINT_BSDF_INFO BsdfBuilder_show(builder[i], material);
-#else
-#define SHADING_PRINT_BSDF_INFO
-#endif
-
 /// @brief Define a material shade function within a shader
 #define DEFINE_MATERIAL_SHADER(shaderName, shadeFnName)                                     \
     void                                                                                    \
@@ -51,7 +45,6 @@ struct Material;
                                                                                             \
         for (uniform int i = 0; i < n; ++i) {                                               \
             shadeFnName(material, tls, state[i], builder[i]);                               \
-            SHADING_PRINT_BSDF_INFO                                                         \
         }                                                                                   \
                                                                                             \
         SHADING_END_CLOCK(material, tls, n * programCount);                                 \

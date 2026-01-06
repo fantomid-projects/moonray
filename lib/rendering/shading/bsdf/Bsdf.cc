@@ -152,12 +152,18 @@ Bsdf::show(const std::string &sceneClass, const std::string &name, std::ostream&
 
     for (size_t i = 0; i < numLobes; ++i) {
         const BsdfLobe* const lobe = mLobeArray[i];
+        if (lobe->getLightSet()) {
+            os << "<LightSet> : '" << lobe->getLightSet()->getName() << "'\n";
+        }
         lobe->show(os, "");
         os << "\n";
     }
 
     for (size_t i = 0; i < numBssrdfs; ++i) {
         const Bssrdf* const bssrdf = mBssrdfArray[i];
+        if (bssrdf->getLightSet()) {
+            os << "<LightSet> : '" << bssrdf->getLightSet()->getName() << "'\n";
+        }
         bssrdf->show(os, "");
         os << "\n";
     }

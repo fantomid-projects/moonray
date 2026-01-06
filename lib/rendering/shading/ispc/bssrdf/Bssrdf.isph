@@ -289,6 +289,12 @@ Bssrdf_getLabel(const varying Bssrdf * uniform bssrdf)
     return bssrdf->mLabel;
 }
 
+inline const uniform LightSet * uniform
+Bssrdf_getLightSet(varying Bssrdf * uniform bssrdf)
+{
+    return bssrdf->mLightSet;
+}
+
 inline void
 Bssrdf_setLightSet(varying Bssrdf * uniform bssrdf,
                    const uniform LightSet * uniform lightSet)

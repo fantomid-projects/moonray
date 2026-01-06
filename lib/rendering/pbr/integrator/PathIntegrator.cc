@@ -343,10 +343,6 @@ shadeMaterial(mcrt_common::ThreadLocalState *tls, const scene_rdl2::rdl2::Materi
                                          lobeLabelIds, lpeLobeLabelIds));
         }
     }
-
-#ifdef SHADING_PRINT_DEBUG_BSDF_INFO_ENABLED
-    bsdf->show(mat->getSceneClass().getName(), mat->getName(), std::cout);
-#endif
 }
 
 // Auxilliary function to add a node in the ray tree. The members of the node will change frequently while development
@@ -824,6 +820,10 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
 
     auto bsdf = arena->allocWithCtor<shading::Bsdf>();
     shadeMaterial(pbrTls->mTopLevelTls, material, isect, bsdf);
+
+    if (fs.mPrintBsdf) {
+        bsdf->show(material->getSceneClass().getName(), material->getName(), std::cout);
+    }
     stats.incCounter(STATS_SHADER_EVALS);
 
     // Evaluate any extra aovs on this material

@@ -2726,14 +2726,6 @@ BsdfBuilder_endAdjacentComponents(varying BsdfBuilder& builder)
     accumulateAttenuation(me);
 }
 
-void
-BsdfBuilder_show(varying BsdfBuilder& builder,
-                 const uniform Material * const uniform material)
-{
-    varying BsdfBuilderImpl& me = *builder.mImpl;
-    Bsdf_show(*me.mBsdf, material);
-}
-
 // ----------------------------------------------------------------------------------
 // functions called by ShadeBundleHandler.cc
 // ----------------------------------------------------------------------------------

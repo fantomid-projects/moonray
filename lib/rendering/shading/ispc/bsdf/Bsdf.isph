@@ -423,7 +423,7 @@ BsdfLobe_getLabel(const varying BsdfLobe * uniform lobe)
     return lobe->mLabel;
 }
 
-inline varying intptr_t
+inline uniform intptr_t
 BsdfLobe_getLightSet(const varying BsdfLobe * uniform lobe)
 {
     return lobe->mLightSet;
@@ -738,15 +738,6 @@ Bsdf_getGeomLabelId(const varying Bsdf * uniform bsdf)
 {
     return bsdf->mGeomLabelId;
 }
-
-/// @brief evaluate a bsdf
-varying Color
-Bsdf_eval(const varying Bsdf * uniform bsdf, const varying BsdfSlice &slice,
-          const varying Vec3f &wi, float &pdf);
-
-/// @brief compute the albedo for a bsdf
-varying Color
-Bsdf_albedo(const varying Bsdf &bsdf, const varying BsdfSlice &slice);
 
 void
 Bsdf_show(const varying Bsdf &bsdf,

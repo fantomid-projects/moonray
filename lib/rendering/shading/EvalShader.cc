@@ -125,9 +125,6 @@ shade(const scene_rdl2::rdl2::Material *material, shading::TLState *tls,
 #endif
 
     bsdfBuilder.shadeMaterial(material);
-#ifdef SHADING_PRINT_DEBUG_BSDF_INFO_ENABLED
-    bsdfBuilder.showBsdf(material->getSceneClass().getName(), material->getName(), std::cout);
-#endif
 }
 
 

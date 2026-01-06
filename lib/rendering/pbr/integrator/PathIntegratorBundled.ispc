@@ -202,6 +202,16 @@ integrateBundled( const uniform PathIntegrator * uniform this,
         const varying Intersection &isect = isects[i];
         const varying Bsdf * uniform bsdf = &bsdfs[i];
 
+        if (fs.mPrintBsdf) {
+            // Retrieve the material from the intersection
+            const varying Address64 a64 = isect.mMaterial;
+            const varying intptr_t vMatAddr = Address64_get(a64);
+            const uniform intptr_t uMatAddr = extract(vMatAddr, 0);
+            const uniform Material * const uniform material = (const uniform Material * const uniform) uMatAddr;
+
+            Bsdf_show(*bsdf, material);
+        }
+
         const varying Subpixel &sp = rs->mSubpixel;
         const varying PathVertex &pv = rs->mPathVertex;
         varying uint32_t sequenceID = rs->mSequenceID;

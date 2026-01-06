@@ -10,10 +10,14 @@
 
 struct Bsdf;
 struct Material;
+struct LightSet;
 
 void BsdfUtil_indent(const uniform uint8_t ntab);
 
 extern "C"
 void CPP_printBsdfHeader(const uniform Material * const uniform material,
                          const varying Bsdf * const uniform bsdf);
+
+extern "C"
+void CPP_printLightSetInfo(const uniform LightSet * const uniform lightSet);
 

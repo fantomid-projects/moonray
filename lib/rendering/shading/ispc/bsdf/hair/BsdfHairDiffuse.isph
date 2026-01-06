@@ -285,10 +285,13 @@ HairDiffuseBsdfLobe_show(const varying BsdfLobe * const uniform lobe,
     BsdfUtil_indent(ntab+1); print("scale: % % %\n", BSDF_UTIL_EXTRACT(me->mScale.r),
                                                      BSDF_UTIL_EXTRACT(me->mScale.g),
                                                      BSDF_UTIL_EXTRACT(me->mScale.b));
+    BsdfUtil_indent(ntab+1); print("hair direction: % % %\n", BSDF_UTIL_EXTRACT(me->mHairDir.x),
+                                                              BSDF_UTIL_EXTRACT(me->mHairDir.y),
+                                                              BSDF_UTIL_EXTRACT(me->mHairDir.z));
     BsdfUtil_indent(ntab+1); print("refl color: % % %\n", BSDF_UTIL_EXTRACT(me->mDiffuseRefl.r),
                                                           BSDF_UTIL_EXTRACT(me->mDiffuseRefl.g),
                                                           BSDF_UTIL_EXTRACT(me->mDiffuseRefl.b));
-    BsdfUtil_indent(ntab+1); print("refl color: % % %\n", BSDF_UTIL_EXTRACT(me->mDiffuseTrans.r),
+    BsdfUtil_indent(ntab+1); print("trans color: % % %\n", BSDF_UTIL_EXTRACT(me->mDiffuseTrans.r),
                                                           BSDF_UTIL_EXTRACT(me->mDiffuseTrans.g),
                                                           BSDF_UTIL_EXTRACT(me->mDiffuseTrans.b));
     if (fresnel) {

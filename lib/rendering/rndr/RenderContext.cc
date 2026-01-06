@@ -3129,6 +3129,8 @@ RenderContext::buildFrameState(FrameState *fs, double frameStartTime, const bool
 #endif
 
     fs->mDisplayFilterCount = mRenderOutputDriver->getDisplayFilterCount();
+
+    fs->mPrintBsdf = mOptions.getPrintBsdf();
 }
 
 void

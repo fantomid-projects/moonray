@@ -569,7 +569,7 @@ public:
     void restoreCachedCameraXform();
 
     /// Sync the camera with rdl2 xform info,
-    /// which involves re-calculating the frustums and 
+    /// which involves re-calculating the frustums and
     /// re-loading the geometries. Intended for use with the
     /// interactive PathVisualizer.
     void forceCameraUpdate();

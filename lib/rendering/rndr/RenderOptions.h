@@ -12,7 +12,6 @@
 #include <scene_rdl2/render/util/GUID.h>
 #include <moonray/rendering/shading/Shading.h>
 #include <moonray/rendering/mcrt_common/ExecutionMode.h>
-// #include <moonray/rendering/mcrt_common/TextureSystem.h>
 
 #include <cstdint>
 #include <string>
@@ -66,7 +65,7 @@ class RenderOptions
 {
 public:
     using Arg = scene_rdl2::grid_util::Arg;
-    using Parser = scene_rdl2::grid_util::Parser; 
+    using Parser = scene_rdl2::grid_util::Parser;
 
     class AttributeOverride
     {
@@ -197,6 +196,10 @@ public:
     void setApplyColorRenderTransform(const bool applyCrt) { mApplyColorRenderTransform = applyCrt; }
     bool getApplyColorRenderTransform() const { return mApplyColorRenderTransform; }
 
+    // Get/set print bsdf flag
+    void setPrintBsdf(const bool value) { mPrintBsdf = value; }
+    bool getPrintBsdf() const { return mPrintBsdf; }
+
     // Get/set the snapshot path
     void setSnapshotPath(const std::string& snapPath) { mSnapshotPath = snapPath; }
     std::string getSnapshotPath() const { return mSnapshotPath; }
@@ -263,7 +266,7 @@ private:
     std::string mCpuAffinityDef {"-1"}; // "-1" is disable CPU-Affinity control
     std::string mSocketAffinityDef;
     std::string mMemAffinityDef; // default is empty string
-    std::string mAutoAffinityDef {"on"}; 
+    std::string mAutoAffinityDef {"on"};
     RenderMode mRenderMode;
     FastRenderMode mFastMode;
     bool mGeneratePixelInfo;    // Generally controlled by the application.
@@ -278,6 +281,7 @@ private:
     mcrt_common::ExecutionMode mExecutionMode;
     bool mTileProgress;        // moonray_gui only
     bool mApplyColorRenderTransform; // moonray_gui only
+    bool mPrintBsdf;
     std::string mSnapshotPath; // moonray_gui only
     std::string mColorRenderTransformOverrideLut;
     std::string mAthenaTagsString;

@@ -119,7 +119,7 @@ HairToonSpecularBsdfLobe::show(std::ostream& os,
     const Color& scale = getScale();
     const Vec3f& N = mFrame.getN();
     const Fresnel * fresnel = getFresnel();
-    os << indent << "[ToonSpecularBsdfLobe]\n";
+    os << indent << "[HairToonSpecularBsdfLobe]\n";
     os << indent << "    " << "scale: "
         << scale.r << " " << scale.g << " " << scale.b << "\n";
     os << indent << "    " << "N: "
@@ -363,7 +363,7 @@ ToonSpecularBsdfLobe::show(std::ostream& os,
     os << indent << "    " << "tint: "
         << mTint.r << " " << mTint.g << " " << mTint.b << "\n";
     os << indent << "    " << "stretch u: " << mStretchU << "\n";
-    os << indent << "    " << "stretch v: " << mStretchU << "\n";
+    os << indent << "    " << "stretch v: " << mStretchV << "\n";
     os << indent << "    " << "dPds: "
         << mdPds.x << " " << mdPds.y << " " << mdPds.z << "\n";
     os << indent << "    " << "dPdt: "

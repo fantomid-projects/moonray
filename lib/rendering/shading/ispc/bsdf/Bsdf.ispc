@@ -4,6 +4,7 @@
 /// @file Bsdf.ispc
 
 #include "Bsdf.isph"
+#include "../bssrdf/Bssrdf.isph"
 #include "BsdfSlice.isph"
 #include "BsdfUtil.isph"
 
@@ -16,7 +17,6 @@ ISPC_UTIL_EXPORT_STRUCT_TO_HEADER(Bsdf);
 ISPC_UTIL_EXPORT_STRUCT_TO_HEADER(BsdfLobe);
 ISPC_UTIL_EXPORT_ENUM_TO_HEADER(BsdfLobeName);
 
-//----------------------------------------------------------------------------
 uniform bool
 BsdfLobe_getProperty(const varying BsdfLobe * uniform lobe,
                      uniform BsdfLobeProperty property,
@@ -44,57 +44,6 @@ BsdfLobe_getProperty(const varying BsdfLobe * uniform lobe,
     return handled;
 }
 
-//----------------------------------------------------------------------------
-
-varying Color
-Bsdf_eval(const varying Bsdf * uniform bsdf, const varying BsdfSlice &slice,
-          const varying Vec3f &wi, varying float &pdf)
-{
-    varying BsdfLobeType flags = BsdfSlice_getSurfaceFlags(&slice, *bsdf, wi);
-
-    // Add up all matching lobes' eval()
-    varying Color f = Color_ctor(0.f);
-    pdf = 0.f;
-    uniform int size = bsdf->mNumLobes;
-    for (uniform int l = 0; l < size; ++l) {
-        varying BsdfLobe * uniform lobe = bsdf->mLobes[l];
-
-        if (isActive(lobe)) {
-            // We need to account for lobe pdf, even if the surface flag doesn't
-            // match
-            varying float tmpPdf = 0.f;
-            varying Color color = BsdfLobe_eval(lobe, slice, wi, &tmpPdf);
-            if (BsdfLobe_matchesFlags(lobe, flags)) {
-                f = f + color;
-            }
-            pdf += tmpPdf;
-        }
-    }
-
-    // Assumes all lobes are equi-probabe
-    if (size > 1) {
-        pdf /= size;
-    }
-
-    return f;
-}
-
-varying Color
-Bsdf_albedo(const varying Bsdf &bsdf,
-            const varying BsdfSlice &slice)
-{
-    varying Color result = Color_ctor(0.f);
-    uniform int size = bsdf.mNumLobes;
-    for (uniform int l = 0; l < size; ++l) {
-        varying BsdfLobe * uniform lobe = bsdf.mLobes[l];
-        if (BsdfLobe_matchesFlags(lobe, slice.mFlags)) {
-            result = result + BsdfLobe_albedo(lobe, slice);
-        }
-    }
-
-    return result;
-}
-
 void
 Bsdf_show(const varying Bsdf &bsdf,
           const uniform Material * const uniform material)
@@ -103,12 +52,20 @@ Bsdf_show(const varying Bsdf &bsdf,
 
     for (uniform int i = 0; i < bsdf.mNumLobes; ++i) {
         varying BsdfLobe * uniform lobe = bsdf.mLobes[i];
+        const uniform intptr_t lightSet = BsdfLobe_getLightSet(lobe);
+        if (lightSet != 0) {
+            CPP_printLightSetInfo((const uniform LightSet * uniform) lightSet);
+        }
         BsdfLobe_show(lobe, 0);
         print("\n");
     }
 
     for (uniform int i = 0; i < bsdf.mNumBssrdfs; ++i) {
         varying Bssrdf * uniform bssrdf = bsdf.mBssrdfs[i];
+        const uniform LightSet * uniform lightSet = Bssrdf_getLightSet(bssrdf);
+        if (lightSet != 0) {
+            CPP_printLightSetInfo(lightSet);
+        }
         Bssrdf_show(bssrdf, 0);
         print("\n");
     }
@@ -119,6 +76,7 @@ Bsdf_show(const varying Bsdf &bsdf,
 
     print("\n==========================================================\n");
 }
+export void * uniform getBsdfShowFn() { return Bsdf_show; }
 
 void
 Bsdf_setPostScatterExtraAovs(varying Bsdf * uniform bsdf,
@@ -130,6 +88,4 @@ Bsdf_setPostScatterExtraAovs(varying Bsdf * uniform bsdf,
     bsdf->mPostScatterExtraAovs.mLabelIds = labelIds;
     bsdf->mPostScatterExtraAovs.mColors = colors;
 }
-
-//----------------------------------------------------------------------------
 

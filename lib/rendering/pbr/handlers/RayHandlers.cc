@@ -437,6 +437,9 @@ rayBundleHandler(mcrt_common::ThreadLocalState *tls, unsigned numEntries,
             const shading::Material *material = &rdl2Material->get<const shading::Material>();
 
             // ---- Record ray for our path visualizer ----------------------------------------------
+            // TODO: We may want to consider moving this to the ShadeBundleHandler instead so that
+            // we can record shading results as well.  This could ultimately replace the existing
+            // functionality that the command-line -print_bsdf option provides.
             const Subpixel& sp = rayStates[i]->mSubpixel;
             if (fs.mSimulationMode) {
                 fs.mScene->recordRegularRay(ray, sp.mPixel, pv.lobeType);

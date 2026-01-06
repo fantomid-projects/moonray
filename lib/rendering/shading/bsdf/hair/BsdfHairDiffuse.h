@@ -66,6 +66,8 @@ public:
         os << indent << "[HairDiffuseLobe]\n";
         os << indent << "    " << "scale: "
             << scale.r << " " << scale.g << " " << scale.b << "\n";
+        os << indent << "    " << "hair direction: "
+            << mHairDir.x << " " << mHairDir.y << " " << mHairDir.z << "\n";
         os << indent << "    " << "refl color: "
             << mHairColorRefl.r << " " << mHairColorRefl.g << " " << mHairColorRefl.b << "\n";
         os << indent << "    " << "trans color: "

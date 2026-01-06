@@ -249,13 +249,25 @@ enum BundledOcclRayDataFlags
 // mScene                           Scene we are rendering this frame.
 // mAovSchema                       Copy of Aov schema.
 // mMaterialAovs                    Material Aov manager.
+// mLightAovs                       Light Aov manager.
 // mRequiresHeatMap                 True if producing a heat map.
+// mLockFrameNoise                  Locks frame noise patterns for consistent results across frames.
 // mShadingWorkloadChunkSize        The number of entries which should be processed
 //                                  in a single iteration. This should be tweaked
 //                                  per architecture such that the working data set
 //                                  can be kept inside of our cache hierarchy.
+// mFrameNumber                     Current frame number being rendered.
+// mInitialSeed                     Seed for random number generation for this frame.
 // mMaxPresenceDepth                The maximum depth the ray can travel through
 //                                  presence < 1 object
+// mPresenceThreshold               Threshold for path throughput after which presence sampling becomes stochastic
+// mPresenceQuality                 Quality factor for stochastic presence.
+// mSamples1D                       Pointer to 1D sample array.
+// mSamples2D                       Pointer to 2D sample array.
+// mShadowTerminatorFix             Shadow terminator fix mode.
+// mLightSamplingMode               ADAPTIVE or UNIFORM.
+// mSimulationMode                  True if in single-pixel rendering mode to gather info for light path visualizer
+// mPrintBsdf                       Debug flag to render a single pixel and print BSDF information.
 
 #define FRAME_STATE_MEMBERS                                                 \
     HUD_MEMBER(int, mExecutionMode);                                        \
@@ -282,7 +294,8 @@ enum BundledOcclRayDataFlags
     HUD_PTR(const Sample2D *, mSamples2D);                                  \
     HUD_MEMBER(HUD_NAMESPACE(shading, ShadowTerminatorFix), mShadowTerminatorFix);  \
     HUD_MEMBER(int, mLightSamplingMode);                                    \
-    HUD_MEMBER(bool, mSimulationMode)
+    HUD_MEMBER(bool, mSimulationMode);                                      \
+    HUD_MEMBER(bool, mPrintBsdf)
 
 #define FRAME_STATE_VALIDATION                                  \
     HUD_BEGIN_VALIDATION(FrameState);                           \
@@ -310,7 +323,8 @@ enum BundledOcclRayDataFlags
     HUD_VALIDATE(FrameState, mSamples2D);                       \
     HUD_VALIDATE(FrameState, mShadowTerminatorFix);             \
     HUD_VALIDATE(FrameState, mLightSamplingMode);               \
-    HUD_VALIDATE(FrameState, mSimulationMode);                       \
+    HUD_VALIDATE(FrameState, mSimulationMode);                  \
+    HUD_VALIDATE(FrameState, mPrintBsdf);                       \
     HUD_END_VALIDATION
 
 

@@ -159,10 +159,10 @@ public:
             << N.x << " " << N.y << " " << N.z << "\n";
         os << indent << "    " << "albedo: "
             << mAlbedo.r << " " << mAlbedo.g << " " << mAlbedo.b << "\n";
-        os << indent << "roughness: " << mRoughness << "\n";
-        os << indent << "terminator shift: " << mTerminatorShift << "\n";
-        os << indent << "flatness: " << mFlatness << "\n";
-        os << indent << "flatness falloff: " << mFlatnessFalloff << "\n";
+        os << indent << "    roughness: " << mRoughness << "\n";
+        os << indent << "    terminator shift: " << mTerminatorShift << "\n";
+        os << indent << "    flatness: " << mFlatness << "\n";
+        os << indent << "    flatness falloff: " << mFlatnessFalloff << "\n";
         if (fresnel) {
             fresnel->show(os, indent + "    ");
         }
