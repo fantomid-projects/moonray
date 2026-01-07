@@ -455,10 +455,7 @@ RenderDriver::progressiveRenderFrame(RenderDriver *driver, const FrameState &fs)
     // use outdated data from neighboring tiles.
     if (driver->getDisplayFilterDriver().hasDisplayFilters()) {
         // Request to update all tiles
-        unsigned numTiles = driver->getFilm().getTiler().mNumTiles;
-        for (unsigned tile = 0; tile < numTiles; ++tile) {
-            driver->getDisplayFilterDriver().requestTileUpdate(tile);
-        }
+        driver->getDisplayFilterDriver().requestAllTilesUpdate();
 
         runDisplayFiltersEndOfPass(driver, fs);
     }

@@ -47,6 +47,8 @@ public:
 
     void requestTileUpdate(unsigned int tileIdx) const;
 
+    void requestAllTilesUpdate() const;
+
 private:
 
     // The DisplayFilterDriver has an internal DAG to organize which
@@ -254,6 +256,16 @@ DisplayFilterDriver::Impl::requestTileUpdate(unsigned int tileIdx) const
 {
     for (int dfIdx = 0; dfIdx < mTotalDisplayFilterCount; ++dfIdx) {
         mUpdateMask[dfIdx][tileIdx] = true;
+    }
+}
+
+void
+DisplayFilterDriver::Impl::requestAllTilesUpdate() const
+{
+    for (unsigned int tileIdx = 0; tileIdx < mTiles->size(); ++tileIdx) {
+        for (int dfIdx = 0; dfIdx < mTotalDisplayFilterCount; ++dfIdx) {
+            mUpdateMask[dfIdx][tileIdx] = true;
+        }
     }
 }
 
@@ -1085,6 +1097,12 @@ void
 DisplayFilterDriver::requestTileUpdate(unsigned int tileIdx) const
 {
     mImpl->requestTileUpdate(tileIdx);
+}
+
+void
+DisplayFilterDriver::requestAllTilesUpdate() const
+{
+    mImpl->requestAllTilesUpdate();
 }
 
 void

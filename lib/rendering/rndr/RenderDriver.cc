@@ -757,6 +757,10 @@ RenderDriver::startFrame(const FrameState &fs)
                                                   .getSceneVariables()
                                                   .get(scene_rdl2::rdl2::SceneVariables::sCryptomatteMultiPresence);
 
+        // We need to skip the film initialization during simulation mode
+        // so that intermediate snapshots can share the same film instance.
+        // Note that this means that the film may have different size than
+        // the current frame state in simulation mode.
         if (!mFs.mSimulationMode) {
             mFilm->init(w, h,
                         mFs.mViewport,

@@ -937,7 +937,7 @@ RenderContext::startFrame(const bool simulationMode)
     // Don't spam the logs if in real-time mode.
     // mTotalRenderPrepTime was set inside of the prep function call
     if (getRenderMode() != RenderMode::REALTIME) {
-        if (mLogTime && !simulationMode) { // only print this if previous pass printing timing
+        if (mLogTime) { // only print this if previous pass printing timing
             mRenderStats->logInfoEmptyLine();
             mRenderStats->updateAndLogRenderPrepStats();
         }
@@ -1092,67 +1092,66 @@ RenderContext::stopFrame(const bool simulationMode)
     mRenderPrepTimingStats->recTime(RenderPrepTimingStats::StopFrameTag::MPBRSCENE_POSTFRAME);
 
     // Accumulate pbr stats data.
-    mPbrStatistics->mMcrtTime = mDriver->getLastFrameMcrtDuration();
-    mPbrStatistics->mMcrtUtilization = mDriver->getLastFrameMcrtUtilization();
-    mPbrStatistics->initLightStats(mPbrScene->getLightCount());
-
-    pbr::forEachTLS([this](pbr::TLState const *tls){ (*mPbrStatistics) += tls->mStatistics; });
-
-    // Accumulate geom stats data.
-    geom::internal::forEachTLS([this](geom::internal::TLState const *tls) {
-        (*mGeomStatistics) += tls->mStatistics;
-    });
-
-    mRenderPrepTimingStats->recTime(RenderPrepTimingStats::StopFrameTag::ACCUMULATE_PBR_STATS_DATA);
-
-    // Collect all per-shader stats into mRenderStats
-    collectShaderStats();
-
-    mRenderPrepTimingStats->recTime(RenderPrepTimingStats::StopFrameTag::COLLECTSHADERSTATS);
-
-    if (mRenderStats->getLogInfo() ||
-        mRenderStats->getLogCsv()  ||
-        mRenderStats->getLogAthena()) {
-
-        reportGeometryStatistics();
-    }
-
-    // Any errors that occurred during shading will be reported at this time
     if (!simulationMode) {
+        mPbrStatistics->mMcrtTime = mDriver->getLastFrameMcrtDuration();
+        mPbrStatistics->mMcrtUtilization = mDriver->getLastFrameMcrtUtilization();
+        mPbrStatistics->initLightStats(mPbrScene->getLightCount());
+
+        pbr::forEachTLS([this](pbr::TLState const *tls){ (*mPbrStatistics) += tls->mStatistics; });
+
+        // Accumulate geom stats data.
+        geom::internal::forEachTLS([this](geom::internal::TLState const *tls) {
+            (*mGeomStatistics) += tls->mStatistics;
+        });
+
+        mRenderPrepTimingStats->recTime(RenderPrepTimingStats::StopFrameTag::ACCUMULATE_PBR_STATS_DATA);
+
+        // Collect all per-shader stats into mRenderStats
+        collectShaderStats();
+
+        mRenderPrepTimingStats->recTime(RenderPrepTimingStats::StopFrameTag::COLLECTSHADERSTATS);
+
+        if (mRenderStats->getLogInfo() ||
+            mRenderStats->getLogCsv()  ||
+            mRenderStats->getLogAthena()) {
+
+            reportGeometryStatistics();
+        }
+
+        // Any errors that occurred during shading will be reported at this time
         reportShadingLogs();
-    }
 
-    mRenderPrepTimingStats->recTime(RenderPrepTimingStats::StopFrameTag::REPORTSHADINGLOGS);
+        mRenderPrepTimingStats->recTime(RenderPrepTimingStats::StopFrameTag::REPORTSHADINGLOGS);
 
-    // Don't spam the logs if in real-time mode, or if interactive changes interrupt
-    // rendering too quickly (less than 10 seconds). I tried much shorter timeouts
-    // but it has to be that long to avoid spamming that makes it impossible to see
-    // useful messages with typical usage (at least by me) of moving the camera,
-    // looking at the result, and then deciding to move the camera again.
-    // The decision for this pass is remembered in mLogTime for next pass to stop
-    // it from printing renderprep timing.
-    if (getRenderMode() != RenderMode::REALTIME && !simulationMode) {
-        if (isFrameComplete() || mPbrStatistics->mMcrtTime >= 10.0) {
-            mLogTime = true;
-            mRenderStats->logInfoEmptyLine();
-            mRenderStats->logSamplingStats(*mPbrStatistics, *mGeomStatistics);
+        // Don't spam the logs if in real-time mode, or if interactive changes interrupt
+        // rendering too quickly (less than 10 seconds). I tried much shorter timeouts
+        // but it has to be that long to avoid spamming that makes it impossible to see
+        // useful messages with typical usage (at least by me) of moving the camera,
+        // looking at the result, and then deciding to move the camera again.
+        // The decision for this pass is remembered in mLogTime for next pass to stop
+        // it from printing renderprep timing.
+        if (getRenderMode() != RenderMode::REALTIME) {
+            if (isFrameComplete() || mPbrStatistics->mMcrtTime >= 10.0) {
+                mLogTime = true;
+                mRenderStats->logInfoEmptyLine();
+                mRenderStats->logSamplingStats(*mPbrStatistics, *mGeomStatistics);
 
-            mRenderStats->logInfoEmptyLine();
-            mRenderStats->logLightStats(*mPbrStatistics, mPbrScene.get(), mSceneContext->getSceneVariables());
+                mRenderStats->logInfoEmptyLine();
+                mRenderStats->logLightStats(*mPbrStatistics, mPbrScene.get(), mSceneContext->getSceneVariables());
 
-            mRenderStats->logInfoEmptyLine();
-            mRenderStats->logTexturingStats(*texture::getTextureSampler(), mDebugLoggingEnabled);
+                mRenderStats->logInfoEmptyLine();
+                mRenderStats->logTexturingStats(*texture::getTextureSampler(), mDebugLoggingEnabled);
 
-            mRenderStats->logRenderingStats(*mPbrStatistics,
-                static_cast<mcrt_common::ExecutionMode>(mDriver->getFrameState().mExecutionMode),
-                mSceneContext->getSceneVariables());
+                mRenderStats->logRenderingStats(*mPbrStatistics,
+                    static_cast<mcrt_common::ExecutionMode>(mDriver->getFrameState().mExecutionMode),
+                    mSceneContext->getSceneVariables());
 
-            mRenderStats->logRenderOutputs(mSceneContext->getAllRenderOutputs());
-        } else {
-            mLogTime = false;
+                mRenderStats->logRenderOutputs(mSceneContext->getAllRenderOutputs());
+            } else {
+                mLogTime = false;
+            }
         }
     }
-
     mRenderStats->flush();
 
     // Do debug ray database processing if we've just been recording rays.

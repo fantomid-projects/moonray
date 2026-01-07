@@ -61,6 +61,9 @@ public:
     // each tile is operated on by one thread at a time.
     void requestTileUpdate(unsigned int tileIdx) const;
 
+    // Set all tiles to be updated.
+    void requestAllTilesUpdate() const;
+
 private:
     class Impl;
     std::unique_ptr<Impl> mImpl;
