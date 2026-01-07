@@ -143,17 +143,18 @@ PathIntegrator::estimateInScatteringSourceTermDirect(pbr::TLState *pbrTls, const
         float pdfLight;
         // TODO: replace the 0.0f with a proper footprint value? (We currently have no RayDifferential available)
         scene_rdl2::math::Color Li = light->eval(pbrTls->mTopLevelTls,
-            lWi, scatterPoint, ulFilter, ray.getTime(), lIsect, false, lightFilterList, nullptr, 0.0f, nullptr, &pdfLight);
+            lWi, scatterPoint, ulFilter, ray.getTime(), lIsect, false, lightFilterList, pv, 0.0f, nullptr, &pdfLight);
         if (!isSampleInvalid(Li, pdfLight) && scene_rdl2::math::isfinite(pdfLight)) {
             mcrt_common::Ray shadowRay(scatterPoint, lWi, 0,
                 sHitEpsilonEnd * lIsect.distance,
                 ray.getTime(), ray.getDepth() + 1);
             float presence = 0.0f;
-            if (!isRayOccluded(pbrTls, light, shadowRay,
-                               sHitEpsilonStart, 0.f /* shadow ray epsilon */,
-                               sp, sequenceID,
-                               scene_rdl2::math::Color(1.f, 1.f, 1.f), // path throughput
-                               presence, assignmentId, true /* isVolume */)) {
+            const bool isOccluded = isRayOccluded(pbrTls, light, shadowRay,
+                                                  sHitEpsilonStart, 0.f /* shadow ray epsilon */,
+                                                  sp, sequenceID,
+                                                  scene_rdl2::math::Color(1.f, 1.f, 1.f), // path throughput
+                                                  presence, assignmentId, true /* isVolume */);
+            if (!isOccluded) {
                 // shadowRay can be modified in occlusion query
                 mcrt_common::Ray trRay(scatterPoint, lWi, 0,
                     sHitEpsilonEnd * lIsect.distance,
@@ -164,6 +165,9 @@ PathIntegrator::estimateInScatteringSourceTermDirect(pbr::TLState *pbrTls, const
                 float ph = phaseFunction.eval(-ray.dir, lWi);
                 Ls += (1.0f - presence) * trToLight * ph * Li /
                     pdfLight;
+            }
+            if (pbrTls->mFs->mSimulationMode) {
+                pbrTls->mFs->mScene->recordOcclusionRay(shadowRay, sp.mPixel, /* lightSampleFlag = */ true, isOccluded);
             }
         }
     }
