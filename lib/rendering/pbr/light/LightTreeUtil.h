@@ -134,7 +134,7 @@ struct SplitCandidate
 
     // Having chosen this SplitCandidate, perform the node creation and light partitioning
     void performSplit(LightTreeNode& leftNode, LightTreeNode& rightNode, const Light* const* lights, 
-                      std::vector<uint>& lightIndices, const LightTreeNode& parent);
+                      LightTreeNode& parent);
 
     std::pair<int, float> mAxis         = {0, 0.f};   // split axis, 1st: 0, 1, or 2 (x, y, or z), 2nd: value
     float mLeftEnergy                   = 0.f;
@@ -155,10 +155,9 @@ class LightTreeNode
 public:
 
     LightTreeNode()
-        : mStartIndex(0),                   // index in mLightIndices where node begins
+        : mLightIndexBegin(nullptr),        // ptr to the beginning of the node's lights in lightIndices
           mRightNodeIndex(0),               // index of right child node in mNodes
           mLightCount(0),                   // total # lights belonging to node
-          mLightIndex(-1),                  // index of light belonging to node (-1 if not leaf)
           mBBox(scene_rdl2::util::empty),   // node's bounding box
           mCone(),                          // orientation cone
           mEnergy(0.f),                     // combined energy of all lights in node
@@ -169,17 +168,18 @@ public:
     /// Is this node a leaf?
     inline bool isLeaf() const { return mLightCount == 1; }
 
-    /// Get the node's starting index in lightIndices
-    inline uint getStartIndex() const { return mStartIndex; }
+    /// Get pointer to the start light index
+    inline const uint32_t* getLightIndexBegin() const { return mLightIndexBegin; }
+    inline uint32_t* getLightIndexBegin() { return mLightIndexBegin; }
 
     /// Get the index of the node's right child
-    inline uint getRightNodeIndex() const { return mRightNodeIndex; }
+    inline uint32_t getRightNodeIndex() const { return mRightNodeIndex; }
 
     /// Get the number of lights in this node
-    inline uint getLightCount() const { return mLightCount; }
+    inline uint32_t getLightCount() const { return mLightCount; }
 
     /// Gets the light index, if it's a leaf. Otherwise, returns -1.
-    inline int getLightIndex() const { return mLightIndex; }
+    inline int getLightIndex() const { return isLeaf() && mLightIndexBegin ? *mLightIndexBegin : -1; }
 
     /// Gets the bounding box of the node
     inline const scene_rdl2::math::BBox3f& getBBox() const { return mBBox; }
@@ -194,35 +194,44 @@ public:
     inline float getEnergyMean() const { return mEnergyMean; }
 
     /// Sets the index of the right child
-    inline void setRightNodeIndex(uint i) { mRightNodeIndex = i; }
-    
-    /// Sets the node's light index to the light index found at the start of this node
-    /// This function assumes you are running this on a leaf
-    inline void setLeafLightIndex(const std::vector<uint>& lightIndices) { mLightIndex = lightIndices[mStartIndex]; }
+    inline void setRightNodeIndex(uint32_t i) { mRightNodeIndex = i; }
+
 /// ----------------------------------------------------------------------------------------------------
 
     // Initialize the node. We do a number of calculations in this step to avoid it during sampling time.
-    void init(uint lightCount, 
-              uint startIndex, 
-              const Light* const* lights, 
-              const std::vector<uint>& lightIndices);
+    void init(const uint32_t lightCount, 
+              uint32_t* lightIndexBegin, 
+              const Light* const* lights);
 
     /// Initialize the node, with most of the calculations passed in from the SplitCandidate
-    void init(uint startIndex, 
-              float energy, 
-              const LightTreeCone& cone, 
-              const scene_rdl2::math::BBox3f& bbox,
-              const Light* const* lights, 
-              const std::vector<uint>& lightIndices, 
-              uint lightCount);
+    void init(const uint32_t lightCount,
+              uint32_t* lightIndexBegin,
+              const Light* const* lights,
+              float energy,
+              const LightTreeCone& cone,
+              const scene_rdl2::math::BBox3f& bbox);
 
     // Calculate the importance weight for the node
     float importance(const scene_rdl2::math::Vec3f& p, 
                      const scene_rdl2::math::Vec3f& n, 
                      const LightTreeNode& sibling,
                      bool cullLights) const;
+
+    // Crawl all lights in this node, applying the given function to each light
+    // While these functions may be simple for-loops, having them as member functions
+    // allows us to encapsulate the logic for accessing the lights in one place,
+    // saving future developers from potential mistakes due to the multiple levels 
+    // of indirection.
+    void crawlLights(const Light* const* lights, const std::function<void(const Light* light)>& func) const;
+    void crawlLights(const Light* const* lights, const std::function<void(const Light* light)>& func);
+
+    // Returns if all lights in the node are coincident, 
+    // and calculates the bounding box of the light positions
+    bool computeLightDistribution(const Light* const* lights,
+                                  scene_rdl2::math::Vec3f& minBound, 
+                                  scene_rdl2::math::Vec3f& range) const;
     
-    void printLights(const std::vector<uint>& lightIndices);
+    void printLights();
     void print();
 
 private:
@@ -241,8 +250,7 @@ private:
 
     /// ---------------------------------------------------------------------------------------------------
 
-    void calcEnergyVariance(uint lightCount, uint startIndex, const Light* const* lights, 
-                            const std::vector<uint>& lightIndices);
+    void calcEnergyVariance(uint32_t lightCount, const Light* const* lights);
 
     // Calculate the uncertainty angle (angle subtended by the bounding box)
     void calcSinCosThetaU(const float dSqr, const float rSqr, float* sinTheta, float* cosTheta) const;

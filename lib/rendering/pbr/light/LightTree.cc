@@ -40,7 +40,7 @@ void LightTree::build(const Light* const* boundedLights, uint32_t boundedLightCo
         // create root node
         mNodes.emplace_back();
         LightTreeNode& rootNode = mNodes.back();
-        rootNode.init(mBoundedLightCount, /* root index*/ 0, mBoundedLights, mLightIndices);
+        rootNode.init(mBoundedLightCount, &mLightIndices[0], mBoundedLights);
 
         // build light tree recursively
         buildRecurse(/* root index */ 0);
@@ -58,10 +58,7 @@ void LightTree::buildRecurse(uint32_t nodeIndex)
     MNRY_ASSERT(node->getLightCount() != 0);
 
     // if leaf node, return
-    if (node->isLeaf()) {
-        node->setLeafLightIndex(mLightIndices);
-        return;
-    }
+    if (node->isLeaf()) { return; }
 
     // -------- [1] section 4.4 ---------
 
@@ -91,12 +88,16 @@ float LightTree::split(LightTreeNode& leftNode, LightTreeNode& rightNode, uint32
 
     // if there are only two lights in node, just create two nodes
     if (node.getLightCount() == 2) {
-        leftNode.init(/* lightCount */ 1, node.getStartIndex(), mBoundedLights, mLightIndices);
-        rightNode.init(/* lightCount */ 1, node.getStartIndex() + 1, mBoundedLights, mLightIndices);
+        leftNode.init(/* lightCount */ 1, node.getLightIndexBegin(), mBoundedLights);
+        rightNode.init(/* lightCount */ 1, node.getLightIndexBegin() + 1, mBoundedLights);
         return /* zero split cost */ 0;
     }
 
-    if (lightsAreCoincident(node, mBoundedLights)) {
+    scene_rdl2::math::Vec3f minBound;
+    scene_rdl2::math::Vec3f range;
+    bool lightsAreCoincident = node.computeLightDistribution(mBoundedLights, minBound, range);
+
+    if (lightsAreCoincident) {
         // if lights are all stacked on top of each other,
         // just split the number of lights evenly
         return splitLightsEvenly(leftNode, rightNode, node);
@@ -111,7 +112,7 @@ float LightTree::split(LightTreeNode& leftNode, LightTreeNode& rightNode, uint32
 
         // split axis into buckets, return splitCandidate for the axis 
         // between buckets that has the minimum cost
-        float splitCost = splitAxis(split, axis, node);
+        float splitCost = splitAxis(split, axis, node, minBound[axis], range[axis]);
 
         // if this axis's split cost is lower than the current min
         // OR this is the first time through the loop, replace the min cost
@@ -122,40 +123,37 @@ float LightTree::split(LightTreeNode& leftNode, LightTreeNode& rightNode, uint32
     }
 
     // partition into left and right nodes using the chosen SplitCandidate
-    minSplit.performSplit(leftNode, rightNode, mBoundedLights, mLightIndices, node);
+    minSplit.performSplit(leftNode, rightNode, mBoundedLights, node);
     return minCost;
 }
 
-float LightTree::splitLightsEvenly(LightTreeNode& leftNode, LightTreeNode& rightNode, const LightTreeNode& parent) const
+float LightTree::splitLightsEvenly(LightTreeNode& leftNode, LightTreeNode& rightNode, LightTreeNode& parent) const
 {
     // just evenly split the lights into both nodes
-    const auto startIt = mLightIndices.begin() + parent.getStartIndex();
+    const auto startIt = parent.getLightIndexBegin();
     // start the right node lights halfway through
     const auto rightStartIt = startIt + (parent.getLightCount() / 2);
 
     // create left and right child nodes
     const uint32_t lightCountLeft  = rightStartIt - startIt;
     const uint32_t lightCountRight = parent.getLightCount() - lightCountLeft;
-    const uint32_t startIndexLeft  = parent.getStartIndex();
-    const uint32_t startIndexRight = parent.getStartIndex() + lightCountLeft;
+    uint32_t* lightIndexBeginLeft  = parent.getLightIndexBegin();
+    uint32_t* lightIndexBeginRight = parent.getLightIndexBegin() + lightCountLeft;
 
     // initialize nodes
-    leftNode.init(lightCountLeft, startIndexLeft, mBoundedLights, mLightIndices);
-    rightNode.init(lightCountRight, startIndexRight, mBoundedLights, mLightIndices);
+    leftNode.init(lightCountLeft, lightIndexBeginLeft, mBoundedLights);
+    rightNode.init(lightCountRight, lightIndexBeginRight, mBoundedLights);
 
     // we currently aren't using this cost anywhere, so it can be zero
     return 0.f;
 }
 
-float LightTree::splitAxis(SplitCandidate& minSplit, int axis, const LightTreeNode& node) const
+float LightTree::splitAxis(SplitCandidate& minSplit, int axis, const LightTreeNode& node,
+                           float minBound, float range) const
 {
     /// TODO: make this a user parameter
     int NUM_BUCKETS = 12, numSplits = NUM_BUCKETS - 1;
-
-    // find bucket size using the node bbox and num_buckets
-    float minBound = node.getBBox().lower[axis];            // lower bound of axis
-    float range = node.getBBox().size()[axis];              // length of the axis covered by the node
-    float bucketSize = range / NUM_BUCKETS;                 // size of each bucket
+    float bucketSize = range / NUM_BUCKETS;  // size of each bucket
 
     // create buckets
     LightTreeBucket buckets[NUM_BUCKETS];
@@ -168,9 +166,7 @@ float LightTree::splitAxis(SplitCandidate& minSplit, int axis, const LightTreeNo
     }
 
     // populate buckets
-    for (int i = node.getStartIndex(); i < node.getStartIndex() + node.getLightCount(); ++i) {
-        const Light* const light = mBoundedLights[mLightIndices[i]];
-
+    node.crawlLights(mBoundedLights, [&](const Light* light) {
         // Find which bucket this light belongs to by checking against split planes
         // This ensures consistency with performSplit() logic
         int bucketIndex = 0;
@@ -181,11 +177,11 @@ float LightTree::splitAxis(SplitCandidate& minSplit, int axis, const LightTreeNo
             }
             bucketIndex = j + 1;
         }
-        
+
         // add light to bucket
         LightTreeBucket& bucket = buckets[bucketIndex];
         bucket.addLight(light);
-    }
+    });
 
     // Purge empty buckets and splits
     LightTreeBucket finalBuckets[NUM_BUCKETS];
@@ -386,7 +382,6 @@ void LightTree::print() const
 void LightTree::printRecurse(uint32_t nodeIndex, int depth) const
 {
     const LightTreeNode& node = mNodes[nodeIndex];
-    const Light* const light = mBoundedLights[node.getLightIndex()];
 
     for (int i = 0; i < depth; ++i) {
         std::cout << " ";
@@ -395,6 +390,7 @@ void LightTree::printRecurse(uint32_t nodeIndex, int depth) const
 
     // if node is a leaf, return
     if (node.isLeaf()) {
+        const Light* light = mBoundedLights[node.getLightIndex()];
         std::cout << ", leaf: " << light->getRdlLight()->get(scene_rdl2::rdl2::Light::sLabel) << std::endl;
         return;
     }
@@ -405,6 +401,17 @@ void LightTree::printRecurse(uint32_t nodeIndex, int depth) const
 
     printRecurse(iL, depth+1);
     printRecurse(iR, depth+1);
+}
+
+// Print the buckets and the num lights associated for debugging
+void LightTree::printBuckets(const LightTreeBucket* buckets, int numBuckets) const
+{
+    std::cout << "Buckets:\n";
+    for (int i = 0; i < numBuckets; ++i) {
+        const LightTreeBucket& bucket = buckets[i];
+        std::cout << "  Bucket " << i << " (light count: " << bucket.mNumLights << "): ";
+        std::cout << "\n";
+    }
 }
 
 } // end namespace pbr

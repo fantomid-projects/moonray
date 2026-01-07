@@ -62,7 +62,7 @@ inline uniform uint LightTreeNode_getLightCount(const uniform LightTreeNode& nod
 /// Gets the light index, if it's a leaf. Otherwise, returns -1.
 inline uniform int LightTreeNode_getLightIndex(const uniform LightTreeNode& node)
 { 
-    return node.mLightIndex;
+    return LightTreeNode_isLeaf(node) && node.mLightIndexBegin ? *node.mLightIndexBegin : -1;
 }
 /// Gets the bounding box of the node
 inline const uniform BBox3f& LightTreeNode_getBBox(const uniform LightTreeNode& node)

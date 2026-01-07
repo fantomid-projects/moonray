@@ -62,6 +62,9 @@ public:
     /// Returns the memory footprint of the tree (in bytes)
     size_t getMemoryFootprint() const;
 
+    /// Returns the number of nodes in the tree
+    size_t getNodeCount() const { return mNodes.size(); }
+
     /// Print the tree
     void print() const;
 
@@ -80,22 +83,6 @@ private:
         if (visibleLightIndex >= 0) {
             lightSelectionPdfs[visibleLightIndex] = pdf;
         }
-    }
-
-    // Returns whether all lights are in the same position
-    inline bool lightsAreCoincident(const LightTreeNode& node, const Light* const* lights)
-    {
-        int startIndex = node.getStartIndex();
-        int lightCount = node.getLightCount();
-
-        const scene_rdl2::math::Vec3f firstLightPosition = lights[startIndex]->getPosition(0.f);
-        for (int i = startIndex + 1; i < startIndex + lightCount; ++i) {
-            const scene_rdl2::math::Vec3f& p = lights[i]->getPosition(0.f);
-            if (!scene_rdl2::math::isEqual(p, firstLightPosition)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     // Returns a new list of buckets and splits with empty buckets/splits removed,
@@ -212,6 +199,9 @@ private:
         std::cout << "]\n";
     }
 
+    // Print buckets and their associated lights for debugging
+    void printBuckets(const LightTreeBucket* buckets, int numBuckets) const;
+
 /// ------------------------------------- Function Declarations ---------------------------------------
 
     /// Recursively build tree
@@ -242,10 +232,11 @@ private:
     /// OUTPUT:
     ///     @param minSplit The SplitCandidate with the lowest cost for this axis
     ///
-    float splitAxis(SplitCandidate& minSplit, int axis, const LightTreeNode& node) const;
+    float splitAxis(SplitCandidate& minSplit, int axis, const LightTreeNode& node,
+                    float minBound, float range) const;
 
     /// Splits the node into two nodes, where it's just an even split of all the lights in the parent node
-    float splitLightsEvenly(LightTreeNode& leftNode, LightTreeNode& rightNode, const LightTreeNode& parent) const;
+    float splitLightsEvenly(LightTreeNode& leftNode, LightTreeNode& rightNode, LightTreeNode& parent) const;
 
 
     /// Choose a light from the hierarchy using importance sampling. We traverse the hierarchy by using a random number, 

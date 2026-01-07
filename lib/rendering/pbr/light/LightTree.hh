@@ -26,10 +26,9 @@
 // ---------------------------------------------------------------------------
 
 #define LIGHT_TREE_NODE_MEMBERS                                     \
-    HUD_MEMBER(uint32_t, mStartIndex);                              \
+    HUD_MEMBER(uint32_t*, mLightIndexBegin);                        \
     HUD_MEMBER(uint32_t, mRightNodeIndex);                          \
     HUD_MEMBER(uint32_t, mLightCount);                              \
-    HUD_MEMBER(int32_t, mLightIndex);                               \
     HUD_MEMBER(HUD_NAMESPACE(scene_rdl2::math, BBox3f), mBBox);     \
     HUD_MEMBER(LightTreeCone, mCone);                               \
     HUD_MEMBER(float, mEnergy);                                     \
@@ -38,10 +37,9 @@
 
 #define LIGHT_TREE_NODE_VALIDATION                                  \
     HUD_BEGIN_VALIDATION(LightTreeNode);                            \
-    HUD_VALIDATE(LightTreeNode, mStartIndex);                       \
+    HUD_VALIDATE(LightTreeNode, mLightIndexBegin);                  \
     HUD_VALIDATE(LightTreeNode, mRightNodeIndex);                   \
     HUD_VALIDATE(LightTreeNode, mLightCount);                       \
-    HUD_VALIDATE(LightTreeNode, mLightIndex);                       \
     HUD_VALIDATE(LightTreeNode, mBBox);                             \
     HUD_VALIDATE(LightTreeNode, mCone);                             \
     HUD_VALIDATE(LightTreeNode, mEnergy);                           \

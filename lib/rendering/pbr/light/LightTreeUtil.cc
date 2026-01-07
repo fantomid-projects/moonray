@@ -163,58 +163,101 @@ float SplitCandidate::cost(const BBox3f& parentBBox, const LightTreeCone& parent
 }
 
 void SplitCandidate::performSplit(LightTreeNode& leftNode, LightTreeNode& rightNode, const Light* const* lights, 
-                                  std::vector<uint>& lightIndices, const LightTreeNode& parent)
+                                  LightTreeNode& parent)
 {
     // sort lights on either side of axis
-    const auto startIt = lightIndices.begin() + parent.getStartIndex();
-    const auto endIt   = lightIndices.begin() + parent.getStartIndex() + parent.getLightCount();
+    // Note: parent is non-const because std::partition modifies the light index array in-place
+    uint32_t* startIt = parent.getLightIndexBegin();
+    uint32_t* endIt   = parent.getLightIndexBegin() + parent.getLightCount();
     const float splitPlane = mAxis.second;
-    const auto splitFunc = [&](uint lightIndex) {
+    const auto splitFunc = [&](uint32_t lightIndex) {
         return isOnLeftSide(lights[lightIndex]);
     };
-    const auto rightStartIt = std::partition(startIt, endIt, splitFunc);
+    uint32_t* rightStartIt = std::partition(startIt, endIt, splitFunc);
 
     // create left and right child nodes
-    const uint lightCountLeft  = rightStartIt - startIt;
-    const uint lightCountRight = parent.getLightCount() - lightCountLeft;
-    const uint startIndexLeft  = parent.getStartIndex();
-    const uint startIndexRight = parent.getStartIndex() + lightCountLeft;
+    const uint32_t lightCountLeft  = rightStartIt - startIt;
+    const uint32_t lightCountRight = parent.getLightCount() - lightCountLeft;
+    uint32_t* lightIndexBeginLeft  = parent.getLightIndexBegin();
+    uint32_t* lightIndexBeginRight = parent.getLightIndexBegin() + lightCountLeft;
 
     // initialize nodes
-    leftNode.init(startIndexLeft, mLeftEnergy, mLeftCone, mLeftBBox, lights, lightIndices, lightCountLeft);
-    rightNode.init(startIndexRight, mRightEnergy, mRightCone, mRightBBox, lights, lightIndices, lightCountRight);
+    leftNode.init(lightCountLeft, lightIndexBeginLeft, lights, mLeftEnergy, mLeftCone, mLeftBBox);
+    rightNode.init(lightCountRight, lightIndexBeginRight, lights, mRightEnergy, mRightCone, mRightBBox);
 }
 
 
 
 /// ------------------------------------------- LightTreeNode ----------------------------------------------------------
 
-void LightTreeNode::calcEnergyVariance(uint lightCount, uint startIndex, const Light* const* lights, 
-                                       const std::vector<uint>& lightIndices)
+void LightTreeNode::crawlLights(const Light* const* lights, const std::function<void(const Light* light)>& func)
+{
+    for (uint32_t i = 0; i < mLightCount; ++i) {
+        func(lights[mLightIndexBegin[i]]);
+    }
+}
+
+void LightTreeNode::crawlLights(const Light* const* lights, const std::function<void(const Light* light)>& func) const
+{
+    for (uint32_t i = 0; i < mLightCount; ++i) {
+        func(lights[mLightIndexBegin[i]]);
+    }
+}
+
+// Given a list of lights, computes whether all lights included in the node
+// are coincident (returns true or false), and calculates the bounding box of the light positions
+bool 
+LightTreeNode::computeLightDistribution(const Light* const* lights, 
+                                        scene_rdl2::math::Vec3f& minBound, 
+                                        scene_rdl2::math::Vec3f& range) const
+{
+    const scene_rdl2::math::Vec3f firstLightPosition = lights[mLightIndexBegin[0]]->getPosition(0.f);
+    scene_rdl2::math::Vec3f maxBound = firstLightPosition;
+    minBound = firstLightPosition;
+    bool areCoincident = true;
+
+    crawlLights(lights, [&](const Light* light) {
+        const scene_rdl2::math::Vec3f& p = light->getPosition(0.f);
+
+        if (!scene_rdl2::math::isEqual(p, firstLightPosition)) {
+            areCoincident = false;
+        }
+
+        if (p.x < minBound[0]) minBound[0] = p.x;
+        if (p.y < minBound[1]) minBound[1] = p.y;
+        if (p.z < minBound[2]) minBound[2] = p.z;
+
+        if (p.x > maxBound[0]) maxBound[0] = p.x;
+        if (p.y > maxBound[1]) maxBound[1] = p.y;
+        if (p.z > maxBound[2]) maxBound[2] = p.z;
+    });
+
+    range = {maxBound[0] - minBound[0], maxBound[1] - minBound[1], maxBound[2] - minBound[2]};
+
+    return areCoincident;
+}
+
+void LightTreeNode::calcEnergyVariance(uint32_t lightCount, const Light* const* lights)
 {
     mEnergyMean = mEnergy / lightCount;
-    for (uint i = 0; i < lightCount; ++i) {
-        const Light* light = lights[lightIndices[startIndex + i]];
 
+    crawlLights(lights, [&](const Light* light) {
         float diff = luminance(light->getRadiance()) - mEnergyMean;
         diff *= diff;
         mEnergyVariance += diff;
-    }
+    });
+
     mEnergyVariance /= lightCount;
 }
 
-
-void LightTreeNode::init(uint lightCount, uint startIndex, const Light* const* lights, 
-                         const std::vector<uint>& lightIndices)
+void LightTreeNode::init(const uint32_t lightCount, uint32_t* lightIndexBegin, const Light* const* lights)
 {
     MNRY_ASSERT(lightCount > 0);
 
-    mStartIndex = startIndex;
+    mLightIndexBegin = lightIndexBegin;
     mLightCount = lightCount;
 
-    for (uint i = 0; i < lightCount; ++i) {
-        const Light* light = lights[lightIndices[startIndex + i]];
-
+    crawlLights(lights, [&](const Light* light) {
         // add to the total energy
         // "maximum radiance emitted in some direction integrated over the emitting area"
         mEnergy += luminance(light->getRadiance());
@@ -225,17 +268,17 @@ void LightTreeNode::init(uint lightCount, uint startIndex, const Light* const* l
         // extend the orientation cone
         const LightTreeCone cone(light);
         mCone = combineCones(mCone, cone);
-    }
+    });
 
-    calcEnergyVariance(lightCount, startIndex, lights, lightIndices);
+    calcEnergyVariance(lightCount, lights);
 }
 
-void LightTreeNode::init(uint startIndex, float energy, const LightTreeCone& cone, const BBox3f& bbox,
-                const Light* const* lights, const std::vector<uint>& lightIndices, uint lightCount)
+void LightTreeNode::init(const uint32_t lightCount, uint32_t* lightIndexBegin, const Light* const* lights,
+                         float energy, const LightTreeCone& cone, const BBox3f& bbox)
 {
     MNRY_ASSERT(lightCount > 0);
     
-    mStartIndex = startIndex;
+    mLightIndexBegin = lightIndexBegin;
     mLightCount = lightCount;
 
     // We already have the energy, bbox, and cone from the split candidate
@@ -243,7 +286,7 @@ void LightTreeNode::init(uint startIndex, float energy, const LightTreeCone& con
     mBBox = bbox;
     mCone = cone;
 
-    calcEnergyVariance(lightCount, startIndex, lights, lightIndices);
+    calcEnergyVariance(lightCount, lights);
 }
 
 float LightTreeNode::importance(const Vec3f& p, const Vec3f& n, const LightTreeNode& sibling, bool cullLights) const
@@ -357,22 +400,22 @@ float LightTreeNode::calcMaterialTerm(const Vec3f& p, const Vec3f& n, bool cullL
     return scene_rdl2::math::abs(cosThetaIPrime);
 }
 
-void LightTreeNode::printLights(const std::vector<uint>& lightIndices)
+void LightTreeNode::printLights()
 {
     std::cout << "{ ";
-    for (uint i = 0; i < mLightCount; ++i) {
-        std::cout << lightIndices[mStartIndex + i] << ", ";
+    for (uint32_t i = 0; i < mLightCount; ++i) {
+        std::cout << mLightIndexBegin[i] << ", ";
     }
     std::cout << "}\n";
 }
 
 void LightTreeNode::print()
 {
-    std::cout << "{\n\tmBBox sizes: " << mBBox.size()
-                << "\n\ttype: " << (mLightIndex == -1 ? "cluster" : "leaf") 
-                << "\n\tmStartIndex: " << mStartIndex
-                << "\n\tmLightCount: " << mLightCount
-                << "\n\tmRightNodeIndex: " << mRightNodeIndex 
+    std::cout << "{\n\tmBBox sizes: "       << mBBox.size()
+                << "\n\ttype: "             << (mLightCount == 1 ? "leaf" : "cluster") 
+                << "\n\tmLightIndexBegin: " << *mLightIndexBegin
+                << "\n\tmLightCount: "      << mLightCount
+                << "\n\tmRightNodeIndex: "  << mRightNodeIndex 
                 << "\n}" << std::endl;
 }
 

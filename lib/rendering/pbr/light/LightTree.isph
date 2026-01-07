@@ -100,5 +100,6 @@ void LightTree_sampleRecurse(const uniform LightTree * const uniform me,
 void LightTree_print(const uniform LightTree * const uniform lightTree);
 
 /// Recursively print the tree
-void LightTree_printRecurse(const uniform LightTree * const uniform lightTree, uniform uint32_t nodeIndex, uniform int depth);
+void LightTree_printRecurse(const uniform LightTree * const uniform lightTree, 
+                            uniform uint32_t nodeIndex, uniform int depth);
 
