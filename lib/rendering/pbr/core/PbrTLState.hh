@@ -26,8 +26,6 @@
 //  mCancellationState
 //  mCurrentPassIdx                     The current pass we are rendering.
 //  mStatistics
-//  mRayRecorder                        Ray recording functionality.
-//  mRayVertexStack
 //  mRayEntries
 //  mOcclusionEntries
 //  mPresenceShadowsEntries
@@ -56,8 +54,6 @@
     HUD_MEMBER(CancellationState, mCancellationState);                              \
     HUD_MEMBER(uint32_t, mCurrentPassIdx);                                          \
     HUD_MEMBER(PbrStatistics, mStatistics);                                         \
-    HUD_CPP_PTR(DebugRayRecorder *, mRayRecorder);                                  \
-    HUD_CPP_MEMBER(std::vector<DebugRayVertex *>, mRayVertexStack, 24);             \
     HUD_PRIVATE()                                                                   \
     HUD_CPP_PTR(RayQueue::EntryType *, mRayEntries);                                \
     HUD_CPP_PTR(OcclusionQueue::EntryType *, mOcclusionEntries);                    \
@@ -87,8 +83,6 @@
     HUD_VALIDATE(PbrTLState, mCancellationState);               \
     HUD_VALIDATE(PbrTLState, mCurrentPassIdx);                  \
     HUD_VALIDATE(PbrTLState, mStatistics);                      \
-    HUD_VALIDATE(PbrTLState, mRayRecorder);                     \
-    HUD_VALIDATE(PbrTLState, mRayVertexStack);                  \
     HUD_VALIDATE(PbrTLState, mRayEntries);                      \
     HUD_VALIDATE(PbrTLState, mOcclusionEntries);                \
     HUD_VALIDATE(PbrTLState, mPresenceShadowsEntries);          \

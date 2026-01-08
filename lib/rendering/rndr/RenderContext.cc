@@ -36,7 +36,6 @@
 #include <moonray/rendering/mcrt_common/ThreadLocalState.h>
 #include <moonray/rendering/pbr/camera/Camera.h>
 #include <moonray/rendering/pbr/core/Aov.h>
-#include <moonray/rendering/pbr/core/DebugRay.h>
 #include <moonray/rendering/pbr/core/Statistics.h>
 #include <moonray/rendering/pbr/handlers/ShadeBundleHandler.h>
 #include <moonray/rendering/pbr/integrator/PathIntegrator.h>
@@ -922,18 +921,6 @@ RenderContext::startFrame(const bool simulationMode)
     mDeepIDChannelNames.reset(new std::vector<std::string>());
     *mDeepIDChannelNames = vars.get(scene_rdl2::rdl2::SceneVariables::sDeepIDAttributeNames);
 
-    // Check if the user requested to record debug rays for this frame.
-    if (!vars.get(scene_rdl2::rdl2::SceneVariables::sDebugRaysFile).empty()) {
-        if (mDriver->getDebugRayState() == RenderDriver::READY) {
-            const Mat4d& render2world = mPbrScene->getRender2World();
-            Viewport vp = scene_rdl2::math::convertToClosedViewport(vars.getRezedRegionWindow());
-            BBox2i bboxVp(vp.min(), vp.max());
-            // Will accept a double to float precision loss for debug rays
-            pbr::DebugRayRecorder::enableRecording(bboxVp, toFloat(render2world));
-            mDriver->switchDebugRayState(RenderDriver::READY, RenderDriver::REQUEST_RECORD);
-        }
-    }
-
     // Don't spam the logs if in real-time mode.
     // mTotalRenderPrepTime was set inside of the prep function call
     if (getRenderMode() != RenderMode::REALTIME) {
@@ -1153,25 +1140,6 @@ RenderContext::stopFrame(const bool simulationMode)
         }
     }
     mRenderStats->flush();
-
-    // Do debug ray database processing if we've just been recording rays.
-    if (mDriver->getDebugRayState() == RenderDriver::RECORDING_COMPLETE) {
-
-        buildAndSaveRayDatabase();
-
-        pbr::forEachTLS([](pbr::TLState *tls) {
-            tls->mRayRecorder->cleanUp();
-        });
-
-        pbr::DebugRayRecorder::disableRecording();
-
-        // Only save the file out for one frame.
-        scene_rdl2::rdl2::SceneVariables& sceneVars = mSceneContext->getSceneVariables();
-        scene_rdl2::rdl2::SceneVariables::UpdateGuard guard(&sceneVars);
-        sceneVars.set(scene_rdl2::rdl2::SceneVariables::sDebugRaysFile, std::string(""));
-
-        mDriver->switchDebugRayState(RenderDriver::RECORDING_COMPLETE, RenderDriver::READY);
-    }
 
     mRenderPrepTimingStats->recTime(RenderPrepTimingStats::StopFrameTag::LOG_FLUSH);
 
@@ -3130,50 +3098,6 @@ RenderContext::buildFrameState(FrameState *fs, double frameStartTime, const bool
     fs->mDisplayFilterCount = mRenderOutputDriver->getDisplayFilterCount();
 
     fs->mPrintBsdf = mOptions.getPrintBsdf();
-}
-
-void
-RenderContext::buildAndSaveRayDatabase()
-{
-    const scene_rdl2::rdl2::SceneVariables& sceneVars = mSceneContext->getSceneVariables();
-    if (sceneVars.get(scene_rdl2::rdl2::SceneVariables::sDebugRaysFile).empty()) {
-        return;
-    }
-
-    try {
-        tbb::tick_count t0 = tbb::tick_count::now();
-
-        Logger::info("Building debug ray database...");
-
-        std::vector<pbr::DebugRayRecorder *> recorders;
-        pbr::forEachTLS([&recorders](pbr::TLState *tls) {
-            pbr::DebugRayRecorder *recorder = tls->mRayRecorder;
-            MNRY_ASSERT(!recorder->isRecording());
-            recorders.push_back(recorder);
-        });
-
-        // Condition recorded ray data...
-        pbr::DebugRayBuilder builder;
-        builder.build(sceneVars.getRezedWidth(), sceneVars.getRezedHeight(), recorders);
-
-        // save conditioned data into debug ray database for serialization
-        pbr::DebugRayDatabase db;
-        builder.exportDatabase(&db);
-
-        if (!db.empty()) {
-            tbb::tick_count t1 = tbb::tick_count::now();
-            Logger::info("  build completed, primary rays = " , db.getPrimaryRayIndices().size() ,
-                       ", vertices = " , db.getRays().size() ,
-                       ", build time = " , (t1-t0).seconds());
-
-            std::string fileName = sceneVars.get(scene_rdl2::rdl2::SceneVariables::sDebugRaysFile);
-            db.save(fileName.c_str());
-        } else {
-            Logger::info("  no rays recorded, skipping.");
-        }
-    } catch (const std::exception& e) {
-        Logger::error("Error generating debug ray database: " , e.what());
-    }
 }
 
 void

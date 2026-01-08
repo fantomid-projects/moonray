@@ -12,7 +12,6 @@
 #include <moonray/rendering/pbr/camera/Camera.h>
 #include <moonray/rendering/pbr/core/Aov.h>
 #include <moonray/rendering/pbr/core/Constants.h>
-#include <moonray/rendering/pbr/core/DebugRay.h>
 #include <moonray/rendering/pbr/core/PbrTLState.h>
 #include <moonray/rendering/pbr/core/RayState.h>
 #include <moonray/rendering/pbr/core/Scene.h>
@@ -264,18 +263,7 @@ PathIntegrator::computeRadianceSubsurfaceSample(pbr::TLState *pbrTls,
                 }
                 continue;
             }
-            // Raydb debug
-            if (lightIsect.distance < sDistantLightDistance) {
-                Ray debugRay(P, wi, 0.0f);
-                RAYDB_EXTEND_RAY_NO_HIT(pbrTls, debugRay, lightIsect.distance);
-                RAYDB_SET_CONTRIBUTION(pbrTls, Li);
-                RAYDB_ADD_TAGS(pbrTls, TAG_AREALIGHT);
-            } else {
-                Ray debugRay(P, wi, 0.0f);
-                RAYDB_EXTEND_RAY_NO_HIT(pbrTls, debugRay, 40.0f);
-                RAYDB_SET_CONTRIBUTION(pbrTls, Li);
-                RAYDB_ADD_TAGS(pbrTls, TAG_ENVLIGHT);
-            }
+
             // shadowRay can be modified in occlusion query
             Ray trRay(P, wi, scene_rdl2::math::max(rayEpsilon, shadowRayEpsilon), tfar, time, rayDepth);
             // volume transmittance from P to light intersection
@@ -571,18 +559,6 @@ PathIntegrator::computeRadianceSubsurfaceSample(pbr::TLState *pbrTls,
                                       AovSchema::sLpePrefixNone, lpeStateId, aovs);
                 }
             }
-            // Raydb debug
-            if (lightIsect.distance < sDistantLightDistance) {
-                Ray debugRay(P, wi, 0.0f);
-                RAYDB_EXTEND_RAY_NO_HIT(pbrTls, debugRay, lightIsect.distance);
-                RAYDB_SET_CONTRIBUTION(pbrTls, Li);
-                RAYDB_ADD_TAGS(pbrTls, TAG_AREALIGHT);
-            } else {
-                Ray debugRay(P, wi, 0.0f);
-                RAYDB_EXTEND_RAY_NO_HIT(pbrTls, debugRay, 40.0f);
-                RAYDB_SET_CONTRIBUTION(pbrTls, Li);
-                RAYDB_ADD_TAGS(pbrTls, TAG_ENVLIGHT);
-            }
         }
     }
     return radiance;
@@ -820,9 +796,6 @@ PathIntegrator::computeRadianceDiffusionSubsurface(pbr::TLState *pbrTls,
             continue;
         }
 
-        RAYDB_EXTEND_RAY(pbrTls, rayProj, isectProj);
-        RAYDB_SET_TAGS(pbrTls, lobeType);
-
         // Update r from projected position and make sure the projected
         // position is still within maxRadius, otherwise this may clash
         // with light culling (see where the lightSet is computed).
@@ -891,7 +864,6 @@ PathIntegrator::computeRadianceDiffusionSubsurface(pbr::TLState *pbrTls,
             subsurfaceSplitFactor, computeRadianceSplitFactor, i,
             doIndirect, rayEpsilon, shadowRayEpsilon, sssSampleID,
             sequenceID, true, aovs, isect, parentLobeLightSets);
-        RAYDB_SET_CONTRIBUTION(pbrTls, radiance / pv.pathThroughput);
     }
 
     /// Back-scattering Term
@@ -1044,9 +1016,6 @@ PathIntegrator::computeDiffusionForwardScattering(pbr::TLState *pbrTls, const Bs
             continue;
         }
 
-        RAYDB_EXTEND_RAY(pbrTls, rayBack, isectBack);
-        RAYDB_SET_TAGS(pbrTls, lobeType);
-
         // We compute the jacobian to convert between this integral over solid
         // angle into the integral we want over surface area
         cosTheta = scene_rdl2::math::abs(dot(Ni, direction));
@@ -1073,8 +1042,6 @@ PathIntegrator::computeDiffusionForwardScattering(pbr::TLState *pbrTls, const Bs
             Pi, NiMap, subsurfaceSplitFactor, computeRadianceSplitFactor,
             sampleIndex, doIndirect, rayEpsilon, shadowRayEpsilon,
             sssSampleID, sequenceID, false, aovs, isect, parentLobeLightSets);
-
-        RAYDB_SET_CONTRIBUTION(pbrTls, radiance / pv.pathThroughput);
     }
     return radiance;
 }

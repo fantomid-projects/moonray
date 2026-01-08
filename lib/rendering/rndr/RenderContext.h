@@ -613,9 +613,6 @@ private:
     // Called each frame in startFrame to update the internal state of the integrator.
     void updatePbrState(const FrameState &fs);
 
-    // Helper function which builds and saves the debug ray database to disk.
-    void buildAndSaveRayDatabase();
-
     // Resets shader stats and logs between frames
     void resetShaderStatsAndLogs();
 

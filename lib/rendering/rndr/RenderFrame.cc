@@ -27,7 +27,6 @@
 #include "PathVisualizerManager.h"
 
 #include <moonray/rendering/shading/ShadingTLState.h>
-#include <moonray/rendering/pbr/core/DebugRay.h>
 
 #include <tbb/task_arena.h>
 
@@ -150,16 +149,6 @@ RenderDriver::renderFrame(RenderDriver *driver, const FrameState &fs)
     pbr::TLState* guiTls = mcrt_common::getGuiTLS()->mPbrTls.get();
     if (guiTls) {
         guiTls->cacheThreadLocalAccumulators();
-    }
-
-    // Check to see if we should be recording the rays for this frame.
-    if (driver->getDebugRayState() == REQUEST_RECORD) {
-        pbr::forEachTLS([&](pbr::TLState *tls) {
-            MNRY_ASSERT(tls->mRayVertexStack.empty());
-            pbr::DebugRayRecorder *recorder = tls->mRayRecorder;
-            recorder->record();
-        });
-        driver->switchDebugRayState(REQUEST_RECORD, RECORDING);
     }
 
     // Everything should have been cleaned up from the previous frame, verify that's still the case.
@@ -290,16 +279,6 @@ RenderDriver::renderFrame(RenderDriver *driver, const FrameState &fs)
         pbr::resetPools();
         shading::Material::printDeferredEntryWarnings();
         shading::Material::resetDeferredEntryState();
-    }
-
-    // If we were recording rays, we're done now
-    if (driver->getDebugRayState() == RECORDING) {
-        pbr::forEachTLS([&](pbr::TLState *tls) {
-            pbr::DebugRayRecorder *recorder = tls->mRayRecorder;
-            recorder->stopRecording();
-            tls->mRayVertexStack.clear();
-        });
-        driver->switchDebugRayState(RECORDING, RECORDING_COMPLETE);
     }
 
     if (fs.mSimulationMode) {

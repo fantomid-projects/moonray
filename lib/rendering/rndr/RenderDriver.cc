@@ -21,7 +21,6 @@
 #include <moonray/rendering/geom/prim/Statistics.h>
 #include <moonray/rendering/mcrt_common/AffinityManager.h>
 #include <moonray/rendering/pbr/core/Aov.h>
-#include <moonray/rendering/pbr/core/DebugRay.h>
 #include <moonray/rendering/pbr/core/Scene.h>
 #include <moonray/rendering/pbr/handlers/XPURayHandlers.h>
 #include <moonray/rendering/rt/gpu/GPUAccelerator.h>
@@ -541,7 +540,6 @@ RenderDriver::RenderDriver(const TLSInitParams &initParams) :
     mFrameEndTime(-1.0),
     mStopAtFrameReadyForDisplay(false),
     mRenderThreadState(),
-    mDebugRayState(READY),
     mAdaptiveTileSampleCap(0),
     mLastCheckpointFileEndSampleId(-1),
     mRenderStopAtPassBoundary(false),
@@ -1296,17 +1294,6 @@ RenderDriver::saveRealtimeStats()
 
         resetRealtimeStats();
     }
-}
-
-void
-RenderDriver::switchDebugRayState(DebugRayState oldState, DebugRayState newState)
-{
-    // If this assert triggers we either have:
-    //  (a) a code bug where the caller is passing in the wrong state, or
-    //  (b) multiple threads are trying to set the same value for newState
-    //      which we disallow
-    const auto old [[gnu::unused]] = mDebugRayState.exchange(newState, std::memory_order_relaxed);
-    MNRY_ASSERT(old == oldState);
 }
 
 void

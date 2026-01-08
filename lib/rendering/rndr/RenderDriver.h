@@ -382,33 +382,6 @@ public:
     void setMultiMachineGlobalProgressFraction(float fraction);
     float getMultiMachineGlobalProgressFraction() const { return mMultiMachineGlobalProgressFraction; }
 
-    //
-    // Various stages of recording debug rays. Each state can only be set by a
-    // single thread so no mutex needed.
-    //
-    enum DebugRayState
-    {
-        READY,              // set from main thread
-        REQUEST_RECORD,     // set from main thread
-        RECORDING,          // set from render thread
-        RECORDING_COMPLETE, // set from render thread
-        BUILDING,           // set from main thread
-        NUM_DEBUG_RAY_STATES,
-    };
-
-    //
-    // The state machine mechanism for recording debug rays is dependent on
-    // there only being a single thread which has permission to change to a
-    // particular state. The thread permissions are shown in the comments in
-    // the DebugRayState enum. As long as we follow this one rule, we don't
-    // need a mutex around the state. For added verification this is true, the
-    // switchDebugRayState function requires the client to pass in what it
-    // expects the current state to be. By doing this we can check that no other
-    // threads have changed the value in the meantime.
-    //
-    DebugRayState getDebugRayState() const  { return mDebugRayState.load(std::memory_order_relaxed); }
-    void switchDebugRayState(DebugRayState oldState, DebugRayState newState);
-
     void   setLastFrameUpdateDurationOffset(double v) { mUpdateDurationOffset = v; }
     double getLastFrameUpdateDurationOffset() const   { return mUpdateDurationOffset; }
     double getLastFrameMcrtStartTime() const          { return mMcrtStartTime; }
@@ -811,11 +784,7 @@ private:
     // out of TBB's thread pool for this task.
     std::thread                     mRenderThread;
 
-    // See comment related to DebugRayState to see how this state machine works.
     RenderThreadStateManager       mRenderThreadState;
-
-    // The current state we're in with regards to recording rays for debugging.
-    std::atomic<DebugRayState>  mDebugRayState;
 
     typedef std::vector<RealtimeFrameStats> RealtimeStats;
     RealtimeStats       mRealtimeStats;

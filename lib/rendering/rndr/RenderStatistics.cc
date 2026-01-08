@@ -829,7 +829,6 @@ RenderStats::logSceneVariables(const scene_rdl2::rdl2::SceneVariables &vars, std
     sceneVarTable.emplace_back("DSO path", vars.getSceneClass().getSceneContext()->getDsoPath());
     sceneVarTable.emplace_back("Camera", vars.getSceneClass().getSceneContext()->getPrimaryCamera()->getName());
     sceneVarTable.emplace_back("Layer", vars.getLayer()->getName());
-    sceneVarTable.emplace_back("Debug ray file", vars.get(scene_rdl2::rdl2::SceneVariables::sDebugRaysFile));
 
     sceneVarTable.emplace_back("texture_cache_size",
                                static_cast<int>(vars.get(scene_rdl2::rdl2::SceneVariables::sTextureCacheSizeMb)));
@@ -854,23 +853,6 @@ RenderStats::logSceneVariables(const scene_rdl2::rdl2::SceneVariables &vars, std
     } else if (csvStream) {
         sceneVarTable.emplace_back("Debug pixel x", "not set");
         sceneVarTable.emplace_back("Debug pixel y", "not set");
-    }
-
-    int start, end;
-    if (vars.getDebugRaysPrimaryRange(start, end)) {
-        sceneVarTable.emplace_back("Debug rays range start", start);
-        sceneVarTable.emplace_back("Debug rays range end", end);
-    } else if (csvStream) {
-        sceneVarTable.emplace_back("Debug rays range start", "not set");
-        sceneVarTable.emplace_back("Debug rays range end", "not set");
-    }
-
-    if (vars.getDebugRaysDepthRange(start,end)) {
-        sceneVarTable.emplace_back("Debug rays depth start", start);
-        sceneVarTable.emplace_back("Debug rays depth end", end);
-    } else if (csvStream) {
-        sceneVarTable.emplace_back("Debug rays depth start", "not set");
-        sceneVarTable.emplace_back("Debug rays depth end", "not set");
     }
 
     StatsTable<2> ssTable("Sampling Settings");

@@ -5,6 +5,7 @@
 #include <moonray/rendering/pbr/Types.h>
 #include <moonray/rendering/mcrt_common/Bundle.h>
 #include <moonray/rendering/pbr/core/PbrTLState.h>
+#include <moonray/rendering/pbr/light/Light.h>
 #include <moonray/rendering/rt/gpu/GPURay.h>
 #include <moonray/rendering/rt/gpu/GPUAccelerator.h>
 

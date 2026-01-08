@@ -325,7 +325,6 @@ target_sources(${component}
         camera/LensDistribution.cc
         core/Aov.cc
         core/Cryptomatte.cc
-        core/DebugRay.cc
         core/DeepBuffer.cc
         core/Distribution.cc
         core/PathVisualizer.cc

@@ -19,8 +19,6 @@
 namespace moonray {
 namespace pbr {
 
-class DebugRayRecorder;
-class DebugRayVertex;
 class XPUOcclusionRayQueue;
 class XPURayQueue;
 

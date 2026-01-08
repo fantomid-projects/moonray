@@ -64,7 +64,6 @@ target_sources(${target}
         TestBsdfv.cc
         TestBsdfvTask.cc
         TestBssrdf.cc
-        TestDebugRays.cc
         TestDistribution.cc
         TestLights.cc
         TestLightSetSampler.cc

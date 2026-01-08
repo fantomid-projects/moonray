@@ -16,7 +16,6 @@
 #include <moonray/common/time/Timer.h>
 #include <moonray/rendering/pbr/core/Aov.h>
 #include <moonray/rendering/pbr/core/Constants.h>
-#include <moonray/rendering/pbr/core/DebugRay.h>
 #include <moonray/rendering/pbr/core/RayState.h>
 #include <moonray/rendering/pbr/core/PathVisualizer.h>
 #include <scene_rdl2/common/rec_time/RecTime.h>
@@ -107,24 +106,6 @@ PathIntegrator::addDirectVisibleBsdfLobeSampleContribution(pbr::TLState *pbrTls,
         } else {
             aovAccumLightAovs(pbrTls, aovSchema, lightAovs, contrib, 
                               nullptr, AovSchema::sLpePrefixNone, lpeStateId, aovs);
-        }
-    }
-
-    // TODO: we don't store light intersection normal when a bsdf sample
-    // ends up hitting a light. We don't store Li either.
-    // If the intersection distance is closer than the distant light, then
-    // assume the hit wasn't due to a distant or env light.
-    if (DebugRayRecorder::isRecordingEnabled()) {
-        if (bsmp.distance < sDistantLightDistance) {
-            mcrt_common::Ray debugRay(parentRay.getOrigin(), bsmp.wi, 0.0f);
-            RAYDB_EXTEND_RAY_NO_HIT(pbrTls, debugRay, bsmp.distance);
-            RAYDB_SET_CONTRIBUTION(pbrTls, scene_rdl2::math::sWhite);
-            RAYDB_ADD_TAGS(pbrTls, TAG_AREALIGHT);
-        } else {
-            mcrt_common::Ray debugRay(parentRay.getOrigin(), bsmp.wi, 0.0f);
-            RAYDB_EXTEND_RAY_NO_HIT(pbrTls, debugRay, 40.0f);
-            RAYDB_SET_CONTRIBUTION(pbrTls, scene_rdl2::math::sWhite);
-            RAYDB_ADD_TAGS(pbrTls, TAG_ENVLIGHT);
         }
     }
 
@@ -307,25 +288,8 @@ PathIntegrator::addDirectVisibleLightSampleContributions(pbr::TLState* pbrTls, S
                     }
                 }
             }
-
-            // TODO: we don't store light sample normal
-            // If the intersection distance is closer than the distant light, then
-            // assume the hit wasn't due to a distant or env light.
-            if (DebugRayRecorder::isRecordingEnabled()) {
-                if (lsmp[i].distance < std::min(sDistantLightDistance, sEnvLightDistance)) {
-                    mcrt_common::Ray debugRay(P, lsmp[i].wi, 0.0f);
-                    RAYDB_EXTEND_RAY_NO_HIT(pbrTls, debugRay, lsmp[i].distance);
-                    RAYDB_SET_CONTRIBUTION(pbrTls, lsmp[i].Li);
-                    RAYDB_ADD_TAGS(pbrTls, TAG_AREALIGHT);
-                } else {
-                    mcrt_common::Ray debugRay(P, lsmp[i].wi, 0.0f);
-                    RAYDB_EXTEND_RAY_NO_HIT(pbrTls, debugRay, 40.0f);
-                    RAYDB_SET_CONTRIBUTION(pbrTls, lsmp[i].Li);
-                    RAYDB_ADD_TAGS(pbrTls, TAG_ENVLIGHT);
-                }
-            }
         }
-        
+
         /// Record ray for our path visualizer
         if (fs.mSimulationMode) {
             mcrt_common::Ray debugRay(P, lsmp[i].wi, 0.f, tfar, 0.f, rayDepth);

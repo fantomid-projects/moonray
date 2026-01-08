@@ -379,35 +379,6 @@ RenderOptions::parseFromCommandLine(int argc, char* argv[])
             foundAtIndex = args.getFlagValues("-sub_vp", 4, values, foundAtIndex + 1);
         }
 
-        foundAtIndex = args.getFlagValues("-record_rays", 1, values);
-        validFlags.push_back("-record_rays");
-        while (foundAtIndex >= 0) {
-            addOverride(overrides, "__SceneVariables__", "debug rays file", values[0], "", true);
-            foundAtIndex = args.getFlagValues("-record_rays", 1, values, foundAtIndex + 1);
-        }
-
-        foundAtIndex = args.getFlagValues("-primary_range", -1, values);
-        validFlags.push_back("-primary_range");
-        while (foundAtIndex >= 0) {
-            if (values.size() == 1) {
-                addOverride(overrides, "__SceneVariables__", "debug rays primary range", values[0], "", true);
-            } else if (values.size() == 2) {
-                addOverride(overrides, "__SceneVariables__", "debug rays primary range", values[0] + ", " + values[1], "", true);
-            }
-            foundAtIndex = args.getFlagValues("-primary_range", -1, values, foundAtIndex + 1);
-        }
-
-        foundAtIndex = args.getFlagValues("-depth_range", -1, values);
-        validFlags.push_back("-depth_range");
-        while (foundAtIndex >= 0) {
-            if (values.size() == 1) {
-                addOverride(overrides, "__SceneVariables__", "debug rays depth range", values[0], "", true);
-            } else if (values.size() == 2) {
-                addOverride(overrides, "__SceneVariables__", "debug rays depth range", values[0] + ", " + values[1], "", true);
-            }
-            foundAtIndex = args.getFlagValues("-depth_range", -1, values, foundAtIndex + 1);
-        }
-
         foundAtIndex = args.getFlagValues("-debug_pixel", 2, values);
         validFlags.push_back("-debug_pixel");
         while (foundAtIndex >= 0) {
@@ -619,17 +590,6 @@ RenderOptions::getUsageMessage(const std::string& programName, bool guiMode)
 "\n"
 "    -fast_geometry_update\n"
 "        Turn on supporting fast geometry update for animation.\n"
-"\n"
-"    -record_rays .raydb/.mm\n"
-"        Save ray database or mm for later debugging.\n"
-"\n"
-"    -primary_range 0 [0]\n"
-"        Start and end range of primary ray(s) to debug. Only active with\n"
-"        -record_rays.\n"
-"\n"
-"    -depth_range 0 [0]\n"
-"        Start and end range of ray depths to debug. Only active with\n"
-"        -record_rays.\n"
 "\n"
 "    -rdla_set \"var name\" \"expression\"\n"
 "        Sets a global variable in the Lua interpreter before any RDLA is\n"

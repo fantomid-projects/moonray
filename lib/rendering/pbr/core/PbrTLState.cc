@@ -1,6 +1,5 @@
 // Copyright 2023-2024 DreamWorks Animation LLC
 // SPDX-License-Identifier: Apache-2.0
-#include "DebugRay.h"
 #include "PbrTLState.h"
 #include "RayState.h"
 #include "XPUOcclusionRayQueue.h"
@@ -843,7 +842,6 @@ TLState::TLState(mcrt_common::ThreadLocalState *tls,
     mFs(nullptr),
     mCancellationState(DISABLED),
     mCurrentPassIdx(0),
-    mRayRecorder(nullptr),
     mRayEntries(nullptr),
     mOcclusionEntries(nullptr),
     mPresenceShadowsEntries(nullptr),
@@ -1008,15 +1006,10 @@ TLState::TLState(mcrt_common::ThreadLocalState *tls,
     }
 
     std::fill(mPrimaryRaysSubmitted, mPrimaryRaysSubmitted + MAX_RENDER_PASSES, 0);
-
-    mRayRecorder = new DebugRayRecorder(tls->mThreadIdx);
-    mRayVertexStack.reserve(32);
 }
 
 TLState::~TLState()
 {
-    delete mRayRecorder;
-
     const unsigned numaNodeId = mTopLevelTls->mArena.getNumaNodeId();
  
 #ifndef PLATFORM_APPLE

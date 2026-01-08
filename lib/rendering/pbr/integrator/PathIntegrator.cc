@@ -16,7 +16,6 @@
 #include <moonray/rendering/pbr/core/Aov.h>
 #include <moonray/rendering/pbr/core/Constants.h>
 #include <moonray/rendering/pbr/core/Cryptomatte.h>
-#include <moonray/rendering/pbr/core/DebugRay.h>
 #include <moonray/rendering/pbr/core/DeepBuffer.h>
 #include <moonray/rendering/pbr/core/PathVisualizer.h>
 #include <moonray/rendering/pbr/core/RayState.h>
@@ -608,10 +607,6 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
     }
     float shadowRayEpsilon = isect.getShadowEpsilonHint();
 
-    // Must be called post-transfer.
-    RAYDB_EXTEND_RAY(pbrTls, ray, isect);
-    RAYDB_SET_TAGS(pbrTls, lobe ? lobe->getType() : TAG_PRIMARY);
-
     const scene_rdl2::rdl2::Material* material = isect.getMaterial()->asA<scene_rdl2::rdl2::Material>();
     MNRY_ASSERT(material != NULL);
 
@@ -930,7 +925,6 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
     //---------------------------------------------------------------------
     // Early out if we don't have any Bsdf lobes nor Bssrdf, VolumeSubsurface
     if (bsdf->getLobeCount() == 0 && !bsdf->hasSubsurface()) {
-        RAYDB_SET_CONTRIBUTION(pbrTls, radiance / pv.pathThroughput);
 
         if (aovs) {
             aovSetMaterialAovs(pbrTls, aovSchema, *fs.mLightAovs, *fs.mMaterialAovs,
@@ -1029,7 +1023,6 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
     //---------------------------------------------------------------------
     // Early out if we don't have any Bsdf lobes
     if (bsdf->getLobeCount() == 0) {
-        RAYDB_SET_CONTRIBUTION(pbrTls, radiance / pv.pathThroughput);
 
         if (aovs) {
             aovSetMaterialAovs(pbrTls, aovSchema, *fs.mLightAovs, *fs.mMaterialAovs,
@@ -1097,8 +1090,6 @@ PathIntegrator::computeRadianceRecurse(pbr::TLState *pbrTls, mcrt_common::RayDif
                                            pv.presenceDepth,
                                            moonray::pbr::CRYPTOMATTE_TYPE_REGULAR);
     }
-
-    RAYDB_SET_CONTRIBUTION(pbrTls, radiance / pv.pathThroughput);
 
     float minTransparency = reduceTransparency(vt.mTransmittanceMin);
     transparency = transparency + (1 - transparency) * minTransparency;
@@ -1312,8 +1303,6 @@ PathIntegrator::computeRadiance(pbr::TLState *pbrTls, int pixelX, int pixelY,
     //usleep(200000);
 #endif
 
-    RAYDB_START_NEW_RAY(pbrTls, ray.org, pixelX, pixelY);
-
     scene_rdl2::math::Color radiance;
     float pathPixelWeight;
     unsigned sequenceID = fs.mInitialSeed;
@@ -1521,8 +1510,6 @@ PathIntegrator::computeColorFromIntersection(pbr::TLState *pbrTls, int pixelX, i
         // transition
         pv.lpeStateId = lightAovs.cameraEventTransition(pbrTls);
     }
-
-    RAYDB_START_NEW_RAY(pbrTls, ray.org, pixelX, pixelY);
 
     shading::Intersection isect;
     int lobeType = 0;

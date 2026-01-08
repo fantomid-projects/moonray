@@ -110,17 +110,6 @@ $> moonray -h
     -fast_geometry_update
         Turn on supporting fast geometry update for animation.
 
-    -record_rays .raydb/.mm
-        Save ray database or mm for later debugging.
-
-    -primary_range 0 [0]
-        Start and end range of primary ray(s) to debug. Only active with
-        -record_rays.
-
-    -depth_range 0 [0]
-        Start and end range of ray depths to debug. Only active with
-        -record_rays.
-
     -rdla_set "var name" "expression"
         Sets a global variable in the Lua interpreter before any RDLA is
         executed.
