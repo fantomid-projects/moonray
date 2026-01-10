@@ -3433,12 +3433,30 @@ RenderContext::parserConfigure()
                 });
     mParser.opt("pathVisMgr", "...command...", "path visualizer manager command",
                 [&](Arg& arg) { return mPathVisualizerManager->getParser().main(arg.childArg()); });
+    mParser.opt("pathVisMgrSetInitCam", "", "set current camera as a pathVis-initCam",
+                [&](Arg& arg) { return setPathVisInitCam(); });
     mParser.opt("saveScene", "<filename>", "save scene",
                 [&](Arg& arg) { return saveSceneCommand(arg); });
     mParser.opt("showExecMode", "", "show rendering execMode and the reason why",
                 [&](Arg& arg) { return arg.msg(showExecModeAndReason() + '\n'); });
     mParser.opt("showNumThread", "", "show number of thread info",
                 [&](Arg& arg) { return arg.fmtMsg("numTBBThread:%d\n", mcrt_common::getNumTBBThreads()); });
+    mParser.opt("renderCam", "...command...", "special command for current render camera",
+                [&](Arg& arg) { return mParserRenderCam.main(arg.childArg()); });
+
+    //------------------------------
+
+    mParserRenderCam.description("current render camera special command");
+
+    mParserRenderCam.opt("show", "", "show current renderCamera info",
+                         [&](Arg& arg) { return arg.msg(showCurrRenderCamInfo() + '\n'); });
+}
+
+bool
+RenderContext::setPathVisInitCam()
+{
+    mPathVisualizerManager->setInitialCameraXform(mCamera->get(scene_rdl2::rdl2::Node::sNodeXformKey));
+    return true;
 }
 
 void
@@ -3510,6 +3528,68 @@ RenderContext::showExecModeAndReason() const
     default : ostr << "unknown"; break;
     }
     if (!mExecutionModeString.empty()) ostr << " (" << mExecutionModeString << ")";
+    return ostr.str();
+}
+
+std::string
+RenderContext::showCurrRenderCamInfo() const
+{
+    auto showCam = [](const scene_rdl2::rdl2::Camera* cam) {
+        auto showNode = [](const scene_rdl2::rdl2::Node* node) {
+            auto showSceneObject = [](const scene_rdl2::rdl2::SceneObject* sObj) {
+                std::ostringstream ostr;
+                ostr << "SceneObject {\n"
+                     << "  name:" << sObj->getName() << '\n'
+                     << "}";
+                return ostr.str();
+            };
+            auto showNodeXform = [](const scene_rdl2::rdl2::Node* node) {
+                auto showMtx = [](const scene_rdl2::rdl2::Mat4d& mtx) {
+                    auto showF = [](const float f) {
+                        std::ostringstream ostr;
+                        ostr << std::setw(10) << std::fixed << std::setprecision(5) << f;
+                        return ostr.str();
+                    }; // showF()
+                    std::ostringstream ostr;
+                    ostr << showF(mtx.vx.x) << ", " << showF(mtx.vx.y) << ", " << showF(mtx.vx.z) << ", " << showF(mtx.vx.w) << '\n'
+                         << showF(mtx.vy.x) << ", " << showF(mtx.vy.y) << ", " << showF(mtx.vy.z) << ", " << showF(mtx.vy.w) << '\n'
+                         << showF(mtx.vz.x) << ", " << showF(mtx.vz.y) << ", " << showF(mtx.vz.z) << ", " << showF(mtx.vz.w) << '\n'
+                         << showF(mtx.vw.x) << ", " << showF(mtx.vw.y) << ", " << showF(mtx.vw.z) << ", " << showF(mtx.vw.w);
+                    return ostr.str();
+                }; // showMtx()
+                std::ostringstream ostr;
+                ostr << "NodeXform {\n"
+                     << scene_rdl2::str_util::addIndent(showMtx(node->get(scene_rdl2::rdl2::Node::sNodeXformKey))) << '\n'
+                     << "}";
+                return ostr.str();
+            }; // showNodeXform()
+            std::ostringstream ostr;
+            ostr << "Node {\n"
+                 << scene_rdl2::str_util::addIndent(showSceneObject(node)) << '\n'
+                 << scene_rdl2::str_util::addIndent(showNodeXform(node)) << '\n'
+                 << "}";
+            return ostr.str();
+        }; // showNode()
+        std::ostringstream ostr;
+        ostr << "Camera {\n"
+             << scene_rdl2::str_util::addIndent(showNode(cam)) << '\n'
+             << "  Near:" << cam->get(scene_rdl2::rdl2::Camera::sNearKey) << '\n'
+             << "  Far:" << cam->get(scene_rdl2::rdl2::Camera::sFarKey) << '\n'
+             << "  MbShutterOpen:" << cam->get(scene_rdl2::rdl2::Camera::sMbShutterOpenKey) << '\n'
+             << "  MbShutterClose:" << cam->get(scene_rdl2::rdl2::Camera::sMbShutterCloseKey) << '\n'
+             << "  MbShutterBias:" << cam->get(scene_rdl2::rdl2::Camera::sMbShutterBiasKey) << '\n'
+             << "  PixelSampleMap:" << cam->get(scene_rdl2::rdl2::Camera::sPixelSampleMap) << '\n'
+             << "}";
+        return ostr.str();
+    };
+
+    const std::vector<const scene_rdl2::rdl2::Camera *> activeCameras = mSceneContext->getActiveCameras();
+    std::ostringstream ostr;
+    ostr << "activeCameras (size:" << activeCameras.size() << ") {\n";
+    for (size_t i = 0; i < activeCameras.size(); ++i) {
+        ostr << scene_rdl2::str_util::addIndent("i:" + std::to_string(i) + ' ' + showCam(activeCameras[i])) << '\n';
+    }
+    ostr << "}";
     return ostr.str();
 }
 

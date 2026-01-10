@@ -8,6 +8,7 @@
 #include <scene_rdl2/common/fb_util/FbTypes.h>
 #include <scene_rdl2/common/grid_util/Arg.h>
 #include <scene_rdl2/common/grid_util/Parser.h>
+#include <scene_rdl2/common/grid_util/VectorPacket.h>
 
 namespace moonray {
 
@@ -27,6 +28,8 @@ public:
 
     PathVisualizerParams() { parserConfigure(); }
 
+    void setOn(const bool flag) { mOn = flag; }
+
     uint32_t mPixelX         = 0;       // x-coord for user-chosen pixel
     uint32_t mPixelY         = 0;       // y-coord for user-chosen pixel
     uint32_t mMaxDepth       = 1;       // max number of bounces
@@ -44,14 +47,30 @@ public:
     scene_rdl2::math::Color mDiffuseRayColor    = scene_rdl2::math::Color(1, 0, 1);     // color of the diffuse rays
     scene_rdl2::math::Color mBsdfSampleColor    = scene_rdl2::math::Color(1, 0.4, 0);   // color of the bsdf rays
     scene_rdl2::math::Color mLightSampleColor   = scene_rdl2::math::Color(1, 1, 0);     // color of the light rays
-    uint32_t mLineWidth = 1;             // width of the lines drawn
+    float mLineWidth = 1.0f;               // width of the lines drawn
+
+    void setPixelRange(const int xMin, const int yMin, const int xMax, const int yMax)
+    {
+        mPixelXmin = xMin;
+        mPixelYmin = yMin;
+        mPixelXmax = xMax;
+        mPixelYmax = yMax;
+    }
 
     Parser& getParser() { return mParser; }
 
     std::string show() const;
+    std::string showPixel() const;
 
 private:
     void parserConfigure();
+
+    bool mOn {false};
+
+    int mPixelXmin {0};
+    int mPixelYmin {0};
+    int mPixelXmax {0};
+    int mPixelYmax {0};
 
     Parser mParser;
 };
@@ -59,7 +78,7 @@ private:
 /// --------------------------------------------------------------------------------------------------------------------
 
 /// Current state
-enum State {
+enum class State : uint8_t {
     NONE,                    // does not yet contain any data, hasn't been initialized
     READY,                   // has been initialized
     START_RECORD,            // flag to start recording
@@ -112,7 +131,7 @@ public:
     /// -------------------------------------------------------------------------------------------
 
     /// Type flags for a Node
-    enum Flags {
+    enum class Flags : uint8_t {
         NONE,               // no flags
         CAMERA,             // camera ray
         INACTIVE,           // the part of a ray that has become inactive (ex: after a light ray hits an occluder)
@@ -141,6 +160,8 @@ public:
 
         Node() = default;
         ~Node() = default;
+
+        bool isType(const Flags flag) const { return mFlags == flag; }
     };
 
     // Pixel coords should be unsigned
@@ -157,12 +178,18 @@ public:
         int y;
     };
 
+    using PosType = scene_rdl2::grid_util::VectorPacketLineStatus::PosType;
+
     struct LineSegment {
         PixelCoordU mPx1;      // starting pixel
         PixelCoordU mPx2;      // ending pixel
         Flags mFlags;          // type of line to draw
         bool mDrawEndpoint;    // whether the line should have an endpoint
         float mAlpha;          // transparency of line
+
+        unsigned mNodeIndex {0};
+        PosType mStartPosType {PosType::UNKNOWN};
+        PosType mEndPosType {PosType::UNKNOWN};
     };
 
     /// -------------------------------------------------------------------------------------------
@@ -172,6 +199,12 @@ public:
 
     PathVisualizer();
     ~PathVisualizer();
+
+    static scene_rdl2::grid_util::VectorPacketLineStatus::RayType flagsToRayType(const uint8_t& flags);
+    static scene_rdl2::grid_util::VectorPacketLineStatus::RayType flagsToRayType(const Flags& flags);
+    scene_rdl2::math::Color getColorByFlags(const uint8_t& flags) const;
+
+    void setOn(const bool flag) { mOn = flag; }
 
     /// Initializes the visualizer
     void initialize(const unsigned int width, const unsigned int height, 
@@ -191,6 +224,7 @@ public:
     /// has moved, since that affects the world-to-screen transformation and
     /// occlusion tests.
     void generateLines(const Scene* scene);
+    void resetLines() { mLines.clear(); } // not MTsafe
 
     /// Draws the path visualization with the given user parameters.
     /// This function should be called every frame, once we are in the DRAW state.
@@ -206,15 +240,19 @@ public:
     template <typename F>
     void crawlAllLines(F callBack) {
         for (const LineSegment& line: mLines) {
-            callBack(line.mPx1.x, line.mPx1.y, line.mPx2.x, line.mPx2.y, 
-                     static_cast<const uint8_t>(line.mFlags), line.mAlpha, 
-                     mParams->mLineWidth, line.mDrawEndpoint);
+            callBack(scene_rdl2::math::Vec2i(line.mPx1.x, line.mPx1.y),
+                     scene_rdl2::math::Vec2i(line.mPx2.x, line.mPx2.y),
+                     static_cast<const uint8_t>(line.mFlags),
+                     line.mAlpha,
+                     mParams->mLineWidth,
+                     line.mDrawEndpoint,
+                     line.mNodeIndex,
+                     line.mStartPosType,
+                     line.mEndPosType);
         }
     };
 
     size_t getTotalLines() const { return mLines.size(); }
-
-    scene_rdl2::math::Color getColorByFlags(const uint8_t& flags) const;
 
     /// Clears all ray data
     void reset();
@@ -247,6 +285,13 @@ public:
     // If maxEntries == -1, print all nodes
     void printNodes(const int maxEntries) const;
 
+    bool getCamPos(scene_rdl2::math::Vec3f& camPos) const;
+
+    // Returns all the camera ray intersection points with the surface.
+    std::vector<scene_rdl2::math::Vec3f> getCamRayIsectSfPos() const;
+
+    size_t serializeNodeDataAll(std::string& buff) const;
+
     /// debug console command parser
     Parser& getParser() { return mParser; }
 
@@ -276,7 +321,10 @@ private:
     /// A line-drawing algorithm that creates line segments
     /// Some lines will be split into multiple segments if they 
     /// have portions that are occluded
-    void traceLine(const PixelCoordI& start, const PixelCoordI& end, 
+    void traceLine(const unsigned nodeIndex,
+                   const PosType startPosType,
+                   const PosType endPosType,
+                   const PixelCoordI& start, const PixelCoordI& end,                    
                    const OcclusionFunction& occlusionFunc,
                    const Flags flag, const bool endpointClipped);
 
@@ -285,7 +333,10 @@ private:
     void generateLine(const int nodeIndex, const Scene* scene);
 
     /// Adds a new 2D line segment
-    void addLineSegment(const PixelCoordU& start, const PixelCoordU& end, const Flags& flags, 
+    void addLineSegment(const unsigned nodeIndex,
+                        const PosType startPosType,
+                        const PosType endPosType,
+                        const PixelCoordU& start, const PixelCoordU& end, const Flags& flags, 
                         const bool drawEndpoint, const bool isOccluded);
 
     /// ---------- Utilities -----------------------------------------------------------------
@@ -363,12 +414,37 @@ private:
     // Given a list of Node indices, print them
     void printNodes(const std::vector<int>& filteredList) const;
 
+    // Node type specified version
+    template <typename F>
+    void crawlAllNodes(const Flags flags, F callBack) const {
+        for (const Node& node: mNodes) {
+            if (node.isType(flags)) {
+                if (!callBack(node)) break;
+            }
+        }
+    };
+
+    // a generic version that takes a predicate (= typeFunc)
+    template <typename F>
+    void crawlAllNodes(const std::function<bool(const Node&)>& typeFunc, F callBack) const {
+        for (const Node& node: mNodes) {
+            if (!typeFunc || typeFunc(node)) {
+                if (!callBack(node)) break;
+            }
+        }
+    };
+
     void parserConfigure();
     std::string showFlowCtrlState() const;
     std::string showLinesInfo() const;
+    std::string showNodeInfo() const;
+    std::string showCamPos() const;
+    std::string showCamRayIsectSfPos() const;
     static std::string stateStr(const State state);
 
     /// ---------------------- Member variables --------------------------------
+
+    bool mOn {false};
 
     /// All of the Nodes (path vertices) for the given viewport
     std::vector<Node> mNodes;

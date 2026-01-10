@@ -18,8 +18,9 @@
 
 #include <moonray/rendering/rt/EmbreeAccelerator.h>
 
-#include <scene_rdl2/common/fb_util/FbTypes.h>
+#include <scene_rdl2/common/grid_util/VectorPacket.h>
 #include <scene_rdl2/common/rec_time/RecTime.h>
+#include <scene_rdl2/render/cache/ValueContainerEnqueue.h>
 #include <scene_rdl2/render/util/StrUtil.h>
 
 using RenderTimer = moonray::time::RAIITimerAverageDouble;
@@ -67,6 +68,7 @@ std::ostream& operator<<(std::ostream& os, const PathVisualizer::LineSegment& li
     os << "  mDrawEndpoint: " << line.mDrawEndpoint << ",\n";
     os << "  mAlpha: " << line.mAlpha << ",\n";
     os << "}\n";
+    return os;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -96,6 +98,28 @@ PathVisualizerParams::show() const
          << "  mBsdfSampleColor:" << mBsdfSampleColor << '\n'
          << "  mLightSampleColor:" << mLightSampleColor << '\n'
          << "  mLineWidth:" << mLineWidth << '\n'
+         << "  mPixelXmin:" << mPixelXmin << '\n'
+         << "  mPixelYmin:" << mPixelYmin << '\n'
+         << "  mPixelXmax:" << mPixelXmax << '\n'
+         << "  mPixelYmax:" << mPixelYmax << '\n'
+         << "}";
+    return ostr.str();
+}
+
+std::string
+PathVisualizerParams::showPixel() const
+{
+    using scene_rdl2::str_util::boolStr;
+    
+    std::ostringstream ostr;
+    ostr << "pixel {\n"
+         << "  mOn:" << boolStr(mOn) << '\n'
+         << "  mPixelX:" << mPixelX << '\n'
+         << "  mPixelY:" << mPixelY << '\n'
+         << "  mPixelXmin:" << mPixelXmin << '\n'
+         << "  mPixelYmin:" << mPixelYmin << '\n'
+         << "  mPixelXmax:" << mPixelXmax << '\n'
+         << "  mPixelYmax:" << mPixelYmax << '\n'
          << "}";
     return ostr.str();
 }
@@ -103,31 +127,52 @@ PathVisualizerParams::show() const
 void
 PathVisualizerParams::parserConfigure()
 {
-    auto setSingleInt = [](Arg& arg, int& dest, const std::string& msg) {
+    auto setSingleUInt = [](Arg& arg, const bool active, unsigned& dest, const std::string& msg) {
+        if (!active) {
+            arg++;
+            return arg.msg("skip\n");
+        }
         std::ostringstream ostr;
-        dest = (arg++).as<int>(0);
+        dest = (arg++).as<unsigned>(0);
         ostr << msg << dest;
         return arg.msg(ostr.str() + '\n');
     };
-    auto setSingleUint = [](Arg& arg, uint32_t& dest, const std::string& msg) {
+    auto setDoubleUInt = [](Arg& arg, const bool active, unsigned& destA, unsigned& destB, const std::string& msg) {
+        if (!active) {
+            arg += 2;
+            return arg.msg("skip\n");
+        }
         std::ostringstream ostr;
-        dest = (arg++).as<uint32_t>(0);
-        ostr << msg << dest;
+        destA = (arg++).as<unsigned>(0);
+        destB = (arg++).as<unsigned>(0);
+        ostr << msg << destA << ',' << destB;
         return arg.msg(ostr.str() + '\n');
     };
-    auto setSingleFloat = [](Arg& arg, float& dest, const std::string& msg) {
+    auto setSingleFloat = [](Arg& arg, const bool active, float& dest, const std::string& msg) {
+        if (!active) {
+            arg++;
+            return arg.msg("skip\n");
+        }
         std::ostringstream ostr;
         dest = (arg++).as<float>(0);
         ostr << msg << dest;
         return arg.msg(ostr.str() + '\n');
     };
-    auto setSingleBool = [](Arg& arg, bool& dest, const std::string& msg) {
+    auto setSingleBool = [](Arg& arg, const bool active, bool& dest, const std::string& msg) {
+        if (!active) {
+            arg++;
+            return arg.msg("skip\n");
+        }
         std::ostringstream ostr;
         dest = (arg++).as<bool>(0);
         ostr << msg << scene_rdl2::str_util::boolStr(dest);
         return arg.msg(ostr.str() + '\n');
     };
-    auto setColorArg = [](Arg& arg, scene_rdl2::math::Color& destCol, const std::string& msg) {
+    auto setColorArg = [](Arg& arg, const bool active, scene_rdl2::math::Color& destCol, const std::string& msg) {
+        if (!active) {
+            arg += 3;
+            return arg.msg("skip\n");
+        }
         destCol.r = (arg++).as<float>(0);
         destCol.g = (arg++).as<float>(0);
         destCol.b = (arg++).as<float>(0);
@@ -135,51 +180,114 @@ PathVisualizerParams::parserConfigure()
         ostr << msg << destCol;
         return arg.msg(ostr.str() + '\n');
     };
+    auto setDeltaPixArg = [](Arg& arg, const bool active, unsigned& pix,
+                             const int min, const int max, const std::string& msg) {
+        if (!active) {
+            arg++;
+            return arg.msg("skip\n");
+        }
+        const int delta = (arg++).as<int>(0);
+        pix = static_cast<unsigned>(std::clamp(static_cast<int>(pix) + delta, std::min(min, 0), max));
+        std::ostringstream ostr;
+        ostr << msg << pix;
+        return arg.msg(ostr.str() + '\n');
+    };
+    auto setDeltaSampleArg = [](Arg& arg, const bool active, unsigned& sample, const std::string& msg) {
+        if (!active) {
+            arg++;
+            return arg.msg("skip\n");
+        }
+        const int delta = (arg++).as<int>(0);
+        sample = static_cast<unsigned>(std::max(static_cast<int>(sample) + delta, 1));
+        std::ostringstream ostr;
+        ostr << msg << sample;
+        return arg.msg(ostr.str() + '\n');
+    };
+    auto setToggleArg = [](Arg& arg, const bool active, bool& flag, const std::string& msg) {
+        if (!active) {
+            arg++;
+            return arg.msg("skip\n");
+        }
+        flag = !flag;
+        std::ostringstream ostr;
+        ostr << msg << scene_rdl2::str_util::boolStr(flag);
+        return arg.msg(ostr.str() + '\n');
+    };
         
     mParser.description("PathVisualizerParams command");
 
+    mParser.opt("pixel", "<x> <y>", "set pixel X Y",
+                [&](Arg& arg) { return setDoubleUInt(arg, mOn, mPixelX, mPixelY, "pixel="); });
     mParser.opt("pixelX", "<x>", "set pixel X",
-                [&](Arg& arg) { return setSingleUint(arg, mPixelX, "pixelX="); });
+                [&](Arg& arg) { return setSingleUInt(arg, mOn, mPixelX, "pixelX="); });
     mParser.opt("pixelY", "<y>", "set pixel Y",
-                [&](Arg& arg) { return setSingleUint(arg, mPixelY, "pixelY="); });
+                [&](Arg& arg) { return setSingleUInt(arg, mOn, mPixelY, "pixelY="); });
     mParser.opt("maxDepth", "<depth>", "set max depth",
-                [&](Arg& arg) { return setSingleUint(arg, mMaxDepth, "maxDepth="); }); 
+                [&](Arg& arg) { return setSingleUInt(arg, mOn, mMaxDepth, "maxDepth="); }); 
     mParser.opt("pixelSamples", "<n>", "set pixel samples",
-                [&](Arg& arg) { return setSingleUint(arg, mPixelSamples, "pixelSamples="); });
+                [&](Arg& arg) { return setSingleUInt(arg, mOn, mPixelSamples, "pixelSamples="); });
     mParser.opt("lightSamples", "<n>", "set light samples",
-                [&](Arg& arg) { return setSingleUint(arg, mLightSamples, "lightSamples="); });
+                [&](Arg& arg) { return setSingleUInt(arg, mOn, mLightSamples, "lightSamples="); });
     mParser.opt("bsdfSamples", "<n>", "set BSDF samples",
-                [&](Arg& arg) { return setSingleUint(arg, mBsdfSamples, "bsdfSamples="); });
+                [&](Arg& arg) { return setSingleUInt(arg, mOn, mBsdfSamples, "bsdfSamples="); });
 
     mParser.opt("useSceneSamplesSw", "<on|off>", "set useSceneSamples condition",
-                [&](Arg& arg) { return setSingleBool(arg, mUseSceneSamples, "useSceneSamplesSw="); });
+                [&](Arg& arg) { return setSingleBool(arg, mOn, mUseSceneSamples, "useSceneSamplesSw="); });
     mParser.opt("occlusionRaysSw", "<on|off>", "set occlusionRays condition",
-                [&](Arg& arg) { return setSingleBool(arg, mOcclusionRaysOn, "occlusionRaysSw="); });
+                [&](Arg& arg) { return setSingleBool(arg, mOn, mOcclusionRaysOn, "occlusionRaysSw="); });
     mParser.opt("specularRaysSw", "<on|off>", "set specularRays condition",
-                [&](Arg& arg) { return setSingleBool(arg, mSpecularRaysOn, "specularRaysSw="); });
+                [&](Arg& arg) { return setSingleBool(arg, mOn, mSpecularRaysOn, "specularRaysSw="); });
     mParser.opt("diffuseRaysSw", "<on|off>", "set diffuseRays condition",
-                [&](Arg& arg) { return setSingleBool(arg, mDiffuseRaysOn, "diffuseRaysSw="); });
+                [&](Arg& arg) { return setSingleBool(arg, mOn, mDiffuseRaysOn, "diffuseRaysSw="); });
     mParser.opt("bsdfSamplesSw", "<on|off>", "set bsdfSamples condition",
-                [&](Arg& arg) { return setSingleBool(arg, mBsdfSamplesOn, "bsdfSamplesSw="); });
+                [&](Arg& arg) { return setSingleBool(arg, mOn, mBsdfSamplesOn, "bsdfSamplesSw="); });
     mParser.opt("lightSamplesSw", "<on|off>", "set lightSamples condition",
-                [&](Arg& arg) { return setSingleBool(arg, mLightSamplesOn, "lightSamplesSw="); });
+                [&](Arg& arg) { return setSingleBool(arg, mOn, mLightSamplesOn, "lightSamplesSw="); });
 
     mParser.opt("cameraRayColor", "<r> <g> <b>", "set cameraRayColor normalized 0~1 col value",
-                [&](Arg& arg) { return setColorArg(arg, mCameraRayColor, "cameraRayColor="); });
+                [&](Arg& arg) { return setColorArg(arg, mOn, mCameraRayColor, "cameraRayColor="); });
     mParser.opt("specularRayColor", "<r> <g> <b>", "set specularRayColor normalized 0~1 col value",
-                [&](Arg& arg) { return setColorArg(arg, mSpecularRayColor, "specularRayColor="); });
+                [&](Arg& arg) { return setColorArg(arg, mOn, mSpecularRayColor, "specularRayColor="); });
     mParser.opt("diffuseRayColor", "<r> <g> <b>", "set diffuseRayColor normalized 0~1 col value",
-                [&](Arg& arg) { return setColorArg(arg, mDiffuseRayColor, "diffuseRayColor="); });
+                [&](Arg& arg) { return setColorArg(arg, mOn, mDiffuseRayColor, "diffuseRayColor="); });
     mParser.opt("bsdfSampleColor", "<r> <g> <b>", "set bsdfSampleColor normalized 0~1 col value",
-                [&](Arg& arg) { return setColorArg(arg, mBsdfSampleColor, "bsdfSampleColor="); });
+                [&](Arg& arg) { return setColorArg(arg, mOn, mBsdfSampleColor, "bsdfSampleColor="); });
     mParser.opt("lightSampleColor", "<r> <g> <b>", "set lightSampleColor normalized 0~1 col value",
-                [&](Arg& arg) { return setColorArg(arg, mLightSampleColor, "lightSampleColor="); });
+                [&](Arg& arg) { return setColorArg(arg, mOn, mLightSampleColor, "lightSampleColor="); });
 
     mParser.opt("lineWidth", "<w>", "set line width",
-                [&](Arg& arg) { return setSingleUint(arg, mLineWidth, "lineWidth="); }); 
+                [&](Arg& arg) { return setSingleFloat(arg, mOn, mLineWidth, "lineWidth="); }); 
 
     mParser.opt("show", "", "show info",
                 [&](Arg& arg) { return arg.msg(show() + '\n'); });
+    mParser.opt("showPixel", "", "show pixel info",
+                [&](Arg& arg) { return arg.msg(showPixel() + '\n'); });
+
+    mParser.opt("deltaPixelX", "<delta>", "delta move pixelX or pixelY",
+                [&](Arg& arg) { return setDeltaPixArg(arg, mOn, mPixelX, mPixelXmin, mPixelXmax, "pixelX="); });
+    mParser.opt("deltaPixelY", "<delta>", "delta move pixelY",
+                [&](Arg& arg) { return setDeltaPixArg(arg, mOn, mPixelY, mPixelYmin, mPixelYmax, "pixelY="); });
+    mParser.opt("deltaPixelSamples", "<delta>", "delta add pixel samples",
+                [&](Arg& arg) { return setDeltaSampleArg(arg, mOn, mPixelSamples, "pixelSamples="); });
+    mParser.opt("deltaLightSamples", "<delta>", "delta add light samples",
+                [&](Arg& arg) { return setDeltaSampleArg(arg, mOn, mLightSamples, "lightSamples="); });
+    mParser.opt("deltaBsdfSamples", "<delta>", "delta add bsdf samples",
+                [&](Arg& arg) { return setDeltaSampleArg(arg, mOn, mBsdfSamples, "bsdfSamples="); });
+    mParser.opt("deltaMaxDepth", "<delta>", "delta add max depth",
+                [&](Arg& arg) { return setDeltaSampleArg(arg, mOn, mMaxDepth, "maxDepth="); });
+
+    mParser.opt("toggleUseSceneSamples", "", "toggle useSceneSamples",
+                [&](Arg& arg) { return setToggleArg(arg, mOn, mUseSceneSamples, "useSceneSamples="); });
+    mParser.opt("toggleOcclusionRays", "", "toggle occlusionRays",
+                [&](Arg& arg) { return setToggleArg(arg, mOn, mOcclusionRaysOn, "occlusionRays="); });
+    mParser.opt("toggleSpecularRays", "", "toggle specularRays",
+                [&](Arg& arg) { return setToggleArg(arg, mOn, mSpecularRaysOn, "specularRays="); });
+    mParser.opt("toggleDiffuseRays", "", "toggle diffuseRays",
+                [&](Arg& arg) { return setToggleArg(arg, mOn, mDiffuseRaysOn, "diffuseRays="); });
+    mParser.opt("toggleBsdfSamples", "", "toggle bsdfSamples",
+                [&](Arg& arg) { return setToggleArg(arg, mOn, mBsdfSamplesOn, "bsdfSamples="); });
+    mParser.opt("toggleLightSamples", "", "toggle lightSamples",
+                [&](Arg& arg) { return setToggleArg(arg, mOn, mLightSamplesOn, "lightSamples="); });
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -201,11 +309,45 @@ PathVisualizer::PathVisualizer()
 
 PathVisualizer::~PathVisualizer() {}
 
+// static function
+scene_rdl2::grid_util::VectorPacketLineStatus::RayType
+PathVisualizer::flagsToRayType(const uint8_t& flags)
+//
+// This function is used when the backend computation transfers Path Visualizer information and needs to
+// determine the rayType based on the line's attribute flags. The core issue here is that the flag
+// representing the rayType in PathVisualizer is not exposed as a public enum. Therefore, this function
+// currently assumes that the uint8_t flags argument represents the PathVisualizer::Flags and performs
+// the conversion based on that assumption.
+// Ultimately, the flags representing the RayType should be made public. This is one of the improvements
+// planned for the next Path Visualizer update.
+//
+{
+    return flagsToRayType(static_cast<Flags>(flags));
+}
+
+// static function
+scene_rdl2::grid_util::VectorPacketLineStatus::RayType
+PathVisualizer::flagsToRayType(const Flags& flags)
+{
+    using RayType = scene_rdl2::grid_util::VectorPacketLineStatus::RayType;
+
+    switch (flags) {
+    case Flags::CAMERA : return RayType::CAMERA;
+    case Flags::INACTIVE : return RayType::INACTIVE;
+    case Flags::DIFFUSE : return RayType::DIFFUSE;
+    case Flags::SPECULAR : return RayType::SPECULAR;
+    case Flags::BSDF_SAMPLE : return RayType::BSDF_SAMPLE;
+    case Flags::LIGHT_SAMPLE : return RayType::LIGHT_SAMPLE;
+    case Flags::NONE :
+    default : return RayType::NONE;
+    }
+}
+
 scene_rdl2::math::Color
 PathVisualizer::getColorByFlags(const uint8_t& flags) const
 //
 // This function is used when the backend computation transfers Path Visualizer information and needs to
-// determine the color based on the line’s attribute flags. The core issue here is that the flag
+// determine the color based on the line's attribute flags. The core issue here is that the flag
 // representing the rayType in PathVisualizer is not exposed as a public enum. Therefore, this function
 // currently assumes that the uint8_t flags argument represents the PathVisualizer::Flags and performs
 // the conversion based on that assumption.
@@ -389,18 +531,23 @@ uint8_t PathVisualizer::clipPoints(const int nodeIndex, Vec3f* outPoints, bool* 
         clippedLine = clippedLine || clippedCurrentLine;
     }
 
-    /// If the isect and/or endpoint has been clipped, flag it
+    /// If the isect and/or startpoint/endpoint have been clipped, flag it
     if (hasIsect) {
-        clipStatus[0] = outPoints[1] != getRayIsect(nodeIndex);
-        clipStatus[1] = outPoints[numPoints-1] != getRayEndpoint(nodeIndex);
+        clipStatus[0] = outPoints[0] != getRayOrigin(nodeIndex);
+        clipStatus[1] = outPoints[1] != getRayIsect(nodeIndex);
+        clipStatus[2] = outPoints[2] != getRayEndpoint(nodeIndex);
     } else {
-        clipStatus[0] = outPoints[numPoints-1] != getRayEndpoint(nodeIndex);
+        clipStatus[0] = outPoints[0] != getRayOrigin(nodeIndex);
+        clipStatus[1] = outPoints[1] != getRayEndpoint(nodeIndex);
     }
    
     return clippedLine ? numPoints : 0;
 }
 
-void PathVisualizer::addLineSegment(const PixelCoordU& start, const PixelCoordU& end, const Flags& flags, 
+void PathVisualizer::addLineSegment(const unsigned nodeIndex,
+                                    const PosType startPosType,
+                                    const PosType endPosType,
+                                    const PixelCoordU& start, const PixelCoordU& end, const Flags& flags, 
                                     const bool drawEndpoint, const bool isOccluded)
 {
     std::lock_guard<std::mutex> lock(mWriteLock);
@@ -409,13 +556,19 @@ void PathVisualizer::addLineSegment(const PixelCoordU& start, const PixelCoordU&
     if (start.x == end.x && start.y == end.y) {
         return;
     }
-    mLines.push_back({start, end, flags, drawEndpoint, isOccluded ? 0.1f : 1.f});
+    mLines.push_back({start, end, flags, drawEndpoint, isOccluded ? 0.1f : 1.f, nodeIndex, startPosType, endPosType});
 }
 
-void PathVisualizer::traceLine(const PixelCoordI& start, const PixelCoordI& end, 
+void PathVisualizer::traceLine(const unsigned nodeIndex,
+                               const PosType startPosType,
+                               const PosType endPosType,
+                               const PixelCoordI& start, const PixelCoordI& end, 
                                const std::function<bool(const PixelCoordU&)>& isOccludedFunc,
                                const Flags flags, const bool endpointClipped)
 {
+    const PixelCoordI lineStart = start;
+    const PixelCoordI lineEnd = end;
+
     /* Uses Wu's line drawing algorithm to trace the line until it finds where it's occluded.
      * Once it does, it creates a new line segment. It continues creating new segments
      * until the line is fully traced.
@@ -457,6 +610,11 @@ void PathVisualizer::traceLine(const PixelCoordI& start, const PixelCoordI& end,
     bool isFirstSegment = true;
     bool prevIsOccluded = false;
 
+    auto calcPosType = [&](const PixelCoordI& orig, const PixelCoordU& p, const PosType posType) -> PosType {
+        if (orig.x == static_cast<int>(p.x) && orig.y == static_cast<int>(p.y)) return posType;
+        return PosType::UNKNOWN;
+    };
+
     double yIntersect = y0;
     // This is a gradually increasing line, so
     // we always increase in x, and conditionally increase in y
@@ -486,13 +644,23 @@ void PathVisualizer::traceLine(const PixelCoordI& start, const PixelCoordI& end,
         // end the current line segment, and start a new one
         const bool currIsOccluded = isOccludedFunc(out);
         if (currIsOccluded != prevIsOccluded) {
-            addLineSegment(segmentStart, segmentEnd, flags, /* draw endpoint */ !currIsOccluded, prevIsOccluded);
+            // Check if the segment start/end point is the same as the line start/end point.
+            // If it isn't, the point is interior on the line, or clipped by view frustum,
+            // and its position type is UNKNOWN.
+            const PosType sPosType = calcPosType(lineStart, segmentStart, startPosType);
+            const PosType ePosType = calcPosType(lineEnd, segmentEnd, endPosType);
+
+            addLineSegment(nodeIndex, sPosType, ePosType,
+                           segmentStart, segmentEnd, flags, /* draw endpoint */ !endpointClipped, prevIsOccluded);
             prevIsOccluded = currIsOccluded;
             segmentStart = out;
         }
     }
     // add the last line segment
-    addLineSegment(segmentStart, segmentEnd, flags, /* draw endpoint */ !endpointClipped, prevIsOccluded);
+    const PosType sPosType = calcPosType(lineStart, segmentStart, startPosType);
+    const PosType ePosType = calcPosType(lineEnd, segmentEnd, endPosType);
+    addLineSegment(nodeIndex, sPosType, ePosType,
+                   segmentStart, segmentEnd, flags, /* draw endpoint */ !endpointClipped, prevIsOccluded);
 }
 
 void PathVisualizer::generateLine(const int nodeIndex, const Scene* scene)
@@ -512,7 +680,7 @@ void PathVisualizer::generateLine(const int nodeIndex, const Scene* scene)
     //  - rayEndpoint
     //  - scene intersection (if occlusion ray)
     Vec3f clippedPoints[3];
-    bool clipStatus[2];
+    bool clipStatus[3] = {false, false, false};
     uint8_t numPoints = clipPoints(nodeIndex, clippedPoints, clipStatus);
     if (numPoints == 0) { return; }
 
@@ -548,7 +716,25 @@ void PathVisualizer::generateLine(const int nodeIndex, const Scene* scene)
         // part of an occlusion ray
         const Flags flags = i > 0 ? Flags::INACTIVE : mNodes[nodeIndex].mFlags;
 
-        traceLine(pixelEndpoints[i], pixelEndpoints[i+1], isOccludedFunc, flags, clipStatus[i]);
+        PosType startPosType {PosType::UNKNOWN};
+        PosType endPosType {PosType::UNKNOWN};
+        if (numPoints == 2) {
+            startPosType = PosType::START;
+            endPosType = PosType::END;
+        } else if (numPoints == 3) {
+            if (i == 0) {
+                startPosType = PosType::START;
+                endPosType = PosType::ISECT;
+            } else {
+                startPosType = PosType::ISECT;
+                endPosType = PosType::END;
+            }
+        }
+        if (clipStatus[i]) startPosType = PosType::UNKNOWN;
+        if (clipStatus[i+1]) endPosType = PosType::UNKNOWN; 
+
+        traceLine(static_cast<unsigned>(nodeIndex), startPosType, endPosType,
+                  pixelEndpoints[i], pixelEndpoints[i+1], isOccludedFunc, flags, clipStatus[i+1]);
     }
 }
 
@@ -573,7 +759,6 @@ void PathVisualizer::generateLines(const Scene* scene)
     });
 }
 
-
 void PathVisualizer::draw(scene_rdl2::fb_util::RenderBuffer* renderBuffer, const Scene* scene)
 {
     /// ---- Create a function that will write to the render buffer --------
@@ -591,19 +776,25 @@ void PathVisualizer::draw(scene_rdl2::fb_util::RenderBuffer* renderBuffer, const
     /// ---- For each line, draw it on top of the render buffer ---------------
     using Color = scene_rdl2::math::Color;
 
-    crawlAllLines([&](const uint32_t p1x, const uint32_t p1y, 
-                      const uint32_t p2x, const uint32_t p2y, 
-                      const uint8_t& flags, const float alpha,
-                      const uint32_t width, const bool drawEndpoint) {
+    crawlAllLines([&](const Vec2i& px1,
+                      const Vec2i& px2,
+                      const uint8_t& flags,
+                      const float alpha,
+                      const float width,
+                      const bool drawEndpoint,
+                      const unsigned nodeId,
+                      const PosType startPosType,
+                      const PosType endPosType) {
         scene_rdl2::math::Color c = getRayColor(static_cast<Flags>(flags));
         auto writeFunc = [&] (int px, int py, float a) {
             writeToRenderBuffer({static_cast<uint32_t>(px), static_cast<uint32_t>(py)}, c, alpha * a);
         };
 
-        drawing::drawLineWu(p1x, p1y, p2x, p2y, width, writeFunc);
-
+        const unsigned uWidth = static_cast<unsigned>(width);
+        drawing::drawLineWu(px1.x, px1.y, px2.x, px2.y, uWidth, writeFunc);
+        
         if (drawEndpoint) {
-            drawing::drawCircle(p2x, p2y, width + 2, writeFunc);
+            drawing::drawCircle(px2.x, px2.y, width + 2, writeFunc);
         }
     });
 }
@@ -842,6 +1033,68 @@ void PathVisualizer::printNodes(const int maxEntries) const
     std::cout << "\n";
 }
 
+bool
+PathVisualizer::getCamPos(scene_rdl2::math::Vec3f& camPos) const
+{
+    bool foundFlag = false;
+    crawlAllNodes(Flags::CAMERA,
+                  [&](const Node& node) {
+                      foundFlag = true;
+                      camPos = mVertexBuffer[node.mRayOriginIndex];
+                      return false; // early exit
+                  });
+    return foundFlag;
+}
+
+std::vector<scene_rdl2::math::Vec3f>
+PathVisualizer::getCamRayIsectSfPos() const
+//
+// Returns all the camera ray intersection points with the surface.
+//
+{
+    std::vector<scene_rdl2::math::Vec3f> tbl;
+    if (mNodes.empty()) return tbl;
+    crawlAllNodes(Flags::CAMERA,
+                  [&](const Node& node) {
+                      tbl.push_back(mVertexBuffer[node.mRayEndpointIndex]);
+                      return true;
+                  });
+    return tbl;
+}
+
+size_t
+PathVisualizer::serializeNodeDataAll(std::string& buff) const
+//
+// Return non-zero data size even if node total and vtx total both are zero,
+// because the data size is encoded.
+//
+{
+    scene_rdl2::cache::ValueContainerEnqueue vce(&buff);
+
+    /* for debug
+    std::cerr << ">> PathVisualizer.cc serializeNodeDataAll() mNodes.size():" << mNodes.size()
+              << " mVertexBuffer.size():" << mVertexBuffer.size() << '\n';
+    */
+
+    vce.enqVLSizeT(mNodes.size());
+    if (mNodes.size()) {
+        for (const auto& node : mNodes) {
+            scene_rdl2::grid_util::VectorPacketNode vecPacketNode(node.mRayOriginIndex,
+                                                                  node.mRayEndpointIndex,
+                                                                  node.mRayIsectIndex,
+                                                                  static_cast<int>(node.mDepth),
+                                                                  flagsToRayType(node.mFlags));
+            vecPacketNode.enq(vce);
+        }
+    }
+
+    vce.enqVLSizeT(mVertexBuffer.size());
+    if (mVertexBuffer.size()) {
+        vce.enqVec3fVector(mVertexBuffer);
+    }
+    return vce.finalize();
+}
+
 void
 PathVisualizer::parserConfigure()
 {
@@ -853,16 +1106,18 @@ PathVisualizer::parserConfigure()
                 [&](Arg& arg) { return arg.msg(showLinesInfo() + '\n'); });
     mParser.opt("startSim", "", "start simulation phase and constructs PathVis dataBase",
                 [&](Arg& arg) {
+                    if (!mOn) return arg.msg("skip\n");
                     mState = State::READY;
                     reset();
                     mState = State::START_RECORD;
                     return arg.msg(showFlowCtrlState() + '\n');
                 });
-    mParser.opt("resetState", "", "reset internal state to READY",
-                [&](Arg& arg) {
-                    mState = State::READY;
-                    return arg.msg(showFlowCtrlState() + '\n');
-                });
+    mParser.opt("showNode", "", "show node information",
+                [&](Arg& arg) { return arg.msg(showNodeInfo() + '\n'); });
+    mParser.opt("showCamPos", "", "show camera position",
+                [&](Arg& arg) { return arg.msg(showCamPos() + '\n'); });
+    mParser.opt("showCamRayIsectSfPos", "", "show camera ray intersect surface positions",
+                [&](Arg& arg) { return arg.msg(showCamRayIsectSfPos() + '\n'); });
 }
 
 std::string
@@ -882,12 +1137,12 @@ PathVisualizer::showLinesInfo() const
     if (!mLines.size()) return "linesInfo (size:0)";
 
     auto showLineSegment = [](const LineSegment& line) {
-        auto showPos = [](const int v) {
+        auto showPos = [](const unsigned v) {
             std::ostringstream ostr;
             ostr << std::setw(4) << v;
             return ostr.str();
         };
-        auto showPosXY = [&](const int x, const int y) {
+        auto showPosXY = [&](const unsigned x, const unsigned y) {
             return "(" + showPos(x) + ',' + showPos(y) + ")";
         };
         auto showCol = [](const float c) {
@@ -897,11 +1152,14 @@ PathVisualizer::showLinesInfo() const
         };
 
         std::ostringstream ostr;
-        ostr << "s" << showPosXY(line.mPx1.x, line.mPx1.y) << ' '
-             << "e" << showPosXY(line.mPx2.x, line.mPx2.y) << ' '
-             << "f" << line.mFlags << ' '
-             << "a:" << showCol(line.mAlpha) << ' '
-             << "endPoint:" << scene_rdl2::str_util::boolStr(line.mDrawEndpoint);
+        ostr << "s" << showPosXY(line.mPx1.x, line.mPx1.y)
+             << " e" << showPosXY(line.mPx2.x, line.mPx2.y)
+             << " f:" << line.mFlags
+             << " a:" << showCol(line.mAlpha)
+             << " drawE:" << scene_rdl2::str_util::boolStr(line.mDrawEndpoint)
+             << " nId:" << line.mNodeIndex
+             << " sPos:" << scene_rdl2::grid_util::VectorPacketLineStatus::posTypeStr(line.mStartPosType)
+             << " ePos:" << scene_rdl2::grid_util::VectorPacketLineStatus::posTypeStr(line.mEndPosType);
         return ostr.str();
     };
 
@@ -913,6 +1171,89 @@ PathVisualizer::showLinesInfo() const
         ostr << "  i:" << std::setw(wi) << i << ' ' << showLineSegment(mLines[i]) << '\n';
     }
     ostr << "}";
+    return ostr.str();
+}
+
+std::string
+PathVisualizer::showNodeInfo() const
+{
+    auto showPosId = [&](const int posId) {
+        auto showPos = [](const scene_rdl2::math::Vec3f& v) {
+            auto showF = [](const float v) {
+                std::ostringstream ostr;
+                ostr << std::setw(10) << std::fixed << std::setprecision(5) << v;
+                return ostr.str();
+            };
+            std::ostringstream ostr;
+            ostr << '(' << showF(v[0]) << ',' << showF(v[1]) << ',' << showF(v[2]) << ')';
+            return ostr.str();
+        };
+        std::ostringstream ostr;
+        const int w = scene_rdl2::str_util::getNumberOfDigits(mVertexBuffer.size());
+        ostr << std::setw(w) << posId << ':' << showPos(mVertexBuffer[posId]);
+        return ostr.str();
+    };
+    auto showNode = [&](const int nodeId) {
+        auto showFlag = [&](const Flags& flag) {
+            std::ostringstream ostr;
+            ostr << "0x" << std::setw(2) << std::hex << static_cast<int>(flag) << ' ' << flag;
+            return ostr.str();
+        };
+        std::ostringstream ostr;
+        const int w = scene_rdl2::str_util::getNumberOfDigits(mNodes.size());
+        const Node& node = mNodes[nodeId];
+        ostr << "node:" << std::setw(w) << nodeId << " {\n"
+             << scene_rdl2::str_util::addIndent("  mRayOriginIndex:" + showPosId(node.mRayOriginIndex)) << '\n'
+             << scene_rdl2::str_util::addIndent("mRayEndpointIndex:" + showPosId(node.mRayEndpointIndex)) << '\n'
+             << scene_rdl2::str_util::addIndent("   mRayIsectIndex:" + showPosId(node.mRayIsectIndex)) << '\n'
+             <<                               "             mDepth:" << static_cast<int>(node.mDepth) << '\n'
+             <<                               "             mFlags:" << showFlag(node.mFlags) << '\n'
+             << "}";
+        return ostr.str();
+    };
+
+    std::ostringstream ostr;
+    ostr << "node info (size:" << mNodes.size() << ") {\n";
+    for (size_t nodeId = 0; nodeId < mNodes.size(); ++nodeId) {
+        ostr << scene_rdl2::str_util::addIndent(showNode(nodeId)) << '\n';
+    }
+    ostr << "}";
+    return ostr.str();
+}
+
+std::string
+PathVisualizer::showCamPos() const
+{
+    scene_rdl2::math::Vec3f camPos;
+    const bool flag = getCamPos(camPos);
+
+    std::ostringstream ostr;
+    if (flag) ostr << "camPos:" << camPos;
+    else      ostr << "camPos:empty"; 
+    return ostr.str();
+}
+
+std::string
+PathVisualizer::showCamRayIsectSfPos() const
+{
+    std::vector<scene_rdl2::math::Vec3f> tbl = getCamRayIsectSfPos();
+
+    const int wi = scene_rdl2::str_util::getNumberOfDigits(tbl.size());
+    std::ostringstream ostr;
+    ostr << "camRayIsectSfPos (size:" << tbl.size() << ") {\n";
+    for (size_t i = 0; i < tbl.size(); ++i) {
+        ostr << "  i:" << std::setw(wi) << i << tbl[i] << '\n';
+    }
+    ostr << "}";
+    return ostr.str();
+}
+
+// static function
+std::string
+PathVisualizer::stateStr(const State state)
+{
+    std::ostringstream ostr;
+    ostr << state;
     return ostr.str();
 }
 

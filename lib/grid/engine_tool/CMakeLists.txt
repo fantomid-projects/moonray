@@ -1,4 +1,4 @@
-# Copyright 2023-2024 DreamWorks Animation LLC
+# Copyright 2023-2025 DreamWorks Animation LLC
 # SPDX-License-Identifier: Apache-2.0
 
 set(component grid_engine_tool)
@@ -12,6 +12,7 @@ add_library(${PROJECT_NAME}::${component} ALIAS ${component})
 target_sources(${component}
     PRIVATE
         McrtFbSender.cc
+        McrtVecSender.cc
 )
 
 set_property(TARGET ${component}
@@ -19,6 +20,7 @@ set_property(TARGET ${component}
         FrameStatus.h
         ImgEncodingType.h
         McrtFbSender.h
+        McrtVecSender.h
 )
 
 target_include_directories(${component}

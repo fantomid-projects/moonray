@@ -654,10 +654,12 @@ private:
     void createMeshLightLayer();
 
     void parserConfigure();
+    bool setPathVisInitCam();
     void setSceneVarTextureCacheSize(const unsigned int sizeMB);
     std::string getSceneVarTextureCacheSize() const;
     bool saveSceneCommand(Arg& arg) const;
     std::string showExecModeAndReason() const;
+    std::string showCurrRenderCamInfo() const;
 
     // Options for rendering, such as the frame size, input/output files, etc.
     RenderOptions& mOptions;
@@ -765,6 +767,7 @@ private:
     std::mutex mMutexForceCallStartFrame;
     bool mForceCallStartFrame = false;
     Parser mParser;
+    Parser mParserRenderCam;
 
     std::unique_ptr<PathVisualizerManager> mPathVisualizerManager;
 

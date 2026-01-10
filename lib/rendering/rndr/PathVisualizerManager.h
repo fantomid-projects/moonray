@@ -7,12 +7,15 @@
 #include <scene_rdl2/common/fb_util/FbTypes.h>
 #include <scene_rdl2/common/grid_util/Arg.h>
 #include <scene_rdl2/common/grid_util/Parser.h>
+#include <scene_rdl2/common/grid_util/VectorPacket.h>
 #include <scene_rdl2/common/math/Math.h>
 #include <scene_rdl2/common/rec_time/RecTime.h>
 #include <scene_rdl2/scene/rdl2/Geometry.h>
 
 namespace scene_rdl2 { 
-    namespace rdl2 { class SceneVariables; class Color;}
+    namespace grid_util { class PathVisSimGlobalInfo; } 
+    namespace math { class Color; }
+    namespace rdl2 { class SceneVariables; }
 }
 
 namespace moonray {
@@ -32,6 +35,7 @@ class PathVisualizerManager {
 public:
     using Arg = scene_rdl2::grid_util::Arg;
     using Parser = scene_rdl2::grid_util::Parser; 
+    using PosType = scene_rdl2::grid_util::VectorPacketLineStatus::PosType;
 
     PathVisualizerManager(RenderContext* renderContext);
     ~PathVisualizerManager();
@@ -64,17 +68,20 @@ public:
 
     void printStats() const;
 
-    using CrawlLineFunc = std::function<void(const uint32_t sx, const uint32_t sy,
-                                             const uint32_t ex, const uint32_t ey,
+    using CrawlLineFunc = std::function<void(const scene_rdl2::math::Vec2i& s,
+                                             const scene_rdl2::math::Vec2i& e,
                                              const uint8_t& flags,
                                              const float a,
                                              const float w,
-                                             const bool drawEndPoint)>;
+                                             const bool drawEndPoint,
+                                             const unsigned nodeId,
+                                             const PosType startPosType,
+                                             const PosType endPosType)>;
     void crawlAllLines(const CrawlLineFunc& func);
     size_t getTotalLines() const;
 
-    // Gets the color associated with the given ray flag
     scene_rdl2::math::Color getColorByFlags(const uint8_t& flags) const;
+    static scene_rdl2::grid_util::VectorPacketLineStatus::RayType flagsToRayType(const uint8_t& flags);
 
     // Indicates whether we need to restart rendering after recording ray data
     void setNeedsRenderRefresh(bool refresh);
@@ -157,7 +164,7 @@ public:
     const scene_rdl2::math::Color& getBsdfSampleColor() const;
     const scene_rdl2::math::Color& getLightSampleColor() const;
 
-    uint32_t getLineWidth() const;
+    float getLineWidth() const;
 
     bool getUseSceneSamples() const;
     uint32_t getPixelSamples() const;
@@ -182,7 +189,7 @@ public:
     void setBsdfSampleColor(scene_rdl2::math::Color color);
     void setLightSampleColor(scene_rdl2::math::Color color);
 
-    void setLineWidth(uint32_t value);
+    void setLineWidth(const float value);
 
     void setUseSceneSamples(bool useSceneSamples, bool update = false);
     void setPixelSamples(uint32_t samples, bool update = false);
@@ -191,10 +198,19 @@ public:
 
     /// ------------------------------
 
+    void setupSimGlobalInfo(scene_rdl2::grid_util::PathVisSimGlobalInfo& globalInfo) const;
+    bool getCamPos(scene_rdl2::math::Vec3f& camPos) const;
+    std::vector<scene_rdl2::math::Vec3f> getCamRayIsectSfPos() const;
+
+    size_t serializeNodeDataAll(std::string& buff) const;
+
+    /// ------------------------------
+
     Parser& getParser() { return mParser; }
 
 private:
     void parserConfigure();
+    std::string showInitialCameraXform() const;
 
     //------------------------------
 

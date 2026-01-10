@@ -3,8 +3,9 @@
 
 #include "PathVisualizerManager.h"
 
-#include <scene_rdl2/scene/rdl2/rdl2.h>
+#include <scene_rdl2/common/grid_util/PathVisSimGlobalInfo.h>
 #include <scene_rdl2/common/math/Color.h>
+#include <scene_rdl2/scene/rdl2/rdl2.h>
 #include <moonray/rendering/pbr/core/PathVisualizer.h>
 #include <moonray/rendering/pbr/core/Scene.h>
 #include <moonray/rendering/rt/EmbreeAccelerator.h>
@@ -37,7 +38,11 @@ void PathVisualizerManager::initialize(const scene_rdl2::rdl2::SceneVariables& v
 
     const float sceneSize = scene_rdl2::math::length(scene->getEmbreeAccelerator()->getBounds().size());
 
-    mPathVisualizer->initialize(vars.getRezedWidth(), vars.getRezedHeight(), mParams.get(), sceneSize);
+    const unsigned width = vars.getRezedWidth();
+    const unsigned height = vars.getRezedHeight();
+    pbr::PathVisualizerParams* params = mParams.get();
+    params->setPixelRange(0, 0, width - 1, height - 1);
+    mPathVisualizer->initialize(width, height, params, sceneSize);
     
     mScene = scene;
     mScene->setPathVisualizer(mPathVisualizer.get());
@@ -137,6 +142,13 @@ PathVisualizerManager::getTotalLines() const
     return mPathVisualizer->getTotalLines();
 }
 
+// static function
+scene_rdl2::grid_util::VectorPacketLineStatus::RayType
+PathVisualizerManager::flagsToRayType(const uint8_t& flags)
+{
+    return pbr::PathVisualizer::flagsToRayType(flags);
+}
+
 scene_rdl2::math::Color
 PathVisualizerManager::getColorByFlags(const uint8_t& flags) const
 {
@@ -183,11 +195,27 @@ void PathVisualizerManager::fillMaxDepth(int& samples) const
 void PathVisualizerManager::turnOn()
 {
     mOn = true;
+
+    mPathVisualizer->setOn(mOn);
+    mParams->setOn(mOn);
+
     startSimulation();
 }
 void PathVisualizerManager::turnOff()
 {
     mOn = false;
+
+    mPathVisualizer->setOn(mOn);
+    mParams->setOn(mOn);
+
+    //
+    // This is for the vecPacket communication, more precise and sync.
+    // Especially for the timing of PathVisualizer turning off to on,
+    // there is some garbage data is still left before generating updated lines.
+    // vecPacket might pick garbage data and send it to the downstream.
+    // We must clean up old lines when the path visualizer is off.
+    //
+    mPathVisualizer->resetLines();
 }
 
 void PathVisualizerManager::setInitialCameraXform(const scene_rdl2::math::Mat4d& xform)
@@ -311,7 +339,7 @@ const scene_rdl2::math::Color& PathVisualizerManager::getDiffuseRayColor() const
 const scene_rdl2::math::Color& PathVisualizerManager::getBsdfSampleColor() const { return mParams->mBsdfSampleColor; }
 const scene_rdl2::math::Color& PathVisualizerManager::getLightSampleColor() const { return mParams->mLightSampleColor; }
 
-uint32_t PathVisualizerManager::getLineWidth() const { return mParams->mLineWidth; }
+float PathVisualizerManager::getLineWidth() const { return mParams->mLineWidth; }
 
 bool PathVisualizerManager::getUseSceneSamples() const { return mParams->mUseSceneSamples; }
 uint32_t PathVisualizerManager::getPixelSamples() const { return std::sqrt(mParams->mPixelSamples); }
@@ -353,7 +381,7 @@ void PathVisualizerManager::setDiffuseRayColor(scene_rdl2::math::Color color) { 
 void PathVisualizerManager::setBsdfSampleColor(scene_rdl2::math::Color color) { mParams->mBsdfSampleColor = color; }
 void PathVisualizerManager::setLightSampleColor(scene_rdl2::math::Color color) { mParams->mLightSampleColor = color; }
 
-void PathVisualizerManager::setLineWidth(uint32_t value) { mParams->mLineWidth = value; }
+void PathVisualizerManager::setLineWidth(const float value) { mParams->mLineWidth = value; }
 
 void PathVisualizerManager::setUseSceneSamples(bool useSceneSamples, bool update)
 { 
@@ -379,6 +407,52 @@ void PathVisualizerManager::setBsdfSamples(uint32_t samples, bool update)
 //------------------------------------------------------------------------------------------
 
 void
+PathVisualizerManager::setupSimGlobalInfo(scene_rdl2::grid_util::PathVisSimGlobalInfo& globalInfo) const
+{
+    globalInfo.setPathVisActive(isOn());
+    if (!isOn()) return;
+    
+    globalInfo.setSamples(mParams->mPixelX, mParams->mPixelY, mParams->mMaxDepth,
+                          mParams->mPixelSamples, mParams->mLightSamples, mParams->mBsdfSamples);
+    globalInfo.setRayTypeSelection(mParams->mUseSceneSamples,
+                                   mParams->mOcclusionRaysOn,
+                                   mParams->mSpecularRaysOn,
+                                   mParams->mDiffuseRaysOn,
+                                   mParams->mBsdfSamplesOn,
+                                   mParams->mLightSamplesOn);
+    globalInfo.setColor(mParams->mCameraRayColor,
+                        mParams->mSpecularRayColor,
+                        mParams->mDiffuseRayColor,
+                        mParams->mBsdfSampleColor,
+                        mParams->mLightSampleColor);
+    globalInfo.setLineWidth(mParams->mLineWidth);
+}
+
+bool
+PathVisualizerManager::getCamPos(scene_rdl2::math::Vec3f& camPos) const
+{
+    return mPathVisualizer->getCamPos(camPos);
+}
+
+std::vector<scene_rdl2::math::Vec3f>
+PathVisualizerManager::getCamRayIsectSfPos() const
+{
+    return mPathVisualizer->getCamRayIsectSfPos();
+}
+
+size_t
+PathVisualizerManager::serializeNodeDataAll(std::string& buff) const
+//
+// Return non-zero data size even if node total and vtx total both are zero,
+// because the data size is encoded.
+//
+{
+    return mPathVisualizer->serializeNodeDataAll(buff);
+}
+
+//------------------------------------------------------------------------------------------
+
+void
 PathVisualizerManager::parserConfigure()
 {
     mParser.description("PathVisualizerManager command");
@@ -387,6 +461,32 @@ PathVisualizerManager::parserConfigure()
                 [&](Arg& arg) { return mPathVisualizer->getParser().main(arg.childArg()); });
     mParser.opt("param", "...command...", "parameters",
                 [&](Arg& arg) { return mParams->getParser().main(arg.childArg()); });
+    mParser.opt("showInitCamXform", "", "show initialCameraXform",
+                [&](Arg& arg) { return arg.msg(showInitialCameraXform() + '\n'); });
+}
+
+std::string
+PathVisualizerManager::showInitialCameraXform() const
+{
+    auto showMtx = [](const scene_rdl2::rdl2::Mat4d& mtx) {
+        auto showF = [](const float f) {
+            std::ostringstream ostr;
+            ostr << std::setw(10) << std::fixed << std::setprecision(5) << f;
+            return ostr.str();
+        };
+        std::ostringstream ostr;
+        ostr << showF(mtx.vx.x) << ", " << showF(mtx.vx.y) << ", " << showF(mtx.vx.z) << ", " << showF(mtx.vx.w) << '\n'
+             << showF(mtx.vy.x) << ", " << showF(mtx.vy.y) << ", " << showF(mtx.vy.z) << ", " << showF(mtx.vy.w) << '\n'
+             << showF(mtx.vz.x) << ", " << showF(mtx.vz.y) << ", " << showF(mtx.vz.z) << ", " << showF(mtx.vz.w) << '\n'
+             << showF(mtx.vw.x) << ", " << showF(mtx.vw.y) << ", " << showF(mtx.vw.z) << ", " << showF(mtx.vw.w);
+        return ostr.str();
+    };
+
+    std::ostringstream ostr;
+    ostr << "mInitialCameraXform {\n"
+         << scene_rdl2::str_util::addIndent(showMtx(mInitialCameraXform)) + '\n'
+         << "}";
+    return ostr.str();
 }
 
 } // end namespace rndr
