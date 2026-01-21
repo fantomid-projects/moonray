@@ -48,6 +48,7 @@ public:
     scene_rdl2::math::Color mBsdfSampleColor    = scene_rdl2::math::Color(1, 0.4, 0);   // color of the bsdf rays
     scene_rdl2::math::Color mLightSampleColor   = scene_rdl2::math::Color(1, 1, 0);     // color of the light rays
     float mLineWidth = 1.0f;               // width of the lines drawn
+    float mHiddenLineOpacity = 0.2f;     // opacity of the line segments that are behind a scene object
 
     void setPixelRange(const int xMin, const int yMin, const int xMax, const int yMax)
     {

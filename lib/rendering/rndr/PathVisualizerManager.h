@@ -165,6 +165,7 @@ public:
     const scene_rdl2::math::Color& getLightSampleColor() const;
 
     float getLineWidth() const;
+    float getHiddenLineOpacity() const;
 
     bool getUseSceneSamples() const;
     uint32_t getPixelSamples() const;
@@ -190,6 +191,7 @@ public:
     void setLightSampleColor(scene_rdl2::math::Color color);
 
     void setLineWidth(const float value);
+    void setHiddenLineOpacity(float value);
 
     void setUseSceneSamples(bool useSceneSamples, bool update = false);
     void setPixelSamples(uint32_t samples, bool update = false);

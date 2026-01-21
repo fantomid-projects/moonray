@@ -98,6 +98,7 @@ PathVisualizerParams::show() const
          << "  mBsdfSampleColor:" << mBsdfSampleColor << '\n'
          << "  mLightSampleColor:" << mLightSampleColor << '\n'
          << "  mLineWidth:" << mLineWidth << '\n'
+         << "  mHiddenLineOpacity:" << mHiddenLineOpacity << '\n'
          << "  mPixelXmin:" << mPixelXmin << '\n'
          << "  mPixelYmin:" << mPixelYmin << '\n'
          << "  mPixelXmax:" << mPixelXmax << '\n'
@@ -256,7 +257,9 @@ PathVisualizerParams::parserConfigure()
                 [&](Arg& arg) { return setColorArg(arg, mOn, mLightSampleColor, "lightSampleColor="); });
 
     mParser.opt("lineWidth", "<w>", "set line width",
-                [&](Arg& arg) { return setSingleFloat(arg, mOn, mLineWidth, "lineWidth="); }); 
+                [&](Arg& arg) { return setSingleFloat(arg, mOn, mLineWidth, "lineWidth="); });
+    mParser.opt("hiddenLineOpacity", "<opacity>", "set hidden line opacity",
+                [&](Arg& arg) { return setSingleFloat(arg, mOn, mHiddenLineOpacity, "hiddenLineOpacity="); });
 
     mParser.opt("show", "", "show info",
                 [&](Arg& arg) { return arg.msg(show() + '\n'); });
@@ -556,7 +559,8 @@ void PathVisualizer::addLineSegment(const unsigned nodeIndex,
     if (start.x == end.x && start.y == end.y) {
         return;
     }
-    mLines.push_back({start, end, flags, drawEndpoint, isOccluded ? 0.1f : 1.f, nodeIndex, startPosType, endPosType});
+    float lineOpacity = isOccluded ? mParams->mHiddenLineOpacity : 1.f;
+    mLines.push_back({start, end, flags, drawEndpoint, lineOpacity, nodeIndex, startPosType, endPosType});
 }
 
 void PathVisualizer::traceLine(const unsigned nodeIndex,

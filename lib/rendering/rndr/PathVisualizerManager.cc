@@ -339,6 +339,7 @@ const scene_rdl2::math::Color& PathVisualizerManager::getDiffuseRayColor() const
 const scene_rdl2::math::Color& PathVisualizerManager::getBsdfSampleColor() const { return mParams->mBsdfSampleColor; }
 const scene_rdl2::math::Color& PathVisualizerManager::getLightSampleColor() const { return mParams->mLightSampleColor; }
 
+float PathVisualizerManager::getHiddenLineOpacity() const { return mParams->mHiddenLineOpacity; }
 float PathVisualizerManager::getLineWidth() const { return mParams->mLineWidth; }
 
 bool PathVisualizerManager::getUseSceneSamples() const { return mParams->mUseSceneSamples; }
@@ -382,6 +383,7 @@ void PathVisualizerManager::setBsdfSampleColor(scene_rdl2::math::Color color) { 
 void PathVisualizerManager::setLightSampleColor(scene_rdl2::math::Color color) { mParams->mLightSampleColor = color; }
 
 void PathVisualizerManager::setLineWidth(const float value) { mParams->mLineWidth = value; }
+void PathVisualizerManager::setHiddenLineOpacity(float value) { mParams->mHiddenLineOpacity = value; }
 
 void PathVisualizerManager::setUseSceneSamples(bool useSceneSamples, bool update)
 { 
