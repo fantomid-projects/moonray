@@ -248,6 +248,18 @@ void LightTreeNode::calcEnergyVariance(uint32_t lightCount, const Light* const* 
     });
 
     mEnergyVariance /= lightCount;
+
+    // --- Go ahead and do any mappings here to avoid the cost during sampling ---
+    // Map the energy variance to [0, 1] range, then take power of 4 to boost splitting chances
+    // then map to [0.5, 1] so that we only ever boost (not lower) splitting chances
+    // this is the simplified version of the calculation (1 - (1 / (1 + sqrt(x)))^4 ) + 1) / 2
+    // (this calculation is primarily based on experimentation; finding what works best)
+    // TODO: I'm not sure what was intended by the above formula, because it does not 
+    // match the implementation below. When we investigate re-incorporating the energy variance term,
+    // we should revisit this calculation. 
+    float arg = 1.f + scene_rdl2::math::sqrt(mEnergyVariance);
+    float arg2 = arg * arg;
+    mEnergyVariance = 1.0f - (0.5f / (arg2*arg2));
 }
 
 void LightTreeNode::init(const uint32_t lightCount, uint32_t* lightIndexBegin, const Light* const* lights)

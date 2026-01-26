@@ -22,6 +22,10 @@ void LightTree::build(const Light* const* boundedLights, uint32_t boundedLightCo
     mBoundedLightCount = boundedLightCount;
     mUnboundedLightCount = unboundedLightCount;
 
+    // Clear previous tree data to ensure a clean rebuild
+    mNodes.clear();
+    mLightIndices.clear();
+
     // pre-allocate since we know the size of the array
     mLightIndices.reserve(boundedLightCount);
 
@@ -272,6 +276,7 @@ float splittingHeuristic(const LightTreeNode& node, const scene_rdl2::math::Vec3
     // TODO: also base this on the orientation cone?
 
     const scene_rdl2::math::BBox3f bbox = node.getBBox();
+    // TODO: we could move this calculation inside the node, since the bounding box doesn't change per sample
     const float radius = scene_rdl2::math::length(bbox.size()) * 0.5f;
     const float distance = scene_rdl2::math::distance(p, center(bbox));
 
@@ -289,17 +294,13 @@ float splittingHeuristic(const LightTreeNode& node, const scene_rdl2::math::Vec3
     // when splitting is low, it results in scenes with high amounts of noise -- this is 
     // why we generally bias more splitting over less.
     const float lightSpreadSqrt = sqrt(lightSpread);
-    // map the energy variance to [0, 1] range, then take power of 4 to boost splitting chances
-    // then map to [0.5, 1] so that we only ever boost (not lower) splitting chances
-    // this is the simplified version of the calculation (1 - (1 / (1 + sqrt(x)))^4 ) + 1) / 2
-    // (this calculation is primarily based on experimentation; finding what works best)
-    float arg = 1.f + sqrt(node.getEnergyVariance());
-    float arg2 = arg * arg;
-    float energyVarianceMapped = 1.f - (0.5f / (arg2*arg2));
 
-    // energy variance is often 0, and in those cases we don't want to completely ignore the distance 
-    // variance. So, let's instead bias the distance variance using the energy variance
-    return 1 - scene_rdl2::math::bias_Schlick(lightSpreadSqrt, energyVarianceMapped);
+    // TODO: we need further investigation on how to incorporate the energy variance.
+    // It currently invalidates the lightSpreadSqrt, because the energy variance tends to go to extremes (either
+    // 0 or a really high number). For now, we will just use lightSpreadSqrt, as it is stable & well-normalized.
+    // We are preserving the energy variance calculation in the LightTreeNode intialization so that we can revisit
+    // the calculation in the future.
+    return 1.f - lightSpreadSqrt;
 }
 
 void LightTree::sampleRecurse(float* lightSelectionPdfs, int nodeIndices[2], const scene_rdl2::math::Vec3f& p, 
@@ -327,7 +328,7 @@ void LightTree::sampleRecurse(float* lightSelectionPdfs, int nodeIndices[2], con
         }
 
         // Decide whether to traverse both subtrees (if the splitting heuristic is below the threshold/sampling quality)
-        // OR to stop traversing and choose a light using importance sampling. 
+        // OR to stop traversing and choose a light using importance sampling.
         if (mSamplingThreshold == 0.f || splittingHeuristic(node, p) > mSamplingThreshold) {
             // must generate new random number for every subtree traversal
             float r;

@@ -316,15 +316,15 @@ BBox3f
 DiskLight::getBounds() const
 {
     const Vec3f pos = getPosition(0.f);
-    const Vec3f xRow = xformPointLocal2Render(Vec3f(1., 0., 0.), 0.f);
-    const Vec3f yRow = xformPointLocal2Render(Vec3f(0., 1., 0.), 0.f);
+    const Vec3f xRow = xformVectorLocal2Render(Vec3f(1., 0., 0.), 0.f);
+    const Vec3f yRow = xformVectorLocal2Render(Vec3f(0., 1., 0.), 0.f);
     const Vec3f halfDims = max(sqrt(xRow*xRow + yRow*yRow), Vec3f(sEpsilon));  // ensure non-degeneracy
     BBox3f bounds(pos - halfDims, pos + halfDims);
 
     if (isMb()) {
         const Vec3f pos = getPosition(1.f);
-        const Vec3f xRow = xformPointLocal2Render(Vec3f(1., 0., 0.), 1.f);
-        const Vec3f yRow = xformPointLocal2Render(Vec3f(0., 1., 0.), 1.f);
+        const Vec3f xRow = xformVectorLocal2Render(Vec3f(1., 0., 0.), 1.f);
+        const Vec3f yRow = xformVectorLocal2Render(Vec3f(0., 1., 0.), 1.f);
         const Vec3f halfDims = max(sqrt(xRow*xRow + yRow*yRow), Vec3f(sEpsilon));  // ensure non-degeneracy
         bounds.extend(BBox3f(pos - halfDims, pos + halfDims));
     }
